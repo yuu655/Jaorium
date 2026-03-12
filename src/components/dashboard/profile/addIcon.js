@@ -50,7 +50,8 @@ export default function AddIcon({ format, uid, onUpload, profile }) {
       if (prevFilesPath) deleteAvatar(prevFilesPath);
       setPrevFilesPath(inputFilesPath);
     } catch (error) {
-      alert("アップロードに失敗しました");
+      console.log(error);
+      alert(error.message);
     } finally {
       setUploading(false);
     }

@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-async function submitUser(formData) {
+async function submitUser(prevState, formData) {
   const data = {
     name: formData.get("name"),
     grade: formData.get("grade"),
@@ -31,16 +31,19 @@ async function submitUser(formData) {
   if (error_insert) {
     throw error_insert;
   }
-  redirect("/dashboard/user");
+  redirect("/setAccount/user");
+  return { success: true };
 }
 
-async function submitMentor(formData) {
+async function submitMentor(prevState, formData) {
   const data = {
     name: formData.get("name"),
     university: formData.get("university"),
     faculty: formData.get("faculty"),
-    description: formData.get("description"),
+    bio: formData.get("bio"),
     region: formData.get("region"),
+    quote: formData.get("quote"),
+    tagIds: formData.getAll("tagIds"),
   };
   const supabase = await createClient();
   const {
@@ -62,14 +65,24 @@ async function submitMentor(formData) {
       name: data.name,
       university: data.university,
       faculty: data.faculty,
-      description: data.description,
+      bio: data.bio,
       region: data.region,
+      quote: data.quote,
     },
   ]);
+  const { error: error_insert_mentor_tags } = await supabase
+    .from("mentor_tags")
+    .insert(data.tagIds.map((id) => ({ mentor_id: user.id, tag_id: id })));
   if (error_insert) {
     throw error_insert;
+    alert("メンター情報の保存に失敗しました");
   }
-  redirect("/dashboard/mentor");
+  if (error_insert_mentor_tags) {
+    throw error_insert_mentor_tags;
+    alert("メンター情報の保存に失敗しました2");
+  }
+  redirect("/setAccount/mentor");
+  return { success: true };
 }
 
 export { submitMentor, submitUser };

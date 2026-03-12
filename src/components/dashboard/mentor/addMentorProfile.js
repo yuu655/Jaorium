@@ -1,8 +1,37 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState, useEffect } from "react";
 
-export default function AddMentorProfile({ profile, onUpload }) {
+export default function AddMentorProfile({
+  profile,
+  onUpload,
+  mentorTags=[],
+  allTags,
+}) {
+  // const wrappedAction = setIsIcon
+  //   ? (prevState, formData) => onUpload(prevState, formData, setIsIcon)
+  //   : onUpload;
   const [state, action, isPending] = useActionState(onUpload, null);
+  const [selected, setSelected] = useState(mentorTags.map((t) => t.id) || []);
+
+  const toggle = (tag) => {
+    const next = selected.includes(tag.id)
+      ? selected.filter((id) => id !== tag.id)
+      : [...selected, tag.id];
+    setSelected(next);
+  };
+
+  // カテゴリごとにグループ化
+  const groupedTags = allTags.reduce((acc, tag) => {
+    if (!acc[tag.category]) acc[tag.category] = [];
+    acc[tag.category].push(tag);
+    return acc;
+  }, {});
+
+  // useEffect(() => {
+  //   if (state?.success && setIsIcon) {
+  //     setIsIcon(true);
+  //   }
+  // }, [state]);
 
   return (
     <>
@@ -18,7 +47,7 @@ export default function AddMentorProfile({ profile, onUpload }) {
             name="name"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             placeholder="山田 太郎"
-            defaultValue={profile.name || ""}
+            defaultValue={profile?.name || ""}
           />
         </div>
 
@@ -34,8 +63,8 @@ export default function AddMentorProfile({ profile, onUpload }) {
             id="university"
             name="university"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-            placeholder="某大学"
-            defaultValue={profile.university || ""}
+            placeholder="○○大学"
+            defaultValue={profile?.university || ""}
           />
         </div>
 
@@ -48,24 +77,35 @@ export default function AddMentorProfile({ profile, onUpload }) {
             id="faculty"
             name="faculty"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-            placeholder="工学部"
-            defaultValue={profile.faculty || ""}
+            placeholder="○○学部"
+            defaultValue={profile?.faculty || ""}
           />
         </div>
 
         <div className="mb-6">
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium mb-2"
-          >
+          <label htmlFor="quote" className="block text-sm font-medium mb-2">
+            アピールポイント
+          </label>
+          <input
+            type="text"
+            id="quote"
+            name="quote"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            placeholder="例：逆転合格の秘訣"
+            defaultValue={profile?.quote || ""}
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="bio" className="block text-sm font-medium mb-2">
             詳細
           </label>
           <textarea
-            id="description"
-            name="description"
-            defaultValue={profile.description || ""}
+            id="bio"
+            name="bio"
+            defaultValue={profile?.bio || ""}
             rows={5}
-            placeholder="例：地方の公立高校に通っていて、東大を目指しています。どのように情報収集すればいいか相談したいです。"
+            placeholder="例：高3夏までE判定。部活引退後からの猛勉強で合格をつかみました。効率的な勉強法には自信があります！"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black resize-none"
           />
         </div>
@@ -78,7 +118,7 @@ export default function AddMentorProfile({ profile, onUpload }) {
             id="region"
             name="region"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-            defaultValue={profile.region || ""}
+            defaultValue={profile?.region || ""}
           >
             <option value="">選択してください</option>
             <option>北海道・東北</option>
@@ -88,6 +128,50 @@ export default function AddMentorProfile({ profile, onUpload }) {
             <option>中国・四国</option>
             <option>九州・沖縄</option>
           </select>
+        </div>
+
+        {selected.map((id) => (
+          <input key={id} type="hidden" name="tagIds" value={id} />
+        ))}
+
+        <div className="mb-6">
+          <label className="block text-sm font-medium mb-2">タグ</label>
+          <div className="border border-gray-300 rounded-lg px-4 py-3 space-y-4">
+            {Object.entries(groupedTags).map(([category, tags]) => (
+              <div key={category}>
+                <p className="text-xs text-gray-500 mb-2">{category}</p>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => {
+                    const isSelected = selected.includes(tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => toggle(tag)}
+                        className={`px-3 py-1 rounded-full text-sm border transition-all ${
+                          isSelected
+                            ? "bg-black text-white border-black"
+                            : "bg-white text-gray-700 border-gray-300 hover:border-black"
+                        }`}
+                      >
+                        {tag.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {selected.length > 0 && (
+            <p className="mt-2 text-xs text-gray-500">
+              選択中：
+              {allTags
+                .filter((t) => selected.includes(t.id))
+                .map((t) => t.name)
+                .join("・")}
+            </p>
+          )}
         </div>
 
         <div className="mb-6">

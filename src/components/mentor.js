@@ -1,90 +1,100 @@
-import { Search, MapPin, GraduationCap } from "lucide-react";
+"use client";
+
+import { Button } from "@/components/ui/button";
+
+import { Search, MapPin, GraduationCap, Star, ArrowRight } from "lucide-react";
 import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
+
+import { useState, useEffect } from "react";
 
 import Icon from "./dashboard/profile/icon";
 
-export default function Mentor({
-  // icon_url,
-  // name,
-  // university,
-  // faculty,
-  // region,
-  // specialties,
-  mentor,
-}) {
+const supabase = createClient();
+export default function Mentor({ mentor }) {
+  const [tags, setTags] = useState([]);
+  useEffect(() => {
+    const fetchAll = async () => {
+      // まずtag_idを取得
+      const { data, error } = await supabase
+        .from("mentor_tags")
+        .select("tag_id")
+        .eq("mentor_id", mentor.id);
+
+      if (error) return;
+
+      const tagIds = data.map((d) => d.tag_id); // stateを使わず直接変数に入れる
+
+      // tagIdsを使ってtagsを取得
+      const tagResults = await Promise.all(
+        tagIds.map((id) =>
+          supabase.from("tags").select("*").eq("id", id).single(),
+        ),
+      );
+
+      const tagNames = tagResults
+        .filter(({ error }) => !error)
+        .map(({ data }) => data.name);
+
+      setTags(tagNames);
+    };
+
+    fetchAll();
+  }, []);
+  console.log(mentor);
   return (
     <>
-      {/* <div className="h-full p-10 bg-white rounded-lg shadow-md">
-        <Image
-          alt="icon"
-          src={icon_url}
-          width={80}
-          height={80}
-          className="w-18 h-18 mx-auto rounded-full object-cover"
-        />
-        <h2 className="text-2xl text-center p-5 font-bold">{name}</h2>
-        <p className="text-2sm text-center">
-          {university} {faculty}
-        </p>
-        <p className="text-2sm text-center pt-2 pb-3 text-gray-500">
-          出身：{region}
-        </p>
-        <p className="text-sm text-center text-gray-700 bg-sky-100 rounded-sm py-1">
-          {specialties.join(", ")}
-        </p>
-      </div> */}
       <div
         key={mentor.id}
-        className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-xl transition-shadow"
+        className="min-w-[280px] md:min-w-[320px] bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 snap-center group flex flex-col"
       >
-        {/* Avatar */}
-        {/* <div className="w-24 h-24 bg-linear-to-br from-gray-300 to-gray-400 rounded-full mx-auto mb-4">
-          <Image
-            alt="icon"
-            src={mentor.icon.url}
-            width={80}
-            height={80}
-            className="w-24 h-24 mx-auto rounded-full object-cover"
-          />
-        </div> */}
-        
-        <Icon size={90} url={mentor?.icon} />
-
-        {/* Name */}
-        <h3 className="text-xl font-bold text-center mb-2">{mentor.name}</h3>
-
-        {/* University */}
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <GraduationCap size={16} className="text-gray-600" />
-          <p className="text-gray-700">
-            {mentor.university} {mentor.faculty}
-          </p>
-        </div>
-
-        {/* Region */}
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <MapPin size={16} className="text-gray-600" />
-          <p className="text-sm text-gray-600">出身：{mentor.region}</p>
-        </div>
-
-        {/* Bio */}
-        <p className="text-sm text-gray-600 text-center mb-4 leading-relaxed">
-          {mentor.bio}
-        </p>
-
-        {/* Specialties */}
-        {mentor.specialties!==null && (
-          <div className="flex flex-wrap gap-2 justify-center mb-4">
-            {mentor.specialties.map((specialty, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-              >
-                {specialty}
-              </span>
-            ))}
+        <div className="h-40 pt-10 relative">
+          <Icon size={120} url={mentor?.icon} />
+          <div className="absolute inset-0 via-transparent to-transparent"></div>
+          <div className="absolute bottom-3 left-5 text-gray-600">
+            <p className="text-[10px] font-bold tracking-widest uppercase mb-0.5 opacity-90">
+              {mentor.university}
+            </p>
+            <p className="text-sm font-bold">{mentor.faculty}</p>
           </div>
-        )}
+        </div>
+        <div className="p-6 flex-1 flex flex-col">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-xl font-bold text-slate-800">{mentor.name}</h3>
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  size={10}
+                  className="fill-yellow-400 text-yellow-400"
+                />
+              ))}
+            </div>
+          </div>
+          <p className="text-emerald-700 font-bold text-sm mb-3">
+            "{mentor.quote}"
+          </p>
+          <p className="text-slate-500 text-xs leading-relaxed mb-4 flex-grow">
+            {mentor.bio}
+          </p>
+
+          {tags.length !== 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-6">
+              {tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="text-[10px] bg-slate-50 text-slate-500 px-2 py-1 rounded-md font-medium border border-slate-100"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <button className="w-full py-2.5 rounded-lg bg-white border border-slate-200 text-slate-600 font-bold text-sm hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors flex items-center justify-center gap-2">
+            詳しく見る <ArrowRight size={14} />
+          </button>
+        </div>
       </div>
     </>
   );

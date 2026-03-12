@@ -33,7 +33,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/booking" className="text-sm text-gray-300 hover:text-blue-400 transition-colors">
+                <Link href="/signup" className="text-sm text-gray-300 hover:text-blue-400 transition-colors">
                   予約する
                 </Link>
               </li>

@@ -37,7 +37,7 @@ export async function updateSession(request) {
   }
 
   if (user) {
-    if (role === "pending" && (pathname === '/login' || pathname.startsWith('/dashboard'))) {
+    if (role === undefined && (pathname === '/login' || pathname.startsWith('/dashboard'))) {
       return NextResponse.redirect(new URL('/setAccount', request.url));
     }
     if (role === "user" && (pathname === '/login' || pathname === '/setAccount' || pathname === '/dashboard' || pathname === '/dashboard/mentor')) {

@@ -16,13 +16,11 @@ export default function HowWork() {
                 <Sparkles size={32} className="text-blue-600" />
                 <div>
                   <p className="text-sm font-bold text-gray-500">STEP 01</p>
-                  <h3 className="text-2xl font-bold">AIマッチング診断</h3>
+                  <h3 className="text-2xl font-bold">マッチング診断</h3>
                 </div>
               </div>
               <p className="text-gray-700 leading-relaxed">
-                簡単な質問に答えるだけ。<br />
-                あなたの悩みや志望分野にぴったりの<br />
-                メンターをAIが提案します。
+                志望する大学・学部や聞きたい内容を答えるだけで、あなたにあったメンターを提案します！
               </p>
             </div>
 
@@ -36,9 +34,7 @@ export default function HowWork() {
                 </div>
               </div>
               <p className="text-gray-700 leading-relaxed">
-                候補の中からメンターを選び、<br />
-                カレンダーで空いている日時をタップ。<br />
-                面倒なメールのやり取りは不要です。
+                チャットで事前に直接相談も可能！
               </p>
             </div>
 
@@ -52,9 +48,8 @@ export default function HowWork() {
                 </div>
               </div>
               <p className="text-gray-700 leading-relaxed">
-                予約時間になったらZoomに入室。<br />
-                最短30分後から相談可能です。<br />
-                顔出しなしでもOK！
+                予約時間に入室。<br/>
+                最短1時間後から可能！
               </p>
             </div>
           </div>

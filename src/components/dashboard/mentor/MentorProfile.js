@@ -1,10 +1,9 @@
 "use client";
 
 import AddIcon from "../profile/addIcon";
-import { updateMentorIcon, updateMentorProfile } from "../profile/actions";
 import AddMentorProfile from "./addMentorProfile";
 
-export default function MentorProfile({ profile }) {
+export default function MentorProfile({ funcProfile, funcIcon, profile=null, mentorTags, allTags }) {
   return (
     <section className="py-16">
       <h3 className="text-2xl font-bold text-center mb-15">プロフィール編集</h3>
@@ -13,14 +12,14 @@ export default function MentorProfile({ profile }) {
           プロフィール情報
         </label>
         <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
-          <AddMentorProfile onUpload={updateMentorProfile} profile={profile} />
+          <AddMentorProfile onUpload={funcProfile} profile={profile} mentorTags={mentorTags} allTags={allTags} />
         </div>
       </div>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <AddIcon
           format="public/mentor"
           uid={profile.id}
-          onUpload={(inputFiles) => updateMentorIcon(inputFiles)}
+          onUpload={(inputFiles) => funcIcon(inputFiles)}
           profile={profile}
         />
       </div>

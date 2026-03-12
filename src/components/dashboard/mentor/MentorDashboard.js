@@ -3,10 +3,11 @@
 import { useState } from "react";
 import MentorSidebar from "./MentorSidebar";
 import MentorAppointmentContent from "./MentorAppointmentContent";
+import { updateMentorIcon, updateMentorProfile } from "../profile/actions";
 import MentorProfile from "./MentorProfile";
 import StatusCode from "../common/statusCode";
 
-export default function MentorDashboard({ profile, meetings, users }) {
+export default function MentorDashboard({ profile, meetings, users, mentorTags, allTags }) {
   const [side, setSide] = useState("appointment");
 
   return (
@@ -25,7 +26,7 @@ export default function MentorDashboard({ profile, meetings, users }) {
                 <MentorAppointmentContent meetings={meetings} users={users} />
               )}
               {side === "profile" && (
-                <MentorProfile profile={profile} />
+                <MentorProfile funcProfile={updateMentorProfile} funcIcon={updateMentorIcon} profile={profile} mentorTags={mentorTags} allTags={allTags} />
               )}
             </div>
           </main>

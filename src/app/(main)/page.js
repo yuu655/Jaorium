@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Target, Briefcase, TrendingUp, Mail } from "lucide-react";
+import { unstable_cache } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
 
 import Header from "@/components/header";
 import Footer from "@/components/footer";
@@ -12,25 +14,52 @@ import Articles from "@/components/articles";
 import TimeLine from "@/components/timeLine";
 import HowWork from "@/components/howWork";
 
-export default function Home() {
+const getMentors = (supabase) =>
+  unstable_cache(
+    async () => {
+      const { data: mentors } = await supabase.from("mentors").select("*");
+      return mentors ?? [];
+    },
+    ["mentors-list"],
+    { revalidate: 10000, tags: ["mentors"] },
+  );
+
+export default async function Home() {
+  const supabase = await createClient();
+  const mentors = await getMentors(supabase)();
   return (
     <>
       {/* <Header propClassName="bg-white shadow-md relative z-0" /> */}
 
-      <section><Hero /></section>
-      <section><Concept /></section>
-      <section><HowWork /></section>
-      <section><TimeLine /></section>
-      <section><AdContact /></section>
-      <section><Mentors /></section>
-      <section><Articles /></section>
+      <Hero />
+      <section>
+        <Concept />
+      </section>
+      <section>
+        <HowWork />
+      </section>
+      <section>
+        <TimeLine />
+      </section>
+      <section>
+        <AdContact />
+      </section>
+      <section>
+        <Mentors mentors={mentors} />
+      </section>
+      <section>
+        <Articles />
+      </section>
 
       <section className="py-20 md:py-28 bg-linear-to-br from-gray-900 to-gray-800 text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">企業の皆様へ</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+              企業の皆様へ
+            </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              JaoRiumは、教育格差の是正を目指すソーシャルビジネスです。<br />
+              JaoRiumは、教育格差の是正を目指すソーシャルビジネスです。
+              <br />
               次世代の育成をご支援いただける企業様を募集しています。
             </p>
           </div>
@@ -41,7 +70,9 @@ export default function Home() {
               <div className="flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-6 mx-auto">
                 <Briefcase size={32} className="text-white" />
               </div>
-              <h3 className="text-xl font-bold mb-4 text-center">採用ブランディング</h3>
+              <h3 className="text-xl font-bold mb-4 text-center">
+                採用ブランディング
+              </h3>
               <p className="text-gray-300 text-center">
                 意欲ある学生層への早期認知形成と、理念共感型の採用に。
               </p>
@@ -63,7 +94,9 @@ export default function Home() {
               <div className="flex items-center justify-center w-16 h-16 bg-purple-600 rounded-full mb-6 mx-auto">
                 <TrendingUp size={32} className="text-white" />
               </div>
-              <h3 className="text-xl font-bold mb-4 text-center">Z世代マーケティング</h3>
+              <h3 className="text-xl font-bold mb-4 text-center">
+                Z世代マーケティング
+              </h3>
               <p className="text-gray-300 text-center">
                 リアルな学生の声やインサイトを活用した商品開発・調査。
               </p>
@@ -72,7 +105,7 @@ export default function Home() {
 
           <div className="text-center">
             <Link
-              href="/for-companies"
+              href="/forCompanies"
               className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white text-lg font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-lg"
             >
               <Mail size={20} />

@@ -12,6 +12,7 @@ export default function Mentor({
   // specialties,
   mentor,
 }) {
+  
   return (
     <>
       {/* <div className="h-full p-10 bg-white rounded-lg shadow-md">

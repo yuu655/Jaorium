@@ -53,6 +53,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="jp">
+      <head>
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet"></link>
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

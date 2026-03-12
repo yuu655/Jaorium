@@ -14,8 +14,8 @@ export default function Mentors({mentors}) {
   const filteredMentors = mentors.filter((mentor) => {
     const matchesSearch =
       mentor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mentor.university.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mentor.specialties.some((s) => s.toLowerCase().includes(searchTerm.toLowerCase()));
+      mentor.university.toLowerCase().includes(searchTerm.toLowerCase());
+      // mentor.specialties.some((s) => s.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesRegion = selectedRegion === "すべて" || mentor.region[0] === selectedRegion;
 

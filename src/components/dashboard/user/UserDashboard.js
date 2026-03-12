@@ -6,6 +6,8 @@ import UserAppointmentContent from "./UserAppointmentContent";
 import UserProfile from "./UserProfile";
 import StatusCode from "../common/statusCode";
 
+import { updateUserIcon, updateUserProfile } from "../profile/actions";
+
 export default function UserDashboard({ profile, meetings, mentors }) {
   const [side, setSide] = useState("appointment");
 
@@ -25,7 +27,7 @@ export default function UserDashboard({ profile, meetings, mentors }) {
                 <UserAppointmentContent meetings={meetings} mentors={mentors} />
               )}
               {side === "profile" && (
-                <UserProfile profile={profile} />
+                <UserProfile funcProfile={updateUserProfile} funcIcon={updateUserIcon} profile={profile} />
               )}
             </div>
           </main>

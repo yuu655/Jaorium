@@ -1,8 +1,22 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 
-export default function AddUserProfile({ profile, onUpload }) {
+export default function AddUserProfile({
+  profile,
+  onUpload,
+  setIsIcon = null,
+}) {
+  // const wrappedAction = setIsIcon
+  //   ? (prevState, formData) => onUpload(prevState, formData, setIsIcon)
+  //   : onUpload;
+
   const [state, action, isPending] = useActionState(onUpload, null);
+
+  useEffect(() => {
+    if (state?.success && setIsIcon) {
+      setIsIcon(true);
+    }
+  }, [state]);
 
   return (
     <>
@@ -18,7 +32,8 @@ export default function AddUserProfile({ profile, onUpload }) {
             name="name"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             placeholder="山田 太郎"
-            defaultValue={profile.name || ""}
+            required
+            defaultValue={profile?.name || ""}
           />
         </div>
 
@@ -30,7 +45,7 @@ export default function AddUserProfile({ profile, onUpload }) {
             id="grade"
             name="grade"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-            defaultValue={profile.grade || ""}
+            defaultValue={profile?.grade || ""}
           >
             <option value="">選択してください</option>
             <option>高校3年生</option>
