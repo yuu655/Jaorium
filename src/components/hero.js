@@ -19,7 +19,7 @@ export default function Hero() {
       style={{
         height: "calc(100vh - 70px)",
         width: "100%",
-        backgroundImage: "url('/default.jpg')",
+        backgroundImage: "url('/25406582_m.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         display: "flex",
