@@ -48,6 +48,7 @@ export default function Hero() {
           opacity: visible ? 1 : 0,
           transform: visible ? "translateY(0)" : "translateY(20px)",
           transition: "opacity 0.9s ease, transform 0.9s ease",
+          height: "fit-content",
         }}
       >
         {/* 縦書きメインコピー */}
@@ -57,8 +58,8 @@ export default function Hero() {
             textOrientation: "upright",
             display: "flex",
             flexDirection: "column",
-            gap: "clamp(12px, 2vw, 24px)",
-            fontSize: "clamp(12px, 10vw, 70px)",
+            gap: "clamp(12px, 2vh, 24px)",
+            fontSize: "clamp(12px, 10vh, 70px)",
             lineHeight: 1.1,
             color: "#ffffff",
             textShadow: "2px 4px 16px rgba(0,0,0,0.5)",

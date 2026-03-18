@@ -3,11 +3,24 @@
 import { login, signup } from "./actions";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useActionState } from "react";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 export default function LoginPage() {
+
+  const handleLogin = async (prevState, formData) => {
+    setIsLoading(true);
+    // console.log("aaa")
+    const result = await login(prevState, formData);
+    if (result?.error) {
+      setIsLoading(false);
+      toast.error(result.error);
+    }
+  };
+
   const [showPassword, setShowPassword] = useState(false);
+    const [state, action, isPending] = useActionState(handleLogin, null);
+
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
@@ -18,25 +31,6 @@ export default function LoginPage() {
         redirectTo: `${window.location.origin}/api/auth/callback?next=/setAccount`,
       },
     });
-  };
-
-  const handleLogin = async (formData) => {
-    setIsLoading(true);
-    // console.log("aaa")
-    const result = await login(formData);
-    if (result?.error) {
-      setIsLoading(false);
-      toast.error(result.error);
-    }
-  };
-
-  const handleSignup = async (formData) => {
-    const result = await signup(formData);
-    if (result?.error) {
-      toast.error(result.error);
-    } else if (result?.success) {
-      toast.success("認証メールを送信しました。受信箱を確認してください！");
-    }
   };
 
   return (
@@ -126,7 +120,8 @@ export default function LoginPage() {
           </div>
 
           {/* Email/Password Form */}
-          <form className="space-y-4">
+          {state?.error && <p className="text-red-500 text-sm">{state.error}</p>}
+          <form action={action} className="space-y-4">
             {/* Email */}
             <div>
               <label
@@ -206,12 +201,11 @@ export default function LoginPage() {
 
             {/* Submit Button */}
             <button
-              // onClick={async() => await setIsLoading(true)}
-              formAction={handleLogin}
-              disabled={isLoading}
+              type="submit"
+              disabled={isPending}
               className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {isLoading ? "ログイン中..." : "ログイン"}
+              {isPending ? "ログイン中..." : "ログイン"}
             </button>
           </form>
 

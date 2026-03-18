@@ -41,7 +41,7 @@ export default function Mentor({ mentor }) {
 
     fetchAll();
   }, []);
-  console.log(mentor);
+  // console.log(mentor);
   return (
     <>
       <div

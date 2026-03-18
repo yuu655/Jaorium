@@ -1,26 +1,75 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import Mentor from "@/components/mentor";
+import { createClient } from "@/lib/supabase/client";
 
-
-export default function Mentors({mentors}) {
+const supabase = createClient();
+export default function Mentors({ mentors }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [filteredMentors, setFilteredMentors] = useState(mentors);
   const [selectedRegion, setSelectedRegion] = useState("すべて");
+  const [tags, setTags] = useState([]);
+  const regions = [
+    "すべて",
+    "北海道・東北",
+    "関東",
+    "中部",
+    "関西",
+    "中国・四国",
+    "九州・沖縄",
+  ];
 
-  const regions = ["すべて", "北海道・東北", "関東", "中部", "関西", "中国・四国", "九州・沖縄"];
+  useEffect(() => {
+    const fetchAndFilter = async () => {
+      const fetchMentorTags = async (mentorId) => {
+        const { data } = await supabase
+          .from("mentor_tags")
+          .select("tag_id")
+          .eq("mentor_id", mentorId);
+        // console.log(data);
+        return data;
+      };
+      const mentorTagsMap = Object.fromEntries(
+        await Promise.all(
+          mentors.map(async (mentor) => [
+            mentor.id,
+            await fetchMentorTags(mentor.id),
+          ]),
+        ),
+      );
+      const terms = searchTerm.split(" ");
+      const filtered = mentors.filter((mentor) => {
+        const mentor_tags = mentorTagsMap[mentor.id];
+        return terms.every((term) => {
+          const tag_id = tags.find((tag) => tag.name === term)?.id;
 
-  const filteredMentors = mentors.filter((mentor) => {
-    const matchesSearch =
-      mentor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mentor.university.toLowerCase().includes(searchTerm.toLowerCase());
-      // mentor.specialties.some((s) => s.toLowerCase().includes(searchTerm.toLowerCase()));
+          const matchesSearch =
+            mentor.name.toLowerCase().includes(term) ||
+            mentor.university.toLowerCase().includes(term);
 
-    const matchesRegion = selectedRegion === "すべて" || mentor.region[0] === selectedRegion;
+          const matchesTag = mentor_tags?.some((mt) => mt.tag_id === tag_id);
 
-    return matchesSearch && matchesRegion;
-  });
+          return matchesSearch || matchesTag;
+        });
+      });
+      setFilteredMentors(filtered);
+    };
+    fetchAndFilter();
+  }, [searchTerm, selectedRegion, mentors]);
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      // まずtag_idを取得
+      const { data, error } = await supabase.from("tags").select("*");
+      if (error) return;
+      // console.log(data);
+      setTags((prev) => [...prev, ...data]);
+    };
+
+    fetchAll();
+  }, []);
 
   return (
     <div className="bg-white min-h-screen">
@@ -31,7 +80,8 @@ export default function Mentors({mentors}) {
             メンター紹介
           </h1>
           <p className="text-xl text-center text-gray-600 max-w-3xl mx-auto">
-            あなたの先輩が、本音で向き合います。<br />
+            あなたの先輩が、本音で向き合います。
+            <br />
             全員が受験を乗り越え、JaoRiumの理念に共感したメンバーです。
           </p>
         </div>
@@ -43,7 +93,10 @@ export default function Mentors({mentors}) {
           <div className="flex flex-col md:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={20}
+              />
               <input
                 type="text"
                 placeholder="名前、大学、専門分野で検索..."
@@ -54,7 +107,7 @@ export default function Mentors({mentors}) {
             </div>
 
             {/* Region Filter */}
-            <select
+            {/* <select
               value={selectedRegion}
               onChange={(e) => setSelectedRegion(e.target.value)}
               className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
@@ -64,7 +117,7 @@ export default function Mentors({mentors}) {
                   {region}
                 </option>
               ))}
-            </select>
+            </select> */}
           </div>
         </div>
       </section>
@@ -80,7 +133,9 @@ export default function Mentors({mentors}) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredMentors.map((mentor) => (
-              <div key={mentor.id}><Mentor mentor={mentor}/></div>
+              <div key={mentor.id}>
+                <Mentor mentor={mentor} />
+              </div>
             ))}
           </div>
         </div>
@@ -90,12 +145,12 @@ export default function Mentors({mentors}) {
       <section className="py-20 bg-linear-to-r from-blue-50 to-indigo-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            あなたの経験が、
-誰かの道しるべになる。
+            あなたの経験が、 誰かの道しるべになる。
           </h2>
           <p className="text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
-            JaoRiumでは、共に未来を作る大学生メンターを募集しています。<br/>
-        過去の苦労や成功体験を、次の世代へつなぎませんか？
+            JaoRiumでは、共に未来を作る大学生メンターを募集しています。
+            <br />
+            過去の苦労や成功体験を、次の世代へつなぎませんか？
           </p>
           <button className="px-8 py-4 bg-black text-white text-lg font-medium rounded-lg hover:bg-gray-800 transition-colors">
             メンター応募について詳しく見る

@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export async function login(formData) {
+export async function login(prevState, formData) {
   const supabase = await createClient();
   const data = {
     email: formData.get("email"),
@@ -26,7 +26,7 @@ export async function login(formData) {
   redirect("/dashboard"); // 成功時はリダイレクト
 }
 
-export async function signup(formData) {
+export async function signup(prevState, formData) {
   const supabase = await createClient();
   const data = {
     email: formData.get("email"),

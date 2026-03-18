@@ -20,7 +20,7 @@ export default async function UserPage() {
           supabase.from("users").select("*").eq("id", userId).single(),
           supabase
             .from("mentors")
-            .select("id, name, university, faculty, icon, specialties, region"),
+            .select("*"),
           supabase
             .from("meetings")
             .select("*")

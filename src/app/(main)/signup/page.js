@@ -3,12 +3,24 @@
 import { login, signup } from "./actions";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useActionState } from "react";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 export default function LoginPage() {
+
+  const handleSignup = async (prevState, formData) => {
+    const result = await signup(prevState, formData);
+    if (result?.error) {
+      toast.error(result.error);
+    } else if (result?.success) {
+      toast.success("認証メールを送信しました。受信箱を確認してください！");
+    }
+  };
+  
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
+  const [state, action, isPending] = useActionState(handleSignup, null);
+  
 
   const handleGoogleLogin = async () => {
     //   const [origin, setOrigin] = useState('')
@@ -35,15 +47,6 @@ export default function LoginPage() {
   //     toast.error(result.error);
   //   }
   // };
-
-  const handleSignup = async (formData) => {
-    const result = await signup(formData);
-    if (result?.error) {
-      toast.error(result.error);
-    } else if (result?.success) {
-      toast.success("認証メールを送信しました。受信箱を確認してください！");
-    }
-  };
 
   return (
     // <>
@@ -132,7 +135,8 @@ export default function LoginPage() {
           </div>
 
           {/* Email/Password Form */}
-          <form className="space-y-4">
+          {state?.error && <p className="text-red-500 text-sm">{state.error}</p>}
+          <form action={action} className="space-y-4">
             {/* Email */}
             <div>
               <label
@@ -212,11 +216,11 @@ export default function LoginPage() {
 
             {/* Submit Button */}
             <button
-              formAction={handleSignup}
-              disabled={isLoading}
+              type="submit"
+              disabled={isPending}
               className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {isLoading ? "サインアップ中..." : "サインアップ"}
+              {isPending ? "サインアップ中..." : "サインアップ"}
             </button>
           </form>
 

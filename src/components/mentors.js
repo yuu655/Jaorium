@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const getMentors = (supabase) => unstable_cache(
   async () => {
-    const { data: mentors } = await supabase.from("mentors").select("*");
+    const { data: mentors } = await supabase.from("mentors").select("*").limit(3);
     return mentors ?? [];
   },
   ["mentors-list"],

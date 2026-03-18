@@ -1,5 +1,6 @@
 import { Button } from "./ui/button";
 import Link from "next/link";
+import Image from "next/image";
 import HeaderNav from "./headerComponents/headerNav";
 // import Humberger from "./headerComponents/humberger";
 import Humberger from "@/components/headerComponents/drawerMenu";
@@ -18,10 +19,13 @@ export default function Header({ propClassName }) {
       <div className="w-full max-w-300 px-4">
         <nav className="flex p-4 justify-between items-center">
           <Link href="/">
-            <div className="flex items-center space-x-2">
-              <span>・</span>
-              <span className="text-black font-bold text-2xl">JaoRium</span>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="ロゴ"
+              width={70}
+              height={70}
+              className="object-contain"
+            />
           </Link>
 
           <HeaderNav nav_list={nav_list} />
