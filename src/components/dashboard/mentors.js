@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
-import Mentor from "./mentor";
+import Mentor from "../mentor";
 
 
 export default function Mentors({mentors}) {
@@ -42,7 +42,7 @@ export default function Mentors({mentors}) {
             </div>
 
             {/* Region Filter */}
-            <select
+            {/* <select
               value={selectedRegion}
               onChange={(e) => setSelectedRegion(e.target.value)}
               className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
@@ -52,7 +52,7 @@ export default function Mentors({mentors}) {
                   {region}
                 </option>
               ))}
-            </select>
+            </select> */}
           </div>
         </div>
       </section>

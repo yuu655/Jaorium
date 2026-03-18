@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Search, MapPin, GraduationCap } from "lucide-react";
+import Mentor from "../../mentor";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Icon from "../profile/icon";
@@ -106,29 +107,8 @@ export default function UserMentors({ mentors }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredMentors.map((mentor) => (
-          <div
-            key={mentor.id}
-            className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-xl transition-shadow text-center"
-          >
-            {/* <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4" /> */}
-            <Icon size={100} url={mentor?.icon} />
-            <h3 className="text-xl font-bold mb-2">{mentor.name}</h3>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <GraduationCap size={16} className="text-gray-600" />
-              <p className="text-gray-700">
-                {mentor.university} {mentor.faculty}
-              </p>
-            </div>
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <MapPin size={16} className="text-gray-600" />
-              <p className="text-sm text-gray-600">出身：{mentor.region}</p>
-            </div>
-            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-              {mentor.bio}
-            </p>
-            <Button variant="default" className="bg-blue-500" asChild>
-              <Link href={`/dashboard/booking/${mentor.id}`}>相談する</Link>
-            </Button>
+          <div key={mentor.id}>
+            <Mentor mentor={mentor} />
           </div>
         ))}
       </div>
