@@ -105,7 +105,7 @@ export default function UserMentors({ mentors }) {
         {filteredMentors.length}名のメンターが見つかりました
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {filteredMentors.map((mentor) => (
           <div key={mentor.id}>
             <Mentor mentor={mentor} />
