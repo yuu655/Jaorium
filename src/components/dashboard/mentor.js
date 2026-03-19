@@ -7,6 +7,7 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 import Icon from "./profile/icon";
 
