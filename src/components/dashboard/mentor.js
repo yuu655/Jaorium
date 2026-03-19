@@ -40,7 +40,7 @@ export default function Mentor({ mentor }) {
     <>
       <div
         key={mentor.id}
-        className="min-w-[280px] md:min-w-[320px] bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 snap-center group flex flex-col"
+        className="min-w-70 md:min-w-[320px] bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 snap-center group flex flex-col"
       >
         <div className="h-40 pt-10 relative">
           <Icon size={120} url={mentor?.icon} />
@@ -68,7 +68,7 @@ export default function Mentor({ mentor }) {
           <p className="text-emerald-700 font-bold text-sm mb-3">
             "{mentor.quote}"
           </p>
-          <p className="text-slate-500 text-xs leading-relaxed mb-4 flex-grow">
+          <p className="text-slate-500 text-xs leading-relaxed mb-4 grow">
             {mentor.bio}
           </p>
 

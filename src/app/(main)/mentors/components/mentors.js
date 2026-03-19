@@ -31,25 +31,25 @@ export default function Mentors({ mentors }) {
       options: [
         { label: "文系", keyword: "文系" },
         { label: "理系", keyword: "理系" },
-        { label: "まだわからない", keyword: "学部選び" },
+        { label: "まだわからない", keyword: "" },
       ],
     },
     {
       title: "大学生活で重視したいことは？",
       options: [
-        { label: "キャンパスライフ・課外活動", keyword: "キャンパスライフ" },
+        { label: "サークル活動", keyword: "サークル" },
         { label: "資格取得や専門的な学び", keyword: "資格・就職" },
         { label: "留学・国際交流", keyword: "留学" },
         { label: "特に決まっていない", keyword: "" },
       ],
     },
     {
-      title: "気になる入試方式は？",
+      title: "気になる受験形式は？",
       options: [
-        { label: "一般入試メイン", keyword: "" },
-        { label: "総合型・推薦も視野に", keyword: "推薦" },
+        { label: "一般入試メイン", keyword: "一般入試" },
+        { label: "総合型・推薦も視野に", keyword: "推薦入試" },
         { label: "帰国子女などの特別枠", keyword: "帰国子女" },
-        { label: "まずは相談して決めたい", keyword: "学部選び" },
+        { label: "まずは相談して決めたい", keyword: "" },
       ],
     },
   ];
@@ -224,9 +224,9 @@ export default function Mentors({ mentors }) {
 
       <section className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden my-12 relative max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* 背景の装飾 */}
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-blue-600"></div>
+        <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-r from-blue-400 to-blue-600"></div>
 
-        <div className="p-8 md:p-12 min-h-[320px] flex flex-col items-center justify-center">
+        <div className="p-8 md:p-12 min-h-80 flex flex-col items-center justify-center">
           {/* 状態1: 初期画面 */}
           {diagState === "idle" && (
             <div className="text-center animate-in fade-in zoom-in duration-500">
@@ -403,7 +403,7 @@ export default function Mentors({ mentors }) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredMentors.map((mentor) => (
               <div key={mentor.id}>
-                <Mentor mentor={mentor} setSearchTerm={setSearchTerm} />
+                <Mentor mentor={mentor} toggleTag={toggleTag} />
               </div>
             ))}
           </div>

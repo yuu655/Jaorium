@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import Icon from "./dashboard/profile/icon";
 
 const supabase = createClient();
-export default function Mentor({ mentor, setSearchTerm=null }) {
+export default function Mentor({ mentor, toggleTag }) {
   const [tags, setTags] = useState([]);
   useEffect(() => {
     const fetchAll = async () => {
@@ -34,7 +34,7 @@ export default function Mentor({ mentor, setSearchTerm=null }) {
 
       const tagNames = tagResults
         .filter(({ error }) => !error)
-        .map(({ data }) => data.name);
+        .map(({ data }) => ({ name: data.name, id: data.id }));
 
       setTags(tagNames);
     };
@@ -46,7 +46,7 @@ export default function Mentor({ mentor, setSearchTerm=null }) {
     <>
       <div
         key={mentor.id}
-        className="min-w-[280px] md:min-w-[320px] bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 snap-center group flex flex-col"
+        className="min-w-70 md:min-w-[320px] bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 snap-center group flex flex-col"
       >
         <div className="h-40 pt-10 relative">
           <Icon size={120} url={mentor?.icon} />
@@ -74,7 +74,7 @@ export default function Mentor({ mentor, setSearchTerm=null }) {
           <p className="text-emerald-700 font-bold text-sm mb-3">
             "{mentor.quote}"
           </p>
-          <p className="text-slate-500 text-xs leading-relaxed mb-4 flex-grow">
+          <p className="text-slate-500 text-xs leading-relaxed mb-4 grow">
             {mentor.bio}
           </p>
 
@@ -83,10 +83,10 @@ export default function Mentor({ mentor, setSearchTerm=null }) {
               {tags.map((tag, index) => (
                 <span
                   key={index}
-                  onClick={() => setSearchTerm(prev => prev + " " + tag)}
+                  onClick={() => toggleTag(tag.id)}
                   className="text-[10px] bg-slate-50 text-slate-500 px-2 py-1 rounded-md font-medium border border-slate-100 cursor-pointer hover:bg-slate-100 hover:text-slate-700 transition-colors"
                 >
-                  {tag}
+                  {tag.name}
                 </span>
               ))}
             </div>
