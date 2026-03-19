@@ -10,9 +10,8 @@ const supabase = createClient();
 export default function Mentors({ mentors }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredMentors, setFilteredMentors] = useState(mentors);
-  const [selectedRegion, setSelectedRegion] = useState("すべて");
+  // const [selectedRegion, setSelectedRegion] = useState("すべて");
   const [tags, setTags] = useState([]);
-  // const [tagGroups, setTagGroups] = useState([]);
   const [diagState, setDiagState] = useState("idle");
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [collectedKeywords, setCollectedKeywords] = useState([]);
@@ -80,26 +79,7 @@ export default function Mentors({ mentors }) {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
-    console.log(selectedTags);
   };
-
-  // フィルターロジック（fetchAndFilter内）
-  // const filtered = mentors.filter((mentor) => {
-  //   const mentorTagNames =
-  //     mentorTagsMap[mentor.id]?.map(
-  //       (mt) => tags.find((t) => t.id === mt.tag_id)?.name,
-  //     ) ?? [];
-
-  //   const matchesTags = selectedTags.every((tag) =>
-  //     mentorTagNames.includes(tag),
-  //   );
-  //   const matchesText =
-  //     !searchTerm ||
-  //     mentor.name.includes(searchTerm) ||
-  //     mentor.university.includes(searchTerm);
-
-  //   return matchesTags && matchesText;
-  // });
 
   const handleAnswer = (keyword) => {
     const newKeywords = keyword
@@ -192,7 +172,7 @@ export default function Mentors({ mentors }) {
     };
     fetchAndFilter();
 
-    console.log(tags);
+    // console.log(tags);
   }, [searchTerm, selectedTags, mentors]);
 
   useEffect(() => {

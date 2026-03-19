@@ -1,11 +1,17 @@
-import Link from "next/link";
+"use client";
+
 import { Button } from "@/components/ui/button";
+
+import { Search, MapPin, GraduationCap, Star, ArrowRight } from "lucide-react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+
 import { useState, useEffect } from "react";
-import Icon from "./dashboard/profile/icon";
+
+import Icon from "./profile/icon";
 
 const supabase = createClient();
-export default function Mentor({ mentor }) {
+export default function Mentor({ mentor, toggleTag }) {
   const [tags, setTags] = useState([]);
   useEffect(() => {
     const fetchAll = async () => {
@@ -28,7 +34,7 @@ export default function Mentor({ mentor }) {
 
       const tagNames = tagResults
         .filter(({ error }) => !error)
-        .map(({ data }) => data.name);
+        .map(({ data }) => ({ name: data.name, id: data.id }));
 
       setTags(tagNames);
     };
@@ -77,9 +83,10 @@ export default function Mentor({ mentor }) {
               {tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="text-[10px] bg-slate-50 text-slate-500 px-2 py-1 rounded-md font-medium border border-slate-100"
+                  onClick={() => toggleTag(tag.id)}
+                  className="text-[10px] bg-slate-50 text-slate-500 px-2 py-1 rounded-md font-medium border border-slate-100 cursor-pointer hover:bg-slate-100 hover:text-slate-700 transition-colors"
                 >
-                  {tag}
+                  {tag.name}
                 </span>
               ))}
             </div>
@@ -93,3 +100,4 @@ export default function Mentor({ mentor }) {
     </>
   );
 }
+
