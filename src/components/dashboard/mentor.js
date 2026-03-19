@@ -94,7 +94,7 @@ export default function Mentor({ mentor, toggleTag }) {
           )}
 
           <Button variant="default" className="bg-blue-500" asChild>
-            <Link href={`/dashbord/booking/${mentor.id}`}>相談する</Link>
+            <Link href={`/dashboard/booking/${mentor.id}`}>相談する</Link>
           </Button>
         </div>
       </div>
