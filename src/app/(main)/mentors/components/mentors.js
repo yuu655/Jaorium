@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Mentor from "@/components/mentor";
 import { createClient } from "@/lib/supabase/client";
 import { Search, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import Link from "next/link";
 
 const supabase = createClient();
 export default function Mentors({ mentors }) {
@@ -133,7 +134,7 @@ export default function Mentors({ mentors }) {
         // setSelectedTags([...collectedKeywords]);
         // console.log([...collectedKeywords]);
         // console.log(collectedKeywords);
-      }, 2500);
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [diagState, collectedKeywords]);
@@ -200,7 +201,7 @@ export default function Mentors({ mentors }) {
       const { data, error } = await supabase.from("tags").select("*");
       if (error) return;
       // console.log(data);
-      setTags((prev) => [...prev, ...data]);
+      setTags(data);
     };
 
     fetchAll();
@@ -421,9 +422,11 @@ export default function Mentors({ mentors }) {
             <br />
             過去の苦労や成功体験を、次の世代へつなぎませんか？
           </p>
-          <button className="px-8 py-4 bg-black text-white text-lg font-medium rounded-lg hover:bg-gray-800 transition-colors">
-            メンター応募について詳しく見る
-          </button>
+          <Link href="/signup">
+            <button className="px-8 py-4 bg-black text-white text-lg font-medium rounded-lg hover:bg-gray-800 transition-colors">
+              メンター応募
+            </button>
+          </Link>
         </div>
       </section>
     </div>
