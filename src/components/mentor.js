@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import Icon from "./dashboard/profile/icon";
 
 const supabase = createClient();
-export default function Mentor({ mentor }) {
+export default function Mentor({ mentor, setSearchTerm=null }) {
   const [tags, setTags] = useState([]);
   useEffect(() => {
     const fetchAll = async () => {
@@ -83,7 +83,8 @@ export default function Mentor({ mentor }) {
               {tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="text-[10px] bg-slate-50 text-slate-500 px-2 py-1 rounded-md font-medium border border-slate-100"
+                  onClick={() => setSearchTerm(prev => prev + " " + tag)}
+                  className="text-[10px] bg-slate-50 text-slate-500 px-2 py-1 rounded-md font-medium border border-slate-100 cursor-pointer hover:bg-slate-100 hover:text-slate-700 transition-colors"
                 >
                   {tag}
                 </span>
