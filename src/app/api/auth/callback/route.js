@@ -8,6 +8,7 @@ export async function GET(request) {
   const next = searchParams.get('next') ?? '/'
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  console.log(searchParams.get('next'));
 
   if (code) {
     const cookieStore = await cookies()
@@ -33,5 +34,5 @@ export async function GET(request) {
     }
   }
 
-  return NextResponse.redirect(`${siteUrl}${next}`)
+  return NextResponse.redirect(`${siteUrl}/setAccount`)
 }
