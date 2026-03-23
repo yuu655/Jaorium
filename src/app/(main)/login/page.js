@@ -28,7 +28,7 @@ export default function LoginPage() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback?next=/setAccount`,
+        redirectTo: `https://jaorium.com/api/auth/callback?next=/setAccount`,
       },
     });
   };
