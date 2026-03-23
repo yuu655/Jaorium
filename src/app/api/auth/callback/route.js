@@ -31,5 +31,5 @@ export async function GET(request) {
     }
   }
   console.log(`${origin}${next}`)
-  return NextResponse.redirect(`${origin}${next}`)
+  return NextResponse.redirect(`https://jaorium.com/setAccount`)
 }
