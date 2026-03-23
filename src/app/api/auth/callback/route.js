@@ -3,12 +3,9 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function GET(request) {
-  const { searchParams } = new URL(request.url)
+  const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
-
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  console.log(searchParams.get('next'));
+  const next = searchParams.get('next') ?? '/setAccount'
 
   if (code) {
     const cookieStore = await cookies()
@@ -33,6 +30,6 @@ export async function GET(request) {
       throw error
     }
   }
-
-  return NextResponse.redirect(`${siteUrl}/setAccount`)
+  console.log(`${origin}${next}`)
+  return NextResponse.redirect(`${origin}${next}`)
 }
