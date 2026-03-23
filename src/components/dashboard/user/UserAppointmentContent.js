@@ -33,12 +33,12 @@ export default function UserAppointmentContent({ meetings, mentors }) {
               <div className="text-center py-12">
                 <Calendar size={48} className="text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">予定中の相談はありません</p>
-                <Link
-                  href="/mentors"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                <div
+                  onClick={() => setIsActive("mentor")}
+                  className="cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Plus size={20} />新しい相談を予約
-                </Link>
+                </div>
               </div>
             )}
           </div>
