@@ -3,11 +3,10 @@ import "./globals.css";
 
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import { Toaster } from "@/components/ui/sonner"
-
+import { Toaster } from "@/components/ui/sonner";
 
 // import { SpeedInsights } from "@vercel/speed-insights/next"
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,25 +24,26 @@ const geistMono = Geist_Mono({
 // };
 
 export const metadata = {
-  title: 'JaoRium | 情報戦に、終止符を。',
-  description: 'JaoRiumは、受験生が無料で先輩の一次情報にアクセスできるオンラインメンタリングサービス。環境に左右されず、誰もが本物の情報で未来を選べる社会を目指します。',
+  title: "JaoRium | 情報戦に、終止符を。",
+  description:
+    "JaoRiumは、受験生が無料で先輩の一次情報にアクセスできるオンラインメンタリングサービス。環境に左右されず、誰もが本物の情報で未来を選べる社会を目指します。",
   openGraph: {
-    title: 'JaoRium',
-    description: '情報戦に、終止符を。',
-    url: 'https://jaorium.com',
-    siteName: 'JaoRium',
+    title: "JaoRium",
+    description: "情報戦に、終止符を。",
+    url: "https://jaorium.com",
+    siteName: "JaoRium",
     images: [
       {
-        url: 'https://www.jaorium.com/logo.png', // 公開URLを指定
+        url: "https://www.jaorium.com/logo.png", // 公開URLを指定
         width: 1200,
         height: 630,
       },
     ],
-    locale: 'ja_JP',
-    type: 'website',
-    verification: {
-      google: 'GTHkrz6bcP2vOPgAQEjL9jLlujRA0CvDUkUYZPJgjAg',
-    },
+    locale: "ja_JP",
+    type: "website",
+  },
+  verification: {
+    google: "GTHkrz6bcP2vOPgAQEjL9jLlujRA0CvDUkUYZPJgjAg",
   },
   // twitter: {
   //   card: 'summary_large_image',
@@ -57,7 +57,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="jp">
       <head>
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet"></link>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap"
+          rel="stylesheet"
+        ></link>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
