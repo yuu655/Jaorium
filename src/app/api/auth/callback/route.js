@@ -5,9 +5,9 @@ import { NextResponse } from 'next/server'
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/setaccount' // ← デフォルトをsetaccountに
+  const next = searchParams.get('next') ?? '/'
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL // ← originの代わりに環境変数を使う
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
 
   if (code) {
     const cookieStore = await cookies()
