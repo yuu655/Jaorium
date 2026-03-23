@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/setAccount'
+  // const next = searchParams.get('next') ?? '/setAccount'
 
   if (code) {
     const cookieStore = await cookies()
@@ -30,6 +30,5 @@ export async function GET(request) {
       throw error
     }
   }
-  console.log(`${origin}${next}`)
-  return NextResponse.redirect(`https://jaorium.com/setAccount`)
+  return NextResponse.redirect(`${process.env.SITE_DOMAIN}setAccount`)
 }
