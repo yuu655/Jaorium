@@ -30,17 +30,20 @@ export const metadata = {
   openGraph: {
     title: 'JaoRium',
     description: '情報戦に、終止符を。',
-    url: 'https://sampleblog-iota.vercel.app',
+    url: 'https://jaorium.com',
     siteName: 'JaoRium',
-    // images: [
-    //   {
-    //     url: 'https://example.com/og-image.png', // 公開URLを指定
-    //     width: 1200,
-    //     height: 630,
-    //   },
-    // ],
+    images: [
+      {
+        url: 'https://www.jaorium.com/logo.png', // 公開URLを指定
+        width: 1200,
+        height: 630,
+      },
+    ],
     locale: 'ja_JP',
     type: 'website',
+    verification: {
+      google: 'GTHkrz6bcP2vOPgAQEjL9jLlujRA0CvDUkUYZPJgjAg',
+    },
   },
   // twitter: {
   //   card: 'summary_large_image',

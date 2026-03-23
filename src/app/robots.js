@@ -5,8 +5,8 @@ export default function robots() {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin"], // クロール拒否するパス
+      disallow: ["/admin/", "/dashboard/"], // クロール拒否するパス
     },
-    sitemap: "https://sampleblog-iota.vercel.app",
+    sitemap: "https://jaorium.com/sitemap.xml",
   };
 }
