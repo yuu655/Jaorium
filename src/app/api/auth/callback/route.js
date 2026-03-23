@@ -3,9 +3,11 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function GET(request) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  const next = searchParams.get('next') ?? '/setaccount' // ← デフォルトをsetaccountに
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL // ← originの代わりに環境変数を使う
 
   if (code) {
     const cookieStore = await cookies()
@@ -30,6 +32,6 @@ export async function GET(request) {
       throw error
     }
   }
-  console.log(`${origin}${next}`)
-  return NextResponse.redirect(`${origin}${next}`)
+
+  return NextResponse.redirect(`${siteUrl}${next}`)
 }

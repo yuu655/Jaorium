@@ -17,7 +17,7 @@ export default async function sitemap() {
   const postUrls = articles.contents.map((post) => ({
     url: `${baseUrl}/articles/${post.id}`,
     lastModified: new Date(post.updatedAt),
-    changeFrequency: "monthly",
+    changeFrequency: "weekly",
     priority: 0.7,
   }));
 
@@ -25,7 +25,7 @@ export default async function sitemap() {
   const routes = ["", "/concept", "/forCompanies", "/mentors", "/articles"].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
-    changeFrequency: "daily",
+    changeFrequency: "monthly",
     priority: 1.0,
   }));
 
