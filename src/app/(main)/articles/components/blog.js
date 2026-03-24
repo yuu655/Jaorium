@@ -34,7 +34,7 @@ export default function Blog({ isDraft, result }) {
               <Calendar size={18} />
               <span>{result.updatedAt}</span>
             </div>
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <User size={18} />
               <span>{result.author.name}</span>
               {result.author.university && (
@@ -50,7 +50,7 @@ export default function Blog({ isDraft, result }) {
                   </span>
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

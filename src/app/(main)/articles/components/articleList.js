@@ -35,13 +35,13 @@ export default async function Articles({ articles, children }) {
                 <article className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group">
                   {/* Thumbnail */}
                   <div className="relative bg-linear-to-br from-gray-200 to-gray-300 h-48 flex items-center justify-center group-hover:opacity-90 transition-opacity rounded-xl">
-  <Image
-    alt="eyecatch"
-    src={article.eyecatch.url}
-    fill
-    className="object-cover rounded-xl"
-  />
-</div>
+                    <Image
+                      alt="eyecatch"
+                      src={article.eyecatch.url}
+                      fill
+                      className="object-cover rounded-xl"
+                    />
+                  </div>
 
                   {/* Content */}
                   <div className="p-6">
@@ -79,9 +79,9 @@ export default async function Articles({ articles, children }) {
                   </div> */}
 
                     {/* Author */}
-                    <p className="text-xs text-gray-500">
+                    {/* <p className="text-xs text-gray-500">
                       by {article.author.name}
-                    </p>
+                    </p> */}
                   </div>
                 </article>
               </Link>

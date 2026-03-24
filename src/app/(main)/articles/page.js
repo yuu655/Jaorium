@@ -71,7 +71,7 @@ export default async function Articles() {
                     <Calendar size={16} />
                     <span>{articles.contents[0].updatedAt}</span>
                   </div>
-                  <span>by {articles.contents[0].author.name}</span>
+                  {/* <span>by {articles.contents[0].author.name}</span> */}
                 </div>
                 <Link href={`/articles/${articles.contents[0].id}`}>
                   <button className="inline-flex items-center cursor-pointer gap-2 px-6 py-3 bg-black text-white font-medium rounded-lg hover:bg-gray-800 transition-colors self-start">
