@@ -123,8 +123,8 @@ export default function LoginPage() {
                                     <Lock size={20} className="text-gray-400" />
                                 </div>
                                 <input
-                                    id="password"
-                                    name="password"
+                                    id="password_check"
+                                    name="password_check"
                                     type={showPassword_check ? "text" : "password"}
                                     required
                                     className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
