@@ -209,6 +209,18 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* reset password */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              <Link
+                href="/reset"
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
+                パスワードがわからない方はこちら
+              </Link>
+            </p>
+          </div>
+
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">

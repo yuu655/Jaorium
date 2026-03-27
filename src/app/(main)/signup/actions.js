@@ -31,7 +31,11 @@ export async function signup(prevState, formData) {
   const data = {
     email: formData.get("email"),
     password: formData.get("password"),
+    confirm_password: formData.get("password_check"),
   };
+  if(data.password !== data.password){
+    return {error: "再入力のパスワードと一致しません"}
+  }
 
   const { error } = await supabase.auth.signUp(data);
 

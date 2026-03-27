@@ -18,6 +18,7 @@ export default function LoginPage() {
   };
   
   const [showPassword, setShowPassword] = useState(false);
+  const [showPassword_check, setShowPassword_check] = useState(false);
   // const [isLoading, setIsLoading] = useState(false);
   const [state, action, isPending] = useActionState(handleSignup, null);
   
@@ -186,6 +187,40 @@ export default function LoginPage() {
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
                   {showPassword ? (
+                    <EyeOff size={20} className="text-gray-400" />
+                  ) : (
+                    <Eye size={20} className="text-gray-400" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <label
+                htmlFor="password_check"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                パスワード再入力
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock size={20} className="text-gray-400" />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword_check ? "text" : "password"}
+                  required
+                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword_check(!showPassword_check)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  {showPassword_check ? (
                     <EyeOff size={20} className="text-gray-400" />
                   ) : (
                     <Eye size={20} className="text-gray-400" />

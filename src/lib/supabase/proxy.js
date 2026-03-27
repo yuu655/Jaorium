@@ -31,7 +31,8 @@ export async function updateSession(request) {
   if (!user && (
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/admin') ||
-    pathname.startsWith('/setAccount')
+    pathname.startsWith('/setAccount') ||
+    pathname.startsWith('/resetPass')
   )) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
