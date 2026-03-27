@@ -5,13 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function resetPassword(prevState, formData) {
     const supabase = await createClient();
+    console.log(formData.get("email"))
 
     // メール/パスワードユーザーのみリセットメール送信
-    const { error } = await supabase.auth.resetPasswordForEmail({
-        email: formData.get("email"),
-        options: {
-            redirectTo: `https://jaorium.com/api/auth/resetpass`,
-        }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://jaorium.com/api/auth/resetpass'
     })
 
     // const { error } = await supabase.auth.signInWithPassword(data);
@@ -21,7 +19,7 @@ export async function resetPassword(prevState, formData) {
             // ユーザーに待つよう伝える
             return { error: 'しばらく時間をおいてから再度お試しください' };
         } else {
-            return { error: 'メールの送信に失敗しました' };
+            return { error: `${error.message}メールの送信に失敗しました` };
         }
     }
 
