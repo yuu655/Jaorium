@@ -256,7 +256,7 @@ export default function HowWork() {
           <div className="mt-24 text-center">
             <Link href="/signup">
               <button className="bg-yellow-400 hover:bg-yellow-300 text-yellow-900 font-extrabold text-xl md:text-2xl px-12 py-5 rounded-full shadow-xl transform transition hover:-translate-y-1 hover:shadow-2xl flex items-center gap-3 mx-auto">
-                無料でJaoRiumをはじめる <ChevronRight className="w-6 h-6" />
+                JaoRiumをはじめる <ChevronRight className="w-6 h-6" />
               </button>
             </Link>
             <p className="text-white mt-4 text-sm opacity-80">※登録は1分で完了します</p>

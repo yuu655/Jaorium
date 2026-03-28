@@ -22,7 +22,7 @@ export default function Concept() {
               だからじゃおりうむは、
             </p>
             <h2 className="md:text-3xl text-2xl font-thin font-sans">
-              無料でリアルな一次情報をあなたに届ける
+              リアルな一次情報をあなたに届ける
             </h2>
           </div>
 
