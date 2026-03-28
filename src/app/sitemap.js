@@ -2,7 +2,7 @@ const API_URL = process.env.API_URL;
 const API_KEY = process.env.API_KEY;
 
 export default async function sitemap() {
-  const baseUrl = "https://jaorium.com";
+  const baseUrl = "https://www.jaorium.com";
 
   // 例：外部CMSやDBから全記事のデータを取得
   const articles = await fetch(`${API_URL}blogs?limit=100`, {

@@ -28,10 +28,10 @@ export async function GET(request) {
 
     if (error) {
       console.error(error)
-      return NextResponse.redirect(`https://jaorium.com/error`)
+      return NextResponse.redirect(`https://www.jaorium.com/error`)
     }
   }
 
   // ✅ セッション交換成功後にパスワード変更ページへ
-  return NextResponse.redirect(`https://jaorium.com/resetPass`)
+  return NextResponse.redirect(`https://www.jaorium.com/resetPass`)
 }

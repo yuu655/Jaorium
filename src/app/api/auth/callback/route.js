@@ -30,5 +30,5 @@ export async function GET(request) {
       throw error
     }
   }
-  return NextResponse.redirect(`https://jaorium.com/setAccount`)
+  return NextResponse.redirect(`https://www.jaorium.com/setAccount`)
 }

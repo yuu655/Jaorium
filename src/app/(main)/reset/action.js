@@ -9,7 +9,7 @@ export async function resetPassword(prevState, formData) {
 
     // メール/パスワードユーザーのみリセットメール送信
     const { error } = await supabase.auth.resetPasswordForEmail(formData.get("email"), {
-        redirectTo: 'https://jaorium.com/api/auth/resetpass'
+        redirectTo: 'https://www.jaorium.com/api/auth/resetpass'
     })
 
     // const { error } = await supabase.auth.signInWithPassword(data);

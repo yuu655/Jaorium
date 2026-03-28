@@ -7,6 +7,6 @@ export default function robots() {
       allow: "/",
       disallow: ["/admin/", "/dashboard/"], // クロール拒否するパス
     },
-    sitemap: "https://jaorium.com/sitemap.xml",
+    sitemap: "https://www.jaorium.com/sitemap.xml",
   };
 }
