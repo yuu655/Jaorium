@@ -30,7 +30,7 @@ export default function Concept() {
               偏差値や倍率は検索できても、「その場所で自分がどう生きていけるか」というリアルな手触りは、ネットには落ちていません。
             </p>
             <p>
-              だから私たちは、JaoRium（じゃおりうむ）を作りました。ここは、少し先を歩く先輩とつながり、本音で話せる場所です。
+              だから私たちは、JaoRium（じゃおりうむ）を作りました。ここは、あなたの好きな時間・場所で気軽に先輩とつながり、本音で話せる場所です。
             </p>
           </div>
         </div>
@@ -52,7 +52,7 @@ export default function Concept() {
                 </div>
               </div>
               <p className="text-lg text-gray-700 leading-relaxed">
-                受験は「情報戦」と言われます。どれだけ良質な情報にアクセスできるかで、合否が左右される。
+                受験はしばしば「情報戦」と言われます。どれだけ良質な情報にアクセスできるかにより、合否が左右されてしまうこともあります。
                 しかし、その情報へのアクセスは、経済力や住んでいる地域によって大きく制限されています。
                 私たちは、この構造的な不平等に終止符を打ちます。
               </p>
@@ -120,11 +120,11 @@ export default function Concept() {
       <section className="py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">JaoRiumについて</h2>
-          
-          <div className="prose prose-lg max-w-none space-y-6 text-gray-700">
-            <p>JaoRiumは、受験における「一次情報」を必要としているすべての高校生に、<br/>完全無料で届けることを目的とした教育支援プロジェクトです。</p>
 
-            <p>大学生のリアルな受験・進学経験を社会に還元すると同時に、<br/>情報を届ける大学生には、次の挑戦の場となる「企業」とのつながりも創出しています。</p>
+          <div className="prose prose-lg max-w-none space-y-6 text-gray-700">
+            <p>JaoRiumは、受験における「一次情報」を必要としているすべての高校生に、<br />完全無料で届けることを目的とした教育支援プロジェクトです。</p>
+
+            <p>大学生のリアルな受験・進学経験を社会に還元すると同時に、<br />情報を届ける大学生には、次の挑戦の場となる「企業」とのつながりも創出しています。</p>
           </div>
 
           <div className="mt-12 p-8 bg-gray-50 rounded-lg">

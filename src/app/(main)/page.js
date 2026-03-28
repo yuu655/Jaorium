@@ -34,14 +34,14 @@ export default async function Home() {
         <Concept />
       </section>
       <section>
-        <HowWork />
-      </section>
-      <section>
         <TimeLine />
       </section>
       <section>
-        <AdContact />
+        <HowWork />
       </section>
+      {/* <section>
+        <AdContact />
+      </section> */}
       <section>
         <Mentors mentors={mentors} />
       </section>

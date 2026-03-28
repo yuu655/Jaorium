@@ -79,6 +79,20 @@ export default function TimeLine() {
               </p>
             </div>
           </div>
+
+          <div className="flex gap-6 items-start">
+            <div className="shrink-0">
+              <div className="w-16 h-16 bg-pink-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
+                After
+              </div>
+            </div>
+            <div className="flex-1 bg-gray-800 p-6 rounded-xl">
+              <h3 className="text-xl font-bold mb-2">フィードバックアンケート</h3>
+              <p className="text-gray-300">
+                今後のじゃおりうむの活動に役立てます。
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

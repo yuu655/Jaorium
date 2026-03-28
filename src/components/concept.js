@@ -13,16 +13,19 @@ export default function Concept() {
             <p className="md:text-3xl text-2xl font-thin font-sans">
               受験のノウハウなど、
               <br />
-              お金を払ってしか得られなかった。
+              お金を払ってしか得られないものも多い。
             </p>
             <p className="md:text-3xl text-2xl font-thin font-sans">
-              ネットには情報があるが、本音は乗っていない。
+              ネットにある無料情報は、上辺だけの話も多い。
+            </p>
+            <p className="md:text-3xl text-2xl font-thin font-sans">
+              だからじゃおりうむは、
             </p>
             <h2 className="md:text-3xl text-2xl font-thin font-sans">
-              無料で、リアルな一次情報を。
+              無料でリアルな一次情報をあなたに届ける
             </h2>
           </div>
-          
+
           <Button variant="noBG" size="noBG" className="pt-20 md:pt-0" asChild>
             <Link className="text-[25px] font-thin" href="/concept">コンセプト</Link>
           </Button>
