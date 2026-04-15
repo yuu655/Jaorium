@@ -76,9 +76,8 @@ export async function signup_mentor(prevState, formData) {
     password: data.password,
     options: {
       emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/mentor",
-      data: {
-        role: "mentor"
-      }
+      
+      
     }
     
   });

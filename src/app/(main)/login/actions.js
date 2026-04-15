@@ -10,7 +10,10 @@ export async function login(prevState, formData) {
     password: formData.get("password"),
   };
 
-  const { error } = await supabase.auth.signInWithPassword(data);
+  const { data: { user }, error } = await supabase.auth.signInWithPassword(data);
+  if (user.app_metadata.role !== undefined) {
+    return( {error: "アカウント登録が途中で終了しています。もう一度サインアップしてください。"} )
+  }
 
   if (error) {
     if (error.message === "Invalid login credentials") {
