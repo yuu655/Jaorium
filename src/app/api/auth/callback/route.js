@@ -30,6 +30,8 @@ export async function GET(request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (error) {
       throw error
+    }else if(data.user?.app_metadata?.role !== undefined) {
+      throw new Error("アカウント登録が途中で終了しています。もう一度サインアップしてください。");
     }
   }
   return NextResponse.redirect(`https://www.jaorium.com${next}`)
