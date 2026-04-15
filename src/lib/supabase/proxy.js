@@ -45,6 +45,9 @@ export async function updateSession(request) {
       await supabase.auth.signOut();
       return NextResponse.redirect(new URL('/', request.url));
     }
+    // if(role === undefined && (pathname.startsWith('/dashboard'))) {
+    // 
+    // }
     if (role === "user" && (pathname === '/login' || pathname === '/setAccount' || pathname === '/setAccount/mentor' || pathname === '/setAccount/user' || pathname.startsWith('/signup') || pathname === '/dashboard/mentor')) {
       return NextResponse.redirect(new URL('/dashboard/user', request.url));
     }

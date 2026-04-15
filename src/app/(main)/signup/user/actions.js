@@ -48,7 +48,7 @@ export async function signup_user(prevState, formData) {
     email: data.email,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/user"
+      emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/user",
     }
   });
 
@@ -75,9 +75,15 @@ export async function signup_mentor(prevState, formData) {
     email: data.email,
     password: data.password,
     options: {
-      emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/mentor"
+      emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/mentor",
+      data: {
+        role: "mentor"
+      }
     }
+    
   });
+
+  await supabase.auth.updateUser({ data: { role: "user" } });
 
   if (error) {
     return { error: "サインアップに失敗しました: " + error.message };
