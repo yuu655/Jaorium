@@ -43,7 +43,7 @@ export async function updateSession(request) {
     // }
     if (role === undefined && pathname === '/setAccount') {
       await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/', request.url));
+      return NextResponse.redirect(new URL('/signup/mentor', request.url));
     }
     // if(role === undefined && (pathname.startsWith('/dashboard'))) {
     // 

@@ -57,18 +57,20 @@ export async function signup_mentor(prevState, formData) {
   const supabase = await createClient();
   const data = {
     email: formData.get("email"),
-    password: formData.get("password"),
-    confirm_password: formData.get("password_check"),
   };
-  if(data.password !== data.password){
-    return {error: "再入力のパスワードと一致しません"}
-  }
 
-  const { error } = await supabase.auth.signUp({
+  // const { error } = await supabase.auth.signUp({
+  //   email: data.email,
+  //   password: data.password,
+  //   options: {
+  //     emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/mentor"
+  //   }
+  // });
+  const { error } = await supabase.auth.signInWithOtp({
     email: data.email,
-    password: data.password,
     options: {
-      emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/mentor"
+      shouldCreateUser: true,
+      emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/mentor",
     }
   });
 

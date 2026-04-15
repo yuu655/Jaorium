@@ -51,12 +51,17 @@ async function submitMentor(prevState, formData) {
     region: formData.get("region"),
     quote: formData.get("quote"),
     tagIds: formData.getAll("tagIds"),
+    password: formData.get("password"),
+    password_check: formData.get("password_check"),
   };
+  if(data.password !== data.password_check) {
+    throw new Error("パスワードが一致しません");
+  }
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  await supabase.auth.updateUser({ data: { role: "mentor" } });
+  await supabase.auth.updateUser({ password: data.password, data: { role: "mentor" } });
   const { error: error_update } = await supabase
     .from("profiles")
     .update({
