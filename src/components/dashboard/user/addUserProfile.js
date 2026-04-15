@@ -1,5 +1,6 @@
 "use client";
 import { useActionState, useEffect, useState } from "react";
+import { Eye, Lock, EyeOff } from "lucide-react";
 
 export default function AddUserProfile({
   profile,
