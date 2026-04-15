@@ -75,12 +75,15 @@ export default function SetAccount() {
   // const [role, setRole] = useState("");
   const [isIcon, setIsIcon] = useState(false);
   const [allTags, setAllTags] = useState([]);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchAllTags = async () => {
       const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase.from("tags").select("*");
       setAllTags(data ?? []);
+      setUser(user);
     };
 
     fetchAllTags();
@@ -113,7 +116,9 @@ export default function SetAccount() {
                 <AddUserProfile
                   onUpload={submitUser}
                   profile={null}
+                  user = {user}
                   setIsIcon={setIsIcon}
+                  isFirst={true}
                 />
               </div>
             </div>

@@ -7,12 +7,17 @@ async function submitUser(prevState, formData) {
     name: formData.get("name"),
     grade: formData.get("grade"),
     desire: formData.get("desire"),
+    password: formData.get("password"),
+    password_check: formData.get("password_check"),
   };
+  if(data.password !== data.password_check) {
+    throw new Error("パスワードが一致しません");
+  }
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  await supabase.auth.updateUser({ data: { role: "user" } });
+  await supabase.auth.updateUser({ password: data.password, data: { role: "user" } });
   const { error: error_update } = await supabase
     .from("profiles")
     .update({

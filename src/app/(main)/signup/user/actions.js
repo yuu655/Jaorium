@@ -33,14 +33,21 @@ export async function signup_user(prevState, formData) {
     password: formData.get("password"),
     confirm_password: formData.get("password_check"),
   };
-  if(data.password !== data.password){
+  if(data.password !== data.confirm_password){
     return {error: "再入力のパスワードと一致しません"}
   }
 
-  const { error } = await supabase.auth.signUp({
+  // const { error } = await supabase.auth.signUp({
+  //   email: data.email,
+  //   password: data.password,
+  //   options: {
+  //     emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/user"
+  //   }
+  // });
+  const { error } = await supabase.auth.signInWithOtp({
     email: data.email,
-    password: data.password,
     options: {
+      shouldCreateUser: true,
       emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/user"
     }
   });
