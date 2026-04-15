@@ -48,10 +48,10 @@ export async function updateSession(request) {
     // if(role === undefined && (pathname.startsWith('/dashboard'))) {
     // 
     // }
-    if (role === "user" && (pathname === '/login' || pathname === '/setAccount' || pathname === '/setAccount/mentor' || pathname === '/setAccount/user' || pathname.startsWith('/signup') || pathname === '/dashboard/mentor')) {
+    if (role === "user" && (pathname === '/login' || pathname === '/setAccount' || pathname === '/setAccount/mentor' || pathname === '/setAccount/user' || pathname.startsWith('/signup') || pathname === '/dashboard' || pathname === '/dashboard/mentor')) {
       return NextResponse.redirect(new URL('/dashboard/user', request.url));
     }
-    if (role === "mentor" && (pathname === '/login' || pathname === '/setAccount' || pathname === '/setAccount/mentor' || pathname === '/setAccount/user' || pathname.startsWith('/signup') || pathname === '/dashboard/user')) {
+    if (role === "mentor" && (pathname === '/login' || pathname === '/setAccount' || pathname === '/setAccount/mentor' || pathname === '/setAccount/user' || pathname.startsWith('/signup')|| pathname === '/dashboard'  || pathname === '/dashboard/user')) {
       return NextResponse.redirect(new URL('/dashboard/mentor', request.url));
     }
     if (pathname.startsWith('/admin') && role !== 'admin') {
