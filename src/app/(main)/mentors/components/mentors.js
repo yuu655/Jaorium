@@ -36,7 +36,7 @@ export default function Mentors({ mentors }) {
     },
     {
       title: "大学生活で重視したいことは？",
-      options: [          
+      options: [
         { label: "部活・サークル活動", keyword: "部活・サークル" },
         { label: "資格取得や専門的な学び", keyword: "資格・就職" },
         { label: "留学・国際交流", keyword: "留学" },
@@ -57,10 +57,10 @@ export default function Mentors({ mentors }) {
   const CATEGORY_LABELS = {
     exam: "受験形式",
     uni: "大学・学部",
+    sub: "得意教科",
+    env: "環境",
     life: "大学生活",
     career: "キャリア",
-    env: "環境",
-    sub: "得意教科"
   };
 
   const tagGroups = Object.entries(

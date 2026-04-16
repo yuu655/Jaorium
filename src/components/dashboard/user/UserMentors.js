@@ -69,10 +69,10 @@ export default function UserMentors({ mentors }) {
     const CATEGORY_LABELS = {
       exam: "受験形式",
       uni: "大学・学部",
+      sub: "得意教科",
+      env: "環境",
       life: "大学生活",
       career: "キャリア",
-      env: "環境",
-    sub: "得意教科"
     };
   
     const tagGroups = Object.entries(
