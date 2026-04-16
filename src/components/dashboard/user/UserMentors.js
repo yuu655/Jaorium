@@ -49,7 +49,7 @@ export default function UserMentors({ mentors }) {
       {
         title: "大学生活で重視したいことは？",
         options: [
-          { label: "サークル活動", keyword: "サークル" },
+          { label: "部活・サークル活動", keyword: "部活・サークル" },
           { label: "資格取得や専門的な学び", keyword: "資格・就職" },
           { label: "留学・国際交流", keyword: "留学" },
           { label: "特に決まっていない", keyword: "" },
@@ -59,7 +59,7 @@ export default function UserMentors({ mentors }) {
         title: "気になる受験形式は？",
         options: [
           { label: "一般入試メイン", keyword: "一般入試" },
-          { label: "総合型・推薦も視野に", keyword: "推薦入試" },
+          { label: "総合型・推薦も視野に", keyword: "学校推薦型選抜" },
           { label: "帰国子女などの特別枠", keyword: "帰国子女" },
           { label: "まずは相談して決めたい", keyword: "" },
         ],
@@ -71,6 +71,8 @@ export default function UserMentors({ mentors }) {
       uni: "大学・学部",
       life: "大学生活",
       career: "キャリア",
+      env: "環境",
+    sub: "得意教科"
     };
   
     const tagGroups = Object.entries(
