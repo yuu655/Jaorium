@@ -34,7 +34,7 @@ export const submitBooking = async (mentorId, prevState, formData) => {
     .single();
   if (!mentor) return { error: "メンターが存在しません" };
 
-  const { data: mentorData } = await supabase.auth.admin.getUserById(mentorId);
+  const { data: mentorData } = await masterSupabase.auth.admin.getUserById(mentorId);
   const mentorEmail = mentorData.user?.email;
   console.log(mentor.id, mentorId, mentorData, mentorEmail);
 
