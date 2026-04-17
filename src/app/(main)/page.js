@@ -11,6 +11,7 @@ import Articles from "@/components/articles";
 import TimeLine from "@/components/timeLine";
 import HowWork from "@/components/howWork";
 import ForCompany from "@/components/forCompany";
+import Features from "@/components/features";
 
 const getMentors = (supabase) =>
   unstable_cache(
@@ -30,12 +31,12 @@ export default async function Home() {
       {/* <Header propClassName="bg-white shadow-md relative z-0" /> */}
 
       <Hero />
-      <section>
-        <Concept />
-      </section>
+      
+      <Concept />
       {/* <section>
         <TimeLine />
       </section> */}
+      <Features />
       <section>
         <Mentors mentors={mentors} />
       </section>
