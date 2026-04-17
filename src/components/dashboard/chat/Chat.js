@@ -607,7 +607,7 @@ export default function Chat({
               </div>
 
               {/* 今後フィールドが増えたらここに追加 */}
-              <div>
+              {/* <div>
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
                   最近、進路や受験勉強のことで一番「困った」「悩んだ」具体的なエピソード
                 </p>
@@ -641,7 +641,7 @@ export default function Chat({
                 <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
                   {meeting.desired_outcome || "説明はありません"}
                 </p>
-              </div>
+              </div> */}
             </div>
           </div>
         </>
