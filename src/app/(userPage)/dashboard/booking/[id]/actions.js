@@ -35,6 +35,7 @@ export const submitBooking = async (mentorId, prevState, formData) => {
 
   const { data: mentorData } = await supabase.auth.admin.getUserById(mentorId);
   const mentorEmail = mentorData.user?.email;
+  console.log(mentorData, mentorEmail);
 
   const { data: meetingData, error } = await supabase.from("meetings").insert({
     title,
@@ -59,7 +60,7 @@ export const submitBooking = async (mentorId, prevState, formData) => {
     from: "noreply@jaorium.com",
     to: user.email,
     subject: "相談を送信しました",
-    html: "<p>相談を送信しました。</p><p>相談内容: " + title + "</p><p>詳細: " + description + `</p><p><a href='https://www.jaorium.com/dashboard/chat/${meetingData[0].id}'>メッセージ画面</a>から面談日時を相談してください</p>`,
+    html: "<p>相談を送信しました。</p><p>相談内容: " + title + "</p><p>詳細: " + description + `</p><p><a href='https://www.jaorium.com/dashboard/chat/${meetingData[0].id}'>メッセージ画面</a>から面談日時を相談してください${mentorData}</p>`,
   });
 
   revalidateTag(`dashboard-user-${user.id}`);

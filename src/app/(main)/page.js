@@ -36,7 +36,7 @@ export default async function Home() {
       {/* <section>
         <TimeLine />
       </section> */}
-      {/* <Features /> */}
+      <Features />
       <section>
         <Mentors mentors={mentors} />
       </section>
