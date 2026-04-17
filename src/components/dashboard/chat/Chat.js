@@ -605,43 +605,6 @@ export default function Chat({
                   <p className="text-sm text-gray-400">未定</p>
                 )}
               </div>
-
-              {/* 今後フィールドが増えたらここに追加 */}
-              {/* <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                  最近、進路や受験勉強のことで一番「困った」「悩んだ」具体的なエピソード
-                </p>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {meeting.trouble_episode || "説明はありません"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                  その悩みや疑問を解決するために、これまでに試したこと
-                </p>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {meeting.actions_taken || "説明はありません"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                  上記の行動をとってみて、「解決しなかったこと」や「まだ足りない」と感じたこと
-                </p>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {meeting.unresolved_issues || "説明はありません"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
-                  今回のオンライン面談（約40分）が終わった時、一番得たい情報
-                </p>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {meeting.desired_outcome || "説明はありません"}
-                </p>
-              </div> */}
             </div>
           </div>
         </>
