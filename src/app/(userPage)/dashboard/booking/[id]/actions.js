@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidateTag } from "next/cache";
 import { Resend } from "resend";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 const resend = new Resend(process.env.SMTP_API_KEY);
 
 export const submitBooking = async (mentorId, prevState, formData) => {
@@ -16,8 +17,14 @@ export const submitBooking = async (mentorId, prevState, formData) => {
   if (!title) return { error: "相談内容を選択してください" };
 
   const supabase = await createClient();
-  const masterSupabase = await createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_SECRET_KEY);
-  const { data: { user } } = await supabase.auth.getUser();
+  const masterSupabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_SECRET_KEY,
+  );
+  // const masterSupabase = await createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_SECRET_KEY);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { error: "ログインが必要です" };
 
   const { data: profile } = await supabase
@@ -34,20 +41,24 @@ export const submitBooking = async (mentorId, prevState, formData) => {
     .single();
   if (!mentor) return { error: "メンターが存在しません" };
 
-  const { data: mentorData } = await masterSupabase.auth.admin.getUserById(mentorId);
+  const { data: mentorData } =
+    await masterSupabase.auth.admin.getUserById(mentorId);
   const mentorEmail = mentorData.user?.email;
   console.log(mentor.id, mentorId, mentorData, mentorEmail);
 
-  const { data: meetingData, error } = await supabase.from("meetings").insert({
-    title,
-    description,
-    mentor: mentorId,
-    user: user.id,
-    trouble_episode: troubleEpisode,
-    actions_taken: actionsTaken,
-    unresolved_issues: unresolvedIssues,
-    desired_outcome: desiredOutcome,
-  }).select();
+  const { data: meetingData, error } = await supabase
+    .from("meetings")
+    .insert({
+      title,
+      description,
+      mentor: mentorId,
+      user: user.id,
+      trouble_episode: troubleEpisode,
+      actions_taken: actionsTaken,
+      unresolved_issues: unresolvedIssues,
+      desired_outcome: desiredOutcome,
+    })
+    .select();
 
   if (error) return { error: "予約の作成に失敗しました" };
 
