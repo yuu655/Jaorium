@@ -16,6 +16,7 @@ export const submitBooking = async (mentorId, prevState, formData) => {
   if (!title) return { error: "相談内容を選択してください" };
 
   const supabase = await createClient();
+  const masterSupabase = await createClient(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, process.env.NEXT_SECRET_KEY);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "ログインが必要です" };
 
