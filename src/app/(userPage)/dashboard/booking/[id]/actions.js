@@ -35,7 +35,7 @@ export const submitBooking = async (mentorId, prevState, formData) => {
 
   const { data: mentorData } = await supabase.auth.admin.getUserById(mentorId);
   const mentorEmail = mentorData.user?.email;
-  console.log(mentorData, mentorEmail);
+  console.log(mentor.id, mentorId, mentorData, mentorEmail);
 
   const { data: meetingData, error } = await supabase.from("meetings").insert({
     title,
@@ -50,18 +50,18 @@ export const submitBooking = async (mentorId, prevState, formData) => {
 
   if (error) return { error: "予約の作成に失敗しました" };
 
-  await resend.emails.send({
-    from: "noreply@jaorium.com",
-    to: mentorEmail,
-    subject: "新しい相談が入りました",
-    html: `<a href='https://www.jaorium.com/dashboard/chat/${meetingData[0].id}'>新しい相談</a><p>が入りました。</p><p>相談内容: ` + title + `</p><p>詳細: ` + description + `</p>`,
-  });
-  await resend.emails.send({
-    from: "noreply@jaorium.com",
-    to: user.email,
-    subject: "相談を送信しました",
-    html: "<p>相談を送信しました。</p><p>相談内容: " + title + "</p><p>詳細: " + description + `</p><p><a href='https://www.jaorium.com/dashboard/chat/${meetingData[0].id}'>メッセージ画面</a>から面談日時を相談してください${mentorData}</p>`,
-  });
+  // await resend.emails.send({
+  //   from: "noreply@jaorium.com",
+  //   to: mentorEmail,
+  //   subject: "新しい相談が入りました",
+  //   html: `<a href='https://www.jaorium.com/dashboard/chat/${meetingData[0].id}'>新しい相談</a><p>が入りました。</p><p>相談内容: ` + title + `</p><p>詳細: ` + description + `</p>`,
+  // });
+  // await resend.emails.send({
+  //   from: "noreply@jaorium.com",
+  //   to: user.email,
+  //   subject: "相談を送信しました",
+  //   html: "<p>相談を送信しました。</p><p>相談内容: " + title + "</p><p>詳細: " + description + `</p><p><a href='https://www.jaorium.com/dashboard/chat/${meetingData[0].id}'>メッセージ画面</a>から面談日時を相談してください${mentorData}</p>`,
+  // });
 
   revalidateTag(`dashboard-user-${user.id}`);
   revalidateTag(`dashboard-mentor-${mentorId}`);
