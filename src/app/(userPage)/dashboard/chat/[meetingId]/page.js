@@ -38,7 +38,7 @@ export default async function ChatPage({ params }) {
     .order("created_at", { ascending: true });
 
   return (
-    <Chat
+    <ChatWrapper
       meeting={meeting}
       currentUserId={user.id}
       counterpart={counterpart}
