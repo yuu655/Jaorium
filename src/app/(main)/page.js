@@ -32,11 +32,11 @@ export default async function Home() {
 
       <Hero />
       
-      <Concept />
+      {/* <Concept /> */}
       {/* <section>
         <TimeLine />
       </section> */}
-      <Features />
+      {/* <Features /> */}
       <section>
         <Mentors mentors={mentors} />
       </section>
