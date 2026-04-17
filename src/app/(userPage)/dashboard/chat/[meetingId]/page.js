@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 // import Chat from "@/components/dashboard/chat/Chat";
-import dynamic from "next/dynamic";
+// import dynamic from "next/dynamic";
+import ChatWrapper from "@/components/dashboard/chat/ChatWrapper";
 
 
 export default async function ChatPage({ params }) {
-  const Chat = dynamic(() => import("@/components/dashboard/chat/Chat"), { ssr: false });
   const { meetingId } = await params;
   const supabase = await createClient();
 
@@ -39,7 +39,7 @@ export default async function ChatPage({ params }) {
     .order("created_at", { ascending: true });
 
   return (
-    <Chat
+    <ChatWrapper
       meeting={meeting}
       currentUserId={user.id}
       counterpart={counterpart}
