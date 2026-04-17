@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Chat from "@/components/dashboard/chat/ChatWrapper";
+import Chat from "@/components/dashboard/chat/Chat";
 
 
 export default async function ChatPage({ params }) {
