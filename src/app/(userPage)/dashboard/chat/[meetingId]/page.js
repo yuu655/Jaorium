@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import ChatWrapper from "@/components/dashboard/chat/ChatWrapper";
+import Chat from "@/components/dashboard/chat/Chat";
 
 
 export default async function ChatPage({ params }) {
@@ -37,7 +38,7 @@ export default async function ChatPage({ params }) {
     .order("created_at", { ascending: true });
 
   return (
-    <ChatWrapper
+    <Chat
       meeting={meeting}
       currentUserId={user.id}
       counterpart={counterpart}
