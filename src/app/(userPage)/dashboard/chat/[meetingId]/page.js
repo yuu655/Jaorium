@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import Chat from "@/components/dashboard/chat/Chat";
+// import Chat from "@/components/dashboard/chat/Chat";
+import dynamic from "next/dynamic";
+
+const Chat = dynamic(() => import("@/components/dashboard/chat/Chat"), { ssr: false });
 
 export default async function ChatPage({ params }) {
   const { meetingId } = await params;
