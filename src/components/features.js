@@ -278,7 +278,7 @@ export default function Features() {
                       </div>
                       <i
                         data-lucide="check-circle-2"
-                        className="w-5 h-5 text-emerald-500 flex-shrink-0"
+                        className="w-5 h-5 text-emerald-500 shrink-0"
                       ></i>
                     </div>
 
@@ -296,7 +296,7 @@ export default function Features() {
                       </div>
                       <i
                         data-lucide="check-circle-2"
-                        className="w-5 h-5 text-emerald-500 flex-shrink-0"
+                        className="w-5 h-5 text-emerald-500 shrink-0"
                       ></i>
                     </div>
 
@@ -314,7 +314,7 @@ export default function Features() {
                       </div>
                       <i
                         data-lucide="check-circle-2"
-                        className="w-5 h-5 text-emerald-500 flex-shrink-0"
+                        className="w-5 h-5 text-emerald-500 shrink-0"
                       ></i>
                     </div>
                   </div>
