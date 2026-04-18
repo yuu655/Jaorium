@@ -258,14 +258,14 @@ export default function Features() {
                 </p>
               </div>
               <div className="w-full md:w-1/2 mt-10 md:mt-0 flex justify-center z-10 order-2 md:order-1">
-                <div className="w-full max-w-md mx-auto aspect-square md:aspect-auto md:h-[400px] bg-gradient-to-br from-emerald-50 to-teal-100 rounded-[2.5rem] border-8 border-white shadow-xl flex items-center justify-center relative overflow-hidden">
+                <div className="w-full max-w-md mx-auto md:aspect-auto h-[400px] bg-linear-to-br from-emerald-50 to-teal-100 rounded-[2.5rem] border-8 border-white shadow-xl flex items-center justify-center relative overflow-hidden">
                   <div className="absolute -bottom-10 -right-10 text-emerald-200/50">
                     <i data-lucide="check-square" className="w-64 h-64"></i>
                   </div>
 
                   <div className="relative z-10 w-full px-6 flex flex-col gap-4">
                     <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 flex items-center gap-4 transform transition-transform hover:-translate-y-1 hover:shadow-md">
-                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold flex-shrink-0">
+                      <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold shrink-0">
                         <i data-lucide="book-open" className="w-6 h-6"></i>
                       </div>
                       <div className="flex-1">

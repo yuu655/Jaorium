@@ -37,7 +37,7 @@ export default function Concept() {
       {/* コンセプト メインメッセージ (スクリーンショット準拠) */}
       <section className="pt-32 pb-16 px-8 max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-end">
           <div className="space-y-8 w-full">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-snug border-b-2 border-gray-900 pb-4 inline-block">
+            <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-snug border-b-2 border-gray-900 pb-4 inline-block">
               受験は、「<span className="text-red-600">知っているか</span>」どうかで決まる。
             </h2>
             <div className="space-y-4 pt-4 text-lg md:text-xl text-gray-800 leading-loose">
