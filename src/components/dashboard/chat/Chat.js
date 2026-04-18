@@ -66,9 +66,53 @@ export default function Chat({
     : "/default.jpg";
 
   // リアルタイム: メッセージ購読
+  // useEffect(() => {
+  //   const channel = supabase
+  //     .channel(`chat:${meeting.id}`)
+  //     .on(
+  //       "postgres_changes",
+  //       {
+  //         event: "INSERT",
+  //         schema: "public",
+  //         table: "messages",
+  //         filter: `meeting_id=eq.${meeting.id}`,
+  //       },
+  //       (payload) => {
+  //         const newMsg = payload.new;
+  //         setMessages((prev) => [...prev, newMsg]);
+  //       },
+  //     )
+  //     .subscribe();
+
+  //   return () => supabase.removeChannel(channel);
+  // }, [meeting.id, currentUserId]);
+
+  // // リアルタイム: meeting状態の変化を購読
+  // useEffect(() => {
+  //   const channel = supabase
+  //     .channel(`meeting:${meeting.id}`)
+  //     .on(
+  //       "postgres_changes",
+  //       {
+  //         event: "UPDATE",
+  //         schema: "public",
+  //         table: "meetings",
+  //         filter: `id=eq.${meeting.id}`,
+  //       },
+  //       (payload) => {
+  //         const updated = payload.new;
+  //         const prev = meeting;
+  //         setMeeting(updated);
+  //       },
+  //     )
+  //     .subscribe();
+
+  //   return () => supabase.removeChannel(channel);
+  // }, [meeting.id, currentUserId]);
   useEffect(() => {
+    // 1つのチャンネルにまとめる
     const channel = supabase
-      .channel(`chat:${meeting.id}`)
+      .channel(`room:${meeting.id}`)
       .on(
         "postgres_changes",
         {
@@ -78,19 +122,10 @@ export default function Chat({
           filter: `meeting_id=eq.${meeting.id}`,
         },
         (payload) => {
-          const newMsg = payload.new;
-          setMessages((prev) => [...prev, newMsg]);
+          // prevを使って最新の状態に対して追加しているので安全です
+          setMessages((prev) => [...prev, payload.new]);
         },
       )
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
-  }, [meeting.id, currentUserId]);
-
-  // リアルタイム: meeting状態の変化を購読
-  useEffect(() => {
-    const channel = supabase
-      .channel(`meeting:${meeting.id}`)
       .on(
         "postgres_changes",
         {
@@ -100,15 +135,16 @@ export default function Chat({
           filter: `id=eq.${meeting.id}`,
         },
         (payload) => {
-          const updated = payload.new;
-          const prev = meeting;
-          setMeeting(updated);
+          setMeeting(payload.new);
         },
       )
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
-  }, [meeting.id, currentUserId]);
+    // クリーンアップ関数でチャンネルを破棄
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [meeting.id]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
