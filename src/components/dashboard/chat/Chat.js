@@ -110,12 +110,8 @@ export default function Chat({
   //   return () => supabase.removeChannel(channel);
   // }, [meeting.id, currentUserId]);
   useEffect(() => {
-  let retryTimeout = null;
-  let channel = null;
-  let keepAlive = null;
-
-  const subscribe = () => {
-    channel = supabase
+    // 1つのチャンネルにまとめる
+    const channel = supabase
       .channel(`room:${meeting.id}`)
       .on(
         "postgres_changes",
@@ -126,6 +122,7 @@ export default function Chat({
           filter: `meeting_id=eq.${meeting.id}`,
         },
         (payload) => {
+          // prevを使って最新の状態に対して追加しているので安全です
           setMessages((prev) => [...prev, payload.new]);
         },
       )
@@ -141,34 +138,14 @@ export default function Chat({
           setMeeting(payload.new);
         },
       )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          // ✅ 接続が確立したらRealtimeチャンネル自体にpingを送る
-          keepAlive = setInterval(() => {
-            channel.send({
-              type: "broadcast",
-              event: "keepalive",
-              payload: {},
-            });
-          }, 9 * 60 * 1000);
-        }
+      .subscribe();
 
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          clearInterval(keepAlive);
-          supabase.removeChannel(channel);
-          retryTimeout = setTimeout(subscribe, 5000);
-        }
-      });
-  };
+    // クリーンアップ関数でチャンネルを破棄
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [meeting.id]);
 
-  subscribe();
-
-  return () => {
-    clearInterval(keepAlive);
-    if (retryTimeout) clearTimeout(retryTimeout);
-    if (channel) supabase.removeChannel(channel);
-  };
-}, [meeting.id]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
