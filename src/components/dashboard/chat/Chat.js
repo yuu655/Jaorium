@@ -110,64 +110,65 @@ export default function Chat({
   //   return () => supabase.removeChannel(channel);
   // }, [meeting.id, currentUserId]);
   useEffect(() => {
-    const keepAlive = setInterval(
-      async () => {
-        await supabase.from("messages").select("id").limit(1);
-      },
-      9 * 60 * 1000,
-    );
-    let retryTimeout = null;
-    let channel = null;
+  let retryTimeout = null;
+  let channel = null;
+  let keepAlive = null;
 
-    const subscribe = () => {
-      channel = supabase
-        .channel(`room:${meeting.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "messages",
-            filter: `meeting_id=eq.${meeting.id}`,
-          },
-          (payload) => {
-            setMessages((prev) => [...prev, payload.new]);
-          },
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "meetings",
-            filter: `id=eq.${meeting.id}`,
-          },
-          (payload) => {
-            setMeeting(payload.new);
-          },
-        )
-        .subscribe((status) => {
-          if (
-            status === "CHANNEL_ERROR" ||
-            status === "TIMED_OUT" ||
-            status === "CLOSED"
-          ) {
-            supabase.removeChannel(channel);
-            retryTimeout = setTimeout(subscribe, 5000);
-          }
-        });
-    };
+  const subscribe = () => {
+    channel = supabase
+      .channel(`room:${meeting.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `meeting_id=eq.${meeting.id}`,
+        },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "meetings",
+          filter: `id=eq.${meeting.id}`,
+        },
+        (payload) => {
+          setMeeting(payload.new);
+        },
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          // ✅ 接続が確立したらRealtimeチャンネル自体にpingを送る
+          keepAlive = setInterval(() => {
+            channel.send({
+              type: "broadcast",
+              event: "keepalive",
+              payload: {},
+            });
+          }, 9 * 60 * 1000);
+        }
 
-    subscribe();
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          clearInterval(keepAlive);
+          supabase.removeChannel(channel);
+          retryTimeout = setTimeout(subscribe, 5000);
+        }
+      });
+  };
 
-    return () => {
-      // if (retryTimeout) clearTimeout(retryTimeout);
-      // if (channel) supabase.removeChannel(channel);
-      clearInterval(keepAlive);
-      if (retryTimeout) clearTimeout(retryTimeout);
-      if (channel) supabase.removeChannel(channel);
-    };
-  }, [meeting.id]);
+  subscribe();
+
+  return () => {
+    clearInterval(keepAlive);
+    if (retryTimeout) clearTimeout(retryTimeout);
+    if (channel) supabase.removeChannel(channel);
+  };
+}, [meeting.id]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
