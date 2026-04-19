@@ -110,39 +110,62 @@ export default function Chat({
   //   return () => supabase.removeChannel(channel);
   // }, [meeting.id, currentUserId]);
   useEffect(() => {
-    // 1つのチャンネルにまとめる
-    const channel = supabase
-      .channel(`room:${meeting.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `meeting_id=eq.${meeting.id}`,
-        },
-        (payload) => {
-          // prevを使って最新の状態に対して追加しているので安全です
-          setMessages((prev) => [...prev, payload.new]);
-        },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "meetings",
-          filter: `id=eq.${meeting.id}`,
-        },
-        (payload) => {
-          setMeeting(payload.new);
-        },
-      )
-      .subscribe();
+    const keepAlive = setInterval(
+      async () => {
+        await supabase.from("messages").select("id").limit(1);
+      },
+      9 * 60 * 1000,
+    );
+    let retryTimeout = null;
+    let channel = null;
 
-    // クリーンアップ関数でチャンネルを破棄
+    const subscribe = () => {
+      channel = supabase
+        .channel(`room:${meeting.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "messages",
+            filter: `meeting_id=eq.${meeting.id}`,
+          },
+          (payload) => {
+            setMessages((prev) => [...prev, payload.new]);
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "meetings",
+            filter: `id=eq.${meeting.id}`,
+          },
+          (payload) => {
+            setMeeting(payload.new);
+          },
+        )
+        .subscribe((status) => {
+          if (
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT" ||
+            status === "CLOSED"
+          ) {
+            supabase.removeChannel(channel);
+            retryTimeout = setTimeout(subscribe, 5000);
+          }
+        });
+    };
+
+    subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      // if (retryTimeout) clearTimeout(retryTimeout);
+      // if (channel) supabase.removeChannel(channel);
+      clearInterval(keepAlive);
+      if (retryTimeout) clearTimeout(retryTimeout);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [meeting.id]);
 

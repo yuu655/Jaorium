@@ -3,6 +3,7 @@ import AddIcon from "@/components/dashboard/profile/addIcon";
 import {
   updateMentorIcon,
 } from "@/components/dashboard/profile/actions";
+import Link from "next/link";
 
 
 import { createClient } from "@/lib/supabase/client";
@@ -54,6 +55,11 @@ export default function SetAccount() {
                 onUpload={(inputFiles) => updateMentorIcon(inputFiles)}
                 profile={profile}
               />
+            </div>
+            <div className="text-center mt-6">
+              <Link href="/dashboard/user" className="text-xl text-blue-600 hover:text-gray-900">
+                →アイコンを設定しない
+              </Link>
             </div>
           </section>
         </div>

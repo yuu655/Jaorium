@@ -4,6 +4,7 @@ import { updateUserIcon } from "@/components/dashboard/profile/actions";
 
 import { createClient } from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 // import {
 //   submitUser,
@@ -51,6 +52,11 @@ export default function SetAccount() {
                 onUpload={(inputFiles) => updateUserIcon(inputFiles)}
                 profile={profile}
               />
+            </div>
+            <div className="text-center mt-6">
+              <Link href="/dashboard/user" className="text-xl text-blue-600 hover:text-gray-900">
+                →アイコンを設定しない
+              </Link>
             </div>
           </section>
         </div>
