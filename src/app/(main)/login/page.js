@@ -1,4 +1,5 @@
 "use client";
+import getUrls from "@/utils/getUrls";
 
 import { login, signup } from "./actions";
 import { createClient } from "@/lib/supabase/client";
@@ -28,7 +29,7 @@ export default function LoginPage() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `https://www.jaorium.com/api/auth/callback?next=/setAccount`,
+        redirectTo: `${getUrls()}/api/auth/callback?next=/setAccount`,
       },
     });
   };

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useState, useActionState } from "react";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import getUrls from "@/utils/getUrls";
 export default function LoginPage() {
 
   const handleSignup = async (prevState, formData) => {
@@ -34,7 +35,7 @@ export default function LoginPage() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `https://www.jaorium.com/api/auth/callback?next=/setAccount/user`,
+        redirectTo: `${getUrls()}/api/auth/callback?next=/setAccount/user`,
       },
     });
   };

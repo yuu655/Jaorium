@@ -27,7 +27,7 @@ export const metadata = {
   openGraph: {
     title: "JaoRium",
     description: "情報戦に、終止符を。",
-    url: "https://sampleblog-iota.vercel.app",
+    url: "https://www.jaorium.com",
     siteName: "JaoRium",
     // images: [
     //   {

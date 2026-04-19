@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'  // ← importが必要
+import getUrls from "@/utils/getUrls";
 
 export async function GET(request) {
   const requestUrl = new URL(request.url)
@@ -28,10 +29,10 @@ export async function GET(request) {
 
     if (error) {
       console.error(error)
-      return NextResponse.redirect(`https://www.jaorium.com/error`)
+      return NextResponse.redirect(`${getUrls()}/error`)
     }
   }
 
   // ✅ セッション交換成功後にパスワード変更ページへ
-  return NextResponse.redirect(`https://www.jaorium.com/resetPass`)
+  return NextResponse.redirect(`${getUrls()}/resetPass`)
 }

@@ -1,6 +1,7 @@
 // import { type EmailOtpType } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import getUrls from "@/utils/getUrls";
 // Creating a handler to a GET request to route /auth/confirm
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
@@ -17,12 +18,12 @@ export async function GET(request) {
 
     if (!error) {
       // 認証成功 → next で指定されたページへリダイレクト
-      return NextResponse.redirect(`https://www.jaorium.com${next}`)
+      return NextResponse.redirect(`${getUrls()}${next}`)
     }
   }
 
   // 認証失敗 → エラーページへリダイレクト
-  return NextResponse.redirect(`https://www.jaorium.com/error`)
+  return NextResponse.redirect(`${getUrls()}/error`)
 }
 
 

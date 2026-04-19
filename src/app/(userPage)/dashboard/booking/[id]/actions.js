@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidateTag } from "next/cache";
 import { Resend } from "resend";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import getUrls from "@/utils/getUrls";
 const resend = new Resend(process.env.SMTP_API_KEY);
 
 export const submitBooking = async (mentorId, prevState, formData) => {
@@ -66,13 +67,13 @@ export const submitBooking = async (mentorId, prevState, formData) => {
     from: "noreply@jaorium.com",
     to: mentorEmail,
     subject: "新しい相談が入りました",
-    html: `<a href='https://www.jaorium.com/dashboard/chat/${meetingData[0].id}'>新しい相談</a><p>が入りました。</p><p>相談内容: ` + title + `</p><p>詳細: ` + description + `</p>`,
+    html: `<a href='${getUrls()}/dashboard/chat/${meetingData[0].id}'>新しい相談</a><p>が入りました。</p><p>相談内容: ` + title + `</p><p>詳細: ` + description + `</p>`,
   });
   await resend.emails.send({
     from: "noreply@jaorium.com",
     to: user.email,
     subject: "相談を送信しました",
-    html: "<p>相談を送信しました。</p><p>相談内容: " + title + "</p><p>詳細: " + description + `</p><p><a href='https://www.jaorium.com/dashboard/chat/${meetingData[0].id}'>メッセージ画面</a>から面談日時を相談してください${mentorData}</p>`,
+    html: "<p>相談を送信しました。</p><p>相談内容: " + title + "</p><p>詳細: " + description + `</p><p><a href='${getUrls()}/dashboard/chat/${meetingData[0].id}'>メッセージ画面</a>から面談日時を相談してください${mentorData}</p>`,
   });
 
   revalidateTag(`dashboard-user-${user.id}`);

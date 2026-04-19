@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import getUrls from "@/utils/getUrls";
 
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url)
@@ -34,5 +35,5 @@ export async function GET(request) {
       throw new Error("アカウント登録が途中で終了しています。もう一度サインアップしてください。");
     }
   }
-  return NextResponse.redirect(`https://www.jaorium.com${next}`)
+  return NextResponse.redirect(`${getUrls()}${next}`)
 }

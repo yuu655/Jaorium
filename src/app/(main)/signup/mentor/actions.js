@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import getUrls from "@/utils/getUrls";
 
 export async function login(prevState, formData) {
   const supabase = await createClient();
@@ -41,7 +42,7 @@ export async function signup_user(prevState, formData) {
     email: data.email,
     password: data.password,
     options: {
-      emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/user"
+      emailRedirectTo: `${getUrls()}/api/auth/confirm?next=/setAccount/user`
     }
   });
 
@@ -70,7 +71,7 @@ export async function signup_mentor(prevState, formData) {
     email: data.email,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/mentor",
+      emailRedirectTo: `${getUrls()}/api/auth/confirm?next=/setAccount/mentor`,
     }
   });
 
