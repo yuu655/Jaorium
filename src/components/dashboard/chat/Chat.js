@@ -110,55 +110,41 @@ export default function Chat({
   //   return () => supabase.removeChannel(channel);
   // }, [meeting.id, currentUserId]);
   useEffect(() => {
-  let retryTimeout = null;
-  let channel = null;
-  let keepAlive = null;
-  let retryCount = 0;
-  const MAX_RETRY = 5; // 最大5回まで
-
-  const subscribe = () => {
-    if (retryCount >= MAX_RETRY) {
-      console.warn("Realtime接続の再試行上限に達しました");
-      return;
-    }
-
-    channel = supabase
+    // 1つのチャンネルにまとめる
+    const channel = supabase
       .channel(`room:${meeting.id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `meeting_id=eq.${meeting.id}` },
-        (payload) => { setMessages((prev) => [...prev, payload.new]); }
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `meeting_id=eq.${meeting.id}`,
+        },
+        (payload) => {
+          // prevを使って最新の状態に対して追加しているので安全です
+          setMessages((prev) => [...prev, payload.new]);
+        },
       )
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "meetings", filter: `id=eq.${meeting.id}` },
-        (payload) => { setMeeting(payload.new); }
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "meetings",
+          filter: `id=eq.${meeting.id}`,
+        },
+        (payload) => {
+          setMeeting(payload.new);
+        },
       )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          retryCount = 0; // 接続成功したらリセット
-          keepAlive = setInterval(() => {
-            channel.send({ type: "broadcast", event: "keepalive", payload: {} });
-          }, 9 * 60 * 1000);
-        }
+      .subscribe();
 
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          clearInterval(keepAlive);
-          supabase.removeChannel(channel);
-          retryCount++;
-          // 指数バックオフ：5秒→10秒→20秒→40秒...
-          const delay = Math.min(5000 * Math.pow(2, retryCount - 1), 60000);
-          console.log(`${delay/1000}秒後に再接続 (${retryCount}/${MAX_RETRY})`);
-          retryTimeout = setTimeout(subscribe, delay);
-        }
-      });
-  };
-
-  subscribe();
-
-  return () => {
-    retryCount = MAX_RETRY; // アンマウント時は再接続させない
-    clearInterval(keepAlive);
-    if (retryTimeout) clearTimeout(retryTimeout);
-    if (channel) supabase.removeChannel(channel);
-  };
-}, [meeting.id]);
+    // クリーンアップ関数でチャンネルを破棄
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [meeting.id]);
 
 
   useEffect(() => {

@@ -78,5 +78,5 @@ export const submitBooking = async (mentorId, prevState, formData) => {
 
   revalidateTag(`dashboard-user-${user.id}`);
   revalidateTag(`dashboard-mentor-${mentorId}`);
-  redirect("/dashboard/user");
+  redirect(`/dashboard/chat/${meetingData[0].id}`);
 };
