@@ -146,7 +146,6 @@ export default function Chat({
     };
   }, [meeting.id]);
 
-
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -438,6 +437,9 @@ export default function Chat({
                                   {formatProposalDate(pDate)}
                                 </p>
                                 <p className="text-gray-600 text-sm">{pTime}</p>
+                                {isMine && (
+                                  <p className="font-bold text-base">相手からの承認をお待ちください</p>
+                                )}
 
                                 {canConfirm && (
                                   <button
@@ -498,18 +500,26 @@ export default function Chat({
       {/* 入力欄 */}
       <div className="bg-white border-t px-4 py-3 shrink-0">
         <div className="flex items-end gap-2 max-w-4xl mx-auto">
-          <button
-            onClick={() => setShowDateModal(true)}
-            disabled={meeting.is_commit}
-            className="w-11 h-11 border border-gray-300 text-gray-500 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
-            title={
-              meeting.is_commit
-                ? "日時確定済み（リセットで再提案可能）"
-                : "日時を提案する"
-            }
-          >
-            <CalendarClock size={18} />
-          </button>
+          <div className="relative group">
+            {!meeting.is_commit && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-800 text-white text-xl rounded-lg whitespace-nowrap pointer-events-none opacity-100">
+                日時を提案しましょう
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+              </div>
+            )}
+            <button
+              onClick={() => setShowDateModal(true)}
+              disabled={meeting.is_commit}
+              className="w-11 h-11 border border-gray-300 text-gray-500 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+              title={
+                meeting.is_commit
+                  ? "日時確定済み（リセットで再提案可能）"
+                  : "日時を提案する"
+              }
+            >
+              <CalendarClock size={18} />
+            </button>
+          </div>
 
           <textarea
             ref={textareaRef}
@@ -676,6 +686,12 @@ export default function Chat({
                 <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
                   {meeting.desired_outcome || "説明はありません"}
                 </p>
+              </div>
+
+              <div>
+                <Link href={`/dashboard/Interview/${meeting.id}`} className="text-blue-500 hover:text-blue-700 transition-colors">
+                  ミーティングに飛ぶ
+                </Link>
               </div>
             </div>
           </div>

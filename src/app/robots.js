@@ -5,7 +5,8 @@ export default function robots() {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin/", "/dashboard/"], // クロール拒否するパス
+      disallow: ["/"],
+      // disallow: ["/admin/", "/dashboard/"], // クロール拒否するパス
     },
     sitemap: "https://www.jaorium.com/sitemap.xml",
   };
