@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, MessageCircle, User, Settings } from "lucide-react";
+import { Calendar, MessageCircle, User, Settings, FileChartColumn } from "lucide-react";
 import Icon from "../profile/icon";
 
 export default function MentorSidebar({ profile, side, setSide }) {
@@ -28,6 +28,10 @@ export default function MentorSidebar({ profile, side, setSide }) {
           </button> */}
           <button className={`${baseStyle} ${side === "profile" ? activeStyle : inactiveStyle}`} onClick={() => setSide("profile")}>
             <User size={20} />プロフィール
+          </button>
+
+          <button className={`${baseStyle} ${side === "template" ? activeStyle : inactiveStyle}`} onClick={() => setSide("template")}>
+            <FileChartColumn size={20} />テンプレート
           </button>
           {/* <button className={`${baseStyle} ${side === "setting" ? activeStyle : inactiveStyle}`} onClick={() => setSide("setting")}>
             <Settings size={20} />設定

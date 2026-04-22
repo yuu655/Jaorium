@@ -3,12 +3,13 @@
 import { useState } from "react";
 import MentorSidebar from "./MentorSidebar";
 import MentorAppointmentContent from "./MentorAppointmentContent";
+import MentorTemplateContent from "./MentorTemplateContent";
 import { updateMentorIcon, updateMentorProfile } from "../profile/actions";
 import MentorProfile from "./MentorProfile";
 import StatusCode from "../common/statusCode";
 
-export default function MentorDashboard({ profile, meetings, users, mentorTags, allTags }) {
-  const [side, setSide] = useState("appointment");
+export default function MentorDashboard({ profile, meetings, users, mentorTags, allTags, initialSide }) {
+  const [side, setSide] = useState(initialSide || "appointment");
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -27,6 +28,9 @@ export default function MentorDashboard({ profile, meetings, users, mentorTags, 
               )}
               {side === "profile" && (
                 <MentorProfile funcProfile={updateMentorProfile} funcIcon={updateMentorIcon} profile={profile} mentorTags={mentorTags} allTags={allTags} />
+              )}
+              {side === "template" && (
+                <MentorTemplateContent />
               )}
             </div>
           </main>

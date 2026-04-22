@@ -21,6 +21,10 @@ export default function PrivacyPage() {
             <li><strong>氏名</strong>：アカウント管理・サービス提供のため</li>
             <li><strong>Cookie・アクセスログ</strong>：サービスの利便性向上・利用状況の分析のため</li>
           </ul>
+          <p>メンターの方は上記に加え、以下の情報を収集することがあります。</p>
+          <ul className="mt-2 space-y-1 list-disc list-inside">
+            <li><strong>大学名・専攻</strong>：メンターサービスの提供のため</li>
+          </ul>
           <div className="mt-4 border-l-4 border-emerald-600 bg-emerald-50 px-4 py-3 rounded-r text-sm text-emerald-800">
             Cookie はブラウザの設定によって無効化することができます。ただし、一部の機能が正常に動作しない場合があります。
           </div>

@@ -2,7 +2,10 @@ import MentorDashboard from "@/components/dashboard/mentor/MentorDashboard";
 import { createClient } from "@/lib/supabase/server";
 import { unstable_cache } from "next/cache";
 
-export default async function MentorPage() {
+export default async function MentorPage({searchParams}) {
+  const {side} = await searchParams;
+  console.log(side);
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -76,6 +79,7 @@ export default async function MentorPage() {
       users={users}
       mentorTags={mentorTags}
       allTags={allTags}
+      initialSide={side}
     />
   );
 }
