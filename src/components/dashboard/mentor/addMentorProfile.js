@@ -194,7 +194,7 @@ export default function AddMentorProfile({
           />
         </div>
 
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <label htmlFor="region" className="block text-sm font-medium mb-2">
             出身地域
           </label>
@@ -212,7 +212,7 @@ export default function AddMentorProfile({
             <option>中国・四国</option>
             <option>九州・沖縄</option>
           </select>
-        </div>
+        </div> */}
 
         {selected.map((id) => (
           <input key={id} type="hidden" name="tagIds" value={id} />

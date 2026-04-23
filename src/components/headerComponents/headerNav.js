@@ -32,6 +32,11 @@ export default function HeaderNav({ nav_list }){
                 <Link className="text-sm" href="/login">ログインする</Link>
               </Button>
             </li>
+            <li>
+              <form action="/api/auth/signout" method="POST">
+                <button className="relative p-2 text-md hover:bg-gray-100 rounded-full transition-colors" type="submit">ログアウト</button>
+              </form>
+            </li>
           </ul>
     );
 }

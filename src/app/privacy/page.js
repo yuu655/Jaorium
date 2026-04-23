@@ -136,8 +136,8 @@ export default function PrivacyPage() {
           <p>本プライバシーポリシーに関するご質問・個人情報の取り扱いに関するお問い合わせは、以下までご連絡ください。</p>
           <div className="mt-4 rounded-lg border border-stone-200 bg-white px-5 py-4 text-sm space-y-1">
             <p><span className="font-medium">サービス名</span>：jaorium</p>
-            <p><span className="font-medium">運営者</span>：<Placeholder text="[運営者名]" /></p>
-            <p><span className="font-medium">メールアドレス</span>：<Placeholder text="[メールアドレス]" /></p>
+            <p><span className="font-medium">運営者</span>：<Placeholder text="jaorium" /></p>
+            <p><span className="font-medium">メールアドレス</span>：<Placeholder text="privacy@jaorium.com" /></p>
           </div>
         </>
       ),
@@ -161,7 +161,7 @@ export default function PrivacyPage() {
         <div className="flex justify-between items-center text-xs text-stone-400 border-b border-stone-200 pb-4 mb-10">
           <span>jaorium プライバシーポリシー</span>
           <span>
-            制定日：<Placeholder text="[制定日]" />
+            制定日：<Placeholder text="2026/03/23" />
           </span>
         </div>
  
@@ -183,9 +183,9 @@ export default function PrivacyPage() {
  
       {/* Footer */}
       <footer className="border-t border-stone-200 py-8 text-center text-xs text-stone-400 space-y-1">
-        <p>© jaorium — <Placeholder text="[運営者名]" />. All rights reserved.</p>
+        <p>© jaorium — <Placeholder text="jaorium" />. All rights reserved.</p>
         <p>
-          制定日：<Placeholder text="[制定日]" />　最終更新日：<Placeholder text="[更新日]" />
+          制定日：<Placeholder text="2026/03/23" />　最終更新日：<Placeholder text="2026/04/22" />
         </p>
       </footer>
     </div>

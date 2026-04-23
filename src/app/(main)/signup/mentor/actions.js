@@ -34,16 +34,16 @@ export async function signup_user(prevState, formData) {
     password: formData.get("password"),
     confirm_password: formData.get("password_check"),
   };
-  if(data.password !== data.password){
-    return {error: "再入力のパスワードと一致しません"}
+  if (data.password !== data.password) {
+    return { error: "再入力のパスワードと一致しません" };
   }
 
   const { error } = await supabase.auth.signUp({
     email: data.email,
     password: data.password,
     options: {
-      emailRedirectTo: `${getUrls()}/api/auth/confirm?next=/setAccount/user`
-    }
+      emailRedirectTo: `${getUrls()}/api/auth/confirm?next=/setAccount/user`,
+    },
   });
 
   if (error) {
@@ -72,7 +72,7 @@ export async function signup_mentor(prevState, formData) {
     options: {
       shouldCreateUser: true,
       emailRedirectTo: `${getUrls()}/api/auth/confirm?next=/setAccount/mentor`,
-    }
+    },
   });
 
   if (error) {
@@ -83,4 +83,17 @@ export async function signup_mentor(prevState, formData) {
   return { success: true };
 }
 
+export async function handleVerifyOtp(prevState, formData) {
+  const supabase = await createClient();
+  const token = formData.get("token");
+  const email = formData.get("email");
 
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "email", // signup後の検証なら 'signup' または 'email'
+  });
+
+  redirect("/setAccount/mentor");
+  return { success: true };
+}
