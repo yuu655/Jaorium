@@ -94,3 +94,17 @@ export async function signup_mentor(prevState, formData) {
 }
 
 
+export async function handleVerifyOtp(prevState, formData) {
+  const supabase = await createClient();
+  const token = formData.get("token");
+  const email = formData.get("email");
+
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "email", // signup後の検証なら 'signup' または 'email'
+  });
+
+  redirect("/setAccount/user");
+  return { success: true };
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { login, signup_user } from "./actions";
+import { login, signup_user, handleVerifyOtp } from "./actions";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useState, useActionState } from "react";
@@ -8,7 +8,6 @@ import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import getUrls from "@/utils/getUrls";
 export default function LoginPage() {
-
   const handleSignup = async (prevState, formData) => {
     const result = await signup_user(prevState, formData);
     if (result?.error) {
@@ -17,12 +16,16 @@ export default function LoginPage() {
       toast.success("認証メールを送信しました。受信箱を確認してください！");
     }
   };
-  
+
+  const [token, setToken] = useState("");
+  const [step, setStep] = useState("send");
+  const [email, setEmail] = useState("");
+  const [state2, action2, isPending2] = useActionState(handleVerifyOtp, null);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showPassword_check, setShowPassword_check] = useState(false);
   // const [isLoading, setIsLoading] = useState(false);
   const [state, action, isPending] = useActionState(handleSignup, null);
-  
 
   const handleGoogleLogin = async () => {
     //   const [origin, setOrigin] = useState('')
@@ -73,7 +76,7 @@ export default function LoginPage() {
     //   </button>
     // </>
     <div className="bg-linear-to-br from-gray-50 to-gray-100 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">        
+      <div className="max-w-md w-full">
         {/* Logo & Title */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
@@ -138,58 +141,61 @@ export default function LoginPage() {
           </div>
 
           {/* Email/Password Form */}
-          {state?.error && <p className="text-red-500 text-sm">{state.error}</p>}
-          <form action={action} className="space-y-4">
-            {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                メールアドレス
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail size={20} className="text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="example@email.com"
-                />
-              </div>
-            </div>
-
-            
-
-            {/* Privacy Policy Checkbox */}
-            <div className="flex items-start gap-3">
-              <input
-                id="privacy"
-                name="privacy"
-                type="checkbox"
-                required
-                className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
-              />
-              <label htmlFor="privacy" className="text-sm text-gray-600 cursor-pointer">
-                <a
-                  href="/privacy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700 underline underline-offset-2"
+          {state?.error && (
+            <p className="text-red-500 text-sm">{state.error}</p>
+          )}
+          {step === "send" ? (
+            <form action={action} className="space-y-4">
+              {/* Email */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
-                  プライバシーポリシー
-                </a>
-                に同意する
-              </label>
-            </div>
+                  メールアドレス
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail size={20} className="text-gray-400" />
+                  </div>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="example@email.com"
+                  />
+                </div>
+              </div>
 
+              {/* Privacy Policy Checkbox */}
+              <div className="flex items-start gap-3">
+                <input
+                  id="privacy"
+                  name="privacy"
+                  type="checkbox"
+                  required
+                  className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                />
+                <label
+                  htmlFor="privacy"
+                  className="text-sm text-gray-600 cursor-pointer"
+                >
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-700 underline underline-offset-2"
+                  >
+                    プライバシーポリシー
+                  </a>
+                  に同意する
+                </label>
+              </div>
 
-            {/* Remember & Forgot */}
-            {/* <div className="flex items-center justify-between">
+              {/* Remember & Forgot */}
+              {/* <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
                   id="remember"
@@ -208,15 +214,53 @@ export default function LoginPage() {
               </a>
             </div> */}
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {isPending ? "サインアップ中..." : "サインアップ"}
-            </button>
-          </form>
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isPending}
+                className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {isPending ? "サインアップ中..." : "サインアップ"}
+              </button>
+            </form>
+          ) : (
+            <>
+              <form action={action2} className="space-y-4">
+                <h2 className="text-xl font-bold">コード入力</h2>
+                <p className="text-sm text-gray-600">
+                  入力したメールアドレスに届いた8桁の数字を入力してください
+                </p>
+                <input
+                  type="text"
+                  name="token"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="one-time-code"
+                  maxLength={8}
+                  placeholder="000000"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  className="w-full text-center text-2xl tracking-widest p-2 border rounded"
+                  required
+                />
+                <input type="hidden" name="email" value={email} />
+                <button
+                  type="submit"
+                  disabled={isPending2}
+                  className="w-full bg-green-600 text-white p-2 rounded"
+                >
+                  {isPending2 ? "サインアップ中..." : "サインアップ"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep("send")}
+                  className="text-sm text-blue-500 underline"
+                >
+                  メールを送り直す
+                </button>
+              </form>
+            </>
+          )}
 
           {/* login Link */}
           <div className="mt-6 text-center">
