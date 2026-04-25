@@ -1,7 +1,7 @@
 "use client";
 import { LiveKitRoom, VideoConference } from "@livekit/components-react";
 import "@livekit/components-styles";
-import { NextResponse } from 'next/server'
+import { NextResponse } from "next/server";
 import { useState, useEffect } from "react";
 import { redirect } from "next/navigation";
 import getUrls from "@/utils/getUrls";
@@ -15,6 +15,19 @@ export default function Interview({ roomName, userName }) {
       .then((data) => setToken(data.token));
   }, [roomName, userName]);
 
+  const AudioUnlocker = () => {
+    const room = useRoomContext();
+
+    useEffect(() => {
+      // iPadのAudioContextをアンロック
+      const unlock = () => room.startAudio();
+      document.addEventListener("touchstart", unlock, { once: true });
+      return () => document.removeEventListener("touchstart", unlock);
+    }, [room]);
+
+    return null;
+  }
+
   if (!token) return <div>接続中...</div>;
 
   return joined ? (
@@ -26,9 +39,10 @@ export default function Interview({ roomName, userName }) {
       audio={true}
       style={{ height: "100vh" }}
       onDisconnected={() => {
-        redirect(`${getUrls()}/dashboard/chat/${roomName}`); 
+        redirect(`${getUrls()}/dashboard/chat/${roomName}`);
       }}
     >
+      <AudioUnlocker />
       <VideoConference />
     </LiveKitRoom>
   ) : (
