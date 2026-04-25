@@ -8,18 +8,20 @@ import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import getUrls from "@/utils/getUrls";
 export default function LoginPage() {
+  
+  const [token, setToken] = useState("");
+  const [step, setStep] = useState("send");
+  const [email, setEmail] = useState("");
   const handleSignup = async (prevState, formData) => {
     const result = await signup_user(prevState, formData);
     if (result?.error) {
       toast.error(result.error);
     } else if (result?.success) {
       toast.success("認証メールを送信しました。受信箱を確認してください！");
+      setStep("verify");
     }
   };
 
-  const [token, setToken] = useState("");
-  const [step, setStep] = useState("send");
-  const [email, setEmail] = useState("");
   const [state2, action2, isPending2] = useActionState(handleVerifyOtp, null);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -165,6 +167,7 @@ export default function LoginPage() {
                     required
                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="example@email.com"
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
@@ -237,7 +240,7 @@ export default function LoginPage() {
                   pattern="[0-9]*"
                   autoComplete="one-time-code"
                   maxLength={8}
-                  placeholder="000000"
+                  placeholder="00000000"
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
                   className="w-full text-center text-2xl tracking-widest p-2 border rounded"

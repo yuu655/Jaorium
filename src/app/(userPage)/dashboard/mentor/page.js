@@ -71,6 +71,7 @@ export default async function MentorPage({searchParams}) {
 
   const { profile, meetings, users } = await getCachedData(supabase, user.id)();
   const { allTags, mentorTags } = await getTags(supabase, user.id)();
+  console.log(meetings);
 
   return (
     <MentorDashboard

@@ -47,6 +47,8 @@ export default async function UserPage() {
     supabase,
     user.id,
   )();
+  
+  console.log(meetings);
 
   return (
     <UserDashboard profile={profile} meetings={meetings} mentors={mentors} />

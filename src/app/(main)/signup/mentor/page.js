@@ -241,7 +241,7 @@ export default function LoginPage() {
                   pattern="[0-9]*"
                   autoComplete="one-time-code"
                   maxLength={8}
-                  placeholder="000000"
+                  placeholder="00000000"
                   value={token}
                   onChange={(e) => setToken(e.target.value)}
                   className="w-full text-center text-2xl tracking-widest p-2 border rounded"
