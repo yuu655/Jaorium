@@ -19,7 +19,7 @@ export default async function UserPage() {
         ] = await Promise.all([
           supabase.from("users").select("*").eq("id", userId).single(),
           supabase
-            .from("mentors")
+            .from("public_mentors")
             .select("*"),
           supabase
             .from("meetings")
@@ -47,8 +47,6 @@ export default async function UserPage() {
     supabase,
     user.id,
   )();
-  
-  console.log(meetings);
 
   return (
     <UserDashboard profile={profile} meetings={meetings} mentors={mentors} />

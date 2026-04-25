@@ -14,7 +14,7 @@ export default function AppointmentUnit({ appointment, mentors, isMentor }) {
     const fetchMentor = async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from("mentors")
+        .from("public_mentors")
         .select("*")
         .eq("id", appointment.mentor)
         .single();

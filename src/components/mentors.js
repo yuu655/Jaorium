@@ -8,7 +8,7 @@ const getMentors = (supabase) =>
   unstable_cache(
     async () => {
       const { data: mentors } = await supabase
-        .from("mentors")
+        .from("public_mentors")
         .select("*")
         .limit(3);
       return mentors ?? [];

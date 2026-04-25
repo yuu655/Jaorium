@@ -20,7 +20,7 @@ export default async function MentorPage({searchParams}) {
           { data: nextMeetings },
           { data: pastMeetings },
         ] = await Promise.all([
-          supabase.from("mentors").select("*").eq("id", userId).single(),
+          supabase.from("public_mentors").select("*").eq("id", userId).single(),
           supabase
             .from("meetings")
             .select("*")

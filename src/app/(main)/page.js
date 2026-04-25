@@ -16,7 +16,7 @@ import Features from "@/components/features";
 const getMentors = (supabase) =>
   unstable_cache(
     async () => {
-      const { data: mentors } = await supabase.from("mentors").select("*");
+      const { data: mentors } = await supabase.from("public_mentors").select("*");
       return mentors ?? [];
     },
     ["mentors-list"],
