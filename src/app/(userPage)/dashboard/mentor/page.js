@@ -4,7 +4,7 @@ import { unstable_cache } from "next/cache";
 
 export default async function MentorPage({searchParams}) {
   const {side} = await searchParams;
-  console.log(side);
+  // console.log(side);
 
   const supabase = await createClient();
   const {
@@ -71,7 +71,7 @@ export default async function MentorPage({searchParams}) {
 
   const { profile, meetings, users } = await getCachedData(supabase, user.id)();
   const { allTags, mentorTags } = await getTags(supabase, user.id)();
-  console.log(meetings);
+  // console.log(meetings);
 
   return (
     <MentorDashboard

@@ -11,7 +11,8 @@ export async function login(prevState, formData) {
   };
 
   const { data: { user }, error } = await supabase.auth.signInWithPassword(data);
-  if (user.app_metadata.role !== undefined) {
+  // ログイン成功後のユーザーデータを確認
+  if (user.user_metadata.role !== undefined) {
     return( {error: "アカウント登録が途中で終了しています。もう一度サインアップしてください。"} )
   }
 

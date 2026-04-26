@@ -17,16 +17,42 @@ export default function PrivacyPage() {
         <>
           <p>本サービスでは、以下の情報を収集することがあります。</p>
           <ul className="mt-2 space-y-1 list-disc list-inside">
-            <li><strong>メールアドレス</strong>：アカウント登録・認証・お問い合わせ対応のため</li>
-            <li><strong>氏名</strong>：アカウント管理・サービス提供のため</li>
-            <li><strong>Cookie・アクセスログ</strong>：サービスの利便性向上・利用状況の分析のため</li>
+            <li>
+              <strong>メールアドレス</strong>
+              ：アカウント登録・認証・お問い合わせ対応のため
+            </li>
+            <li>
+              <strong>氏名</strong>：アカウント管理・サービス提供のため
+            </li>
+            <li>
+              <strong>プロフィール画像</strong>
+              ：アカウント管理・サービス提供のため
+            </li>
+            <li>
+              <strong>学年</strong>：サービス提供・メンターとのマッチングのため
+            </li>
+            <li>
+              <strong>Cookie・アクセスログ</strong>
+              ：サービスの利便性向上・利用状況の分析のため
+            </li>
           </ul>
-          <p>メンターの方は上記に加え、以下の情報を収集することがあります。</p>
+          <p className="mt-4">
+            メンターの方は上記に加え、以下の情報を収集することがあります。
+          </p>
           <ul className="mt-2 space-y-1 list-disc list-inside">
-            <li><strong>大学名・専攻</strong>：メンターサービスの提供のため</li>
+            <li>
+              <strong>大学名・学部・専攻</strong>：メンターサービスの提供のため
+            </li>
+            <li>
+              <strong>地域</strong>：メンターサービスの提供・マッチングのため
+            </li>
+            <li>
+              <strong>自己紹介文</strong>：メンタープロフィールの公開のため
+            </li>
           </ul>
           <div className="mt-4 border-l-4 border-emerald-600 bg-emerald-50 px-4 py-3 rounded-r text-sm text-emerald-800">
-            Cookie はブラウザの設定によって無効化することができます。ただし、一部の機能が正常に動作しない場合があります。
+            Cookie
+            はブラウザの設定によって無効化することができます。ただし、一部の機能が正常に動作しない場合があります。
           </div>
         </>
       ),
@@ -52,14 +78,18 @@ export default function PrivacyPage() {
       title: "第三者への提供",
       content: (
         <>
-          <p>当方は、以下の場合を除き、ユーザーの個人情報を第三者に提供・開示しません。</p>
+          <p>
+            当方は、以下の場合を除き、ユーザーの個人情報を第三者に提供・開示しません。
+          </p>
           <ul className="mt-2 space-y-1 list-disc list-inside">
             <li>ユーザー本人の同意がある場合</li>
             <li>法令に基づく場合</li>
             <li>人の生命・身体・財産の保護に必要な場合</li>
           </ul>
           <hr className="my-4 border-stone-200" />
-          <p>本サービスでは、以下の外部サービスを利用しており、これらのサービスに必要な範囲でデータが共有される場合があります。</p>
+          <p>
+            本サービスでは、以下の外部サービスを利用しており、これらのサービスに必要な範囲でデータが共有される場合があります。
+          </p>
           <ul className="mt-2 space-y-1 list-disc list-inside">
             <li>
               <strong>Supabase</strong>（認証・データベース管理）：
@@ -82,10 +112,12 @@ export default function PrivacyPage() {
       content: (
         <>
           <p>
-            本サービスは、Cookie およびこれに類する技術を利用しています。Cookie はサービスの利便性向上・セッション管理・アクセス解析のために使用されます。
+            本サービスは、Cookie およびこれに類する技術を利用しています。Cookie
+            はサービスの利便性向上・セッション管理・アクセス解析のために使用されます。
           </p>
           <p className="mt-2">
-            ユーザーはブラウザの設定から Cookie の受け入れを拒否することができますが、一部のサービス機能が利用できなくなる場合があります。
+            ユーザーはブラウザの設定から Cookie
+            の受け入れを拒否することができますが、一部のサービス機能が利用できなくなる場合があります。
           </p>
         </>
       ),
@@ -99,7 +131,8 @@ export default function PrivacyPage() {
             当方は、収集した個人情報を適切に管理し、不正アクセス・漏洩・改ざん・紛失を防ぐために合理的な安全対策を講じます。
           </p>
           <p className="mt-2">
-            本サービスではユーザー認証に Supabase を採用しており、パスワード等の機密情報は適切に暗号化されて管理されます。
+            本サービスではユーザー認証に Supabase
+            を採用しており、パスワード等の機密情報は適切に暗号化されて管理されます。
           </p>
         </>
       ),
@@ -109,13 +142,17 @@ export default function PrivacyPage() {
       title: "ユーザーの権利",
       content: (
         <>
-          <p>ユーザーは、当方が保有する自己の個人情報について、以下の権利を有します。</p>
+          <p>
+            ユーザーは、当方が保有する自己の個人情報について、以下の権利を有します。
+          </p>
           <ul className="mt-2 space-y-1 list-disc list-inside">
             <li>個人情報の開示・確認を求める権利</li>
             <li>個人情報の訂正・削除を求める権利</li>
             <li>個人情報の利用停止を求める権利</li>
           </ul>
-          <p className="mt-2">上記のご要望は、下記お問い合わせ窓口までご連絡ください。</p>
+          <p className="mt-2">
+            上記のご要望は、下記お問い合わせ窓口までご連絡ください。
+          </p>
         </>
       ),
     },
@@ -133,43 +170,58 @@ export default function PrivacyPage() {
       title: "お問い合わせ",
       content: (
         <>
-          <p>本プライバシーポリシーに関するご質問・個人情報の取り扱いに関するお問い合わせは、以下までご連絡ください。</p>
+          <p>
+            本プライバシーポリシーに関するご質問・個人情報の取り扱いに関するお問い合わせは、以下までご連絡ください。
+          </p>
           <div className="mt-4 rounded-lg border border-stone-200 bg-white px-5 py-4 text-sm space-y-1">
-            <p><span className="font-medium">サービス名</span>：jaorium</p>
-            <p><span className="font-medium">運営者</span>：<Placeholder text="jaorium" /></p>
-            <p><span className="font-medium">メールアドレス</span>：<Placeholder text="privacy@jaorium.com" /></p>
+            <p>
+              <span className="font-medium">サービス名</span>：jaorium
+            </p>
+            <p>
+              <span className="font-medium">運営者</span>：
+              <Placeholder text="jaorium" />
+            </p>
+            <p>
+              <span className="font-medium">メールアドレス</span>：
+              <Placeholder text="privacy@jaorium.com" />
+            </p>
           </div>
         </>
       ),
     },
   ];
- 
+
   return (
     <div className="min-h-screen bg-stone-50 text-stone-800">
       {/* Header */}
       <header className="bg-emerald-900 px-6 py-12 text-center">
-        <p className="text-xs tracking-widest text-emerald-300 uppercase mb-2">Privacy Policy</p>
+        <p className="text-xs tracking-widest text-emerald-300 uppercase mb-2">
+          Privacy Policy
+        </p>
         <h1 className="text-2xl md:text-3xl font-semibold text-white tracking-wide">
           プライバシーポリシー
         </h1>
         <p className="mt-2 text-sm text-emerald-400 tracking-widest">jaorium</p>
       </header>
- 
+
       {/* Main */}
       <main className="mx-auto max-w-2xl px-5 py-12">
         {/* Meta */}
         <div className="flex justify-between items-center text-xs text-stone-400 border-b border-stone-200 pb-4 mb-10">
           <span>jaorium プライバシーポリシー</span>
           <span>
-            制定日：<Placeholder text="2026/03/23" />
+            制定日：
+            <Placeholder text="2026/03/23" />
           </span>
         </div>
- 
+
         {/* Sections */}
         <div className="space-y-10">
           {sections.map((section) => (
             <section key={section.num}>
-              <p className="text-xs tracking-widest text-emerald-700 mb-1">{section.num}</p>
+              <p className="text-xs tracking-widest text-emerald-700 mb-1">
+                {section.num}
+              </p>
               <h2 className="text-base font-semibold text-emerald-900 border-b border-stone-200 pb-2 mb-4 tracking-wide">
                 {section.title}
               </h2>
@@ -180,19 +232,24 @@ export default function PrivacyPage() {
           ))}
         </div>
       </main>
- 
+
       {/* Footer */}
       <footer className="border-t border-stone-200 py-8 text-center text-xs text-stone-400 space-y-1">
-        <p>© jaorium — <Placeholder text="jaorium" />. All rights reserved.</p>
         <p>
-          制定日：<Placeholder text="2026/03/23" />　最終更新日：<Placeholder text="2026/04/22" />
+          © jaorium — <Placeholder text="jaorium" />. All rights reserved.
+        </p>
+        <p>
+          制定日：
+          <Placeholder text="2026/03/23" />
+          　最終更新日：
+          <Placeholder text="2026/04/22" />
         </p>
       </footer>
     </div>
   );
 }
- 
-function Placeholder({text}) {
+
+function Placeholder({ text }) {
   return (
     <span className="bg-yellow-100 text-yellow-800 rounded px-1 italic text-[0.85em]">
       {text}

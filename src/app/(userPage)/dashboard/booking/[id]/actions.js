@@ -28,12 +28,12 @@ export const submitBooking = async (mentorId, prevState, formData) => {
   } = await supabase.auth.getUser();
   if (!user) return { error: "ログインが必要です" };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (profile?.role !== "user") return { error: "権限がありません" };
+  // const { data: profile } = await supabase
+  //   .from("profiles")
+  //   .select("role")
+  //   .eq("id", user.id)
+  //   .single();
+  if (user?.user_metadata.role !== "user") return { error: "権限がありません" };
 
   const { data: mentor } = await supabase
     .from("public_mentors")

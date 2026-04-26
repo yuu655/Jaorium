@@ -26,6 +26,7 @@ export async function updateSession(request) {
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
   const role = user?.user_metadata?.role;  // JWTから取得
+  const role_admin = user?.app_metadata?.role_admin;
 
   // 未ログイン → リダイレクトa
   if (!user && (
@@ -54,7 +55,7 @@ export async function updateSession(request) {
     if (role === "mentor" && (pathname === '/login' || pathname === '/setAccount' || pathname === '/setAccount/mentor' || pathname === '/setAccount/user' || pathname.startsWith('/signup')|| pathname === '/dashboard'  || pathname === '/dashboard/user')) {
       return NextResponse.redirect(new URL('/dashboard/mentor', request.url));
     }
-    if (pathname.startsWith('/admin') && role !== 'admin') {
+    if (pathname.startsWith('/admin') && role_admin !== 'admin') {
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
