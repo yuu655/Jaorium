@@ -1,5 +1,5 @@
 "use client";
-import { LiveKitRoom, VideoConference } from "@livekit/components-react";
+import { LiveKitRoom, VideoConference, useRoomContext } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { NextResponse } from "next/server";
 import { useState, useEffect } from "react";

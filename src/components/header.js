@@ -12,6 +12,7 @@ export default function Header({ propClassName }) {
     { name: "コンセプト", href: "/concept" },
     { name: "メンター紹介", href: "/mentors" },
     { name: "記事", href: "/articles" },
+    { name: "メンター募集", href: "/recruitment" },
     // { name: "メンターになりたい方へ", href: "/forCompanies" },
   ];
   return (
