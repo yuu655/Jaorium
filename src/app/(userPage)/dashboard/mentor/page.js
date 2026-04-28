@@ -12,7 +12,7 @@ export default async function MentorPage({searchParams}) {
   } = await supabase.auth.getUser();
 
   // supabaseとuserIdをキャッシュの外で取得してから渡す
-  const getCachedData = (supabase, userId) =>
+  const getCachedData = (userId) =>
     unstable_cache(
       async () => {
         const [
@@ -20,7 +20,7 @@ export default async function MentorPage({searchParams}) {
           { data: nextMeetings },
           { data: pastMeetings },
         ] = await Promise.all([
-          supabase.from("public_mentors").select("*").eq("id", userId).single(),
+          supabase.from("mentors").select("*").eq("id", userId).single(),
           supabase
             .from("meetings")
             .select("*")
@@ -52,7 +52,7 @@ export default async function MentorPage({searchParams}) {
       { revalidate: 3600, tags: [`dashboard-mentor-${userId}`, "meetings"] },
     );
 
-  const getTags = (supabase, userId) =>
+  const getTags = (userId) =>
     unstable_cache(
       async () => {
         const [{ data: allTags }, { data: mentorTag_ids }] = await Promise.all([
@@ -69,8 +69,9 @@ export default async function MentorPage({searchParams}) {
       { revalidate: 3600, tags: [`mentor-tags-${userId}`] },
     );
 
-  const { profile, meetings, users } = await getCachedData(supabase, user.id)();
-  const { allTags, mentorTags } = await getTags(supabase, user.id)();
+  const { profile, meetings, users } = await getCachedData(user.id)();
+  console.log(profile);
+  const { allTags, mentorTags } = await getTags(user.id)();
   // console.log(meetings);
 
   return (

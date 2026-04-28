@@ -12,7 +12,7 @@ export default function MentorSidebar({ profile, side, setSide }) {
     <aside className="lg:col-span-1">
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="text-center mb-6 pb-6 border-b">
-          <Icon size={100} url={profile.icon} />
+          <Icon size={100} url={profile?.icon} />
           <h3 className="font-bold text-lg">{profile.name}</h3>
           {/* mentorは大学・学部を表示 */}
           <p className="text-sm pt-0.5 text-gray-600">{profile.university}</p>
