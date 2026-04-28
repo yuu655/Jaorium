@@ -1,0 +1,165 @@
+/* ─── Corporate Blog · article.css ─── */
+
+/* ─ フォント設定 ─ */
+/* 本文はセリフ体(可読性重視)、見出しはサンセリフ(明快さ優先) */
+/* 推奨: body serif = "Georgia" / "Noto Serif JP"     */
+/*       --font-sans = "Inter" / "Noto Sans JP"        */
+
+.article-body {
+  font-family: 'Georgia', 'Noto Serif JP', serif;
+  font-size: 16px;
+  line-height: 2;
+  color: var(--foreground);
+  letter-spacing: 0.01em;
+}
+
+/* ─ アイキャッチ（カテゴリラベル） ─ */
+.article-body .article-eyebrow {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1a6fd4; /* ブランドカラーに合わせて変更 */
+  margin-bottom: 14px;
+}
+
+/* ─ タイトル ─ */
+.article-body .article-title {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+
+/* ─ メタ情報（日付・著者・読了時間） ─ */
+.article-body .article-meta {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: #888;
+  margin: 0 0 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #eee;
+}
+
+/* ─ 見出し h2 ─ */
+.article-body h2 {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 2.75rem 0 1rem;
+  padding-left: 16px;
+  border-left: 3px solid #1a6fd4;
+}
+
+/* ─ 見出し h3 ─ */
+.article-body h3 {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 2rem 0 0.75rem;
+}
+
+/* ─ 本文 p ─ */
+.article-body p {
+  margin: 0 0 1.6rem;
+}
+
+/* ─ リンク ─ */
+.article-body a {
+  color: #1a6fd4;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* ─ リスト ─ */
+.article-body ul,
+.article-body ol {
+  margin: 0 0 1.6rem;
+  padding-left: 1.5rem;
+}
+.article-body li {
+  margin-bottom: 0.5rem;
+  line-height: 1.85;
+}
+
+/* ─ ブロッククォート ─ */
+.article-body blockquote {
+  margin: 2rem 0;
+  padding: 1.25rem 1.5rem;
+  border-left: 3px solid #1a6fd4;
+  border-radius: 0 6px 6px 0;
+  background: rgba(26, 111, 212, 0.05);
+  font-style: italic;
+  color: #666;
+}
+
+/* ─ インラインコード ─ */
+.article-body code {
+  font-size: 13px;
+  background: #f4f4f4;
+  border: 1px solid #e8e8e8;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ─ コードブロック ─ */
+.article-body pre {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  overflow-x: auto;
+  margin: 0 0 1.75rem;
+}
+.article-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13.5px;
+}
+
+/* ─ 画像 ─ */
+.article-body img {
+  width: 100%;
+  border-radius: 8px;
+  margin: 0.5rem 0 2rem;
+}
+
+/* ─ テーブル ─ */
+.article-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  margin: 0 0 1.75rem;
+}
+.article-body th {
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 10px 14px;
+  background: #f7f7f7;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  color: #888;
+}
+.article-body td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: top;
+}
+
+/* ─ 水平線 ─ */
+.article-body hr {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 3rem 0;
+}

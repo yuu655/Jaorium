@@ -57,7 +57,7 @@ export default function Blog({ isDraft, result }) {
 
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="prose prose-lg max-w-none">
-          <div dangerouslySetInnerHTML={{ __html: result.content }} />
+          <div className="article-body" dangerouslySetInnerHTML={{ __html: result.content }} />
         </div>
       </article>
       {isDraft && <ExitButton redirectTo="/" />}
