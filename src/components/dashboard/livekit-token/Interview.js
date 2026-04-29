@@ -31,10 +31,13 @@ export default function Interview({ roomName, userName }) {
     } catch (err) {
       console.error("Permission error:", err);
 
-      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+      if (
+        err.name === "NotAllowedError" ||
+        err.name === "PermissionDeniedError"
+      ) {
         setPermissionStatus("denied");
         setPermissionError(
-          "マイク・カメラへのアクセスが拒否されました。\niOSの設定 > アプリ名 > マイク・カメラ をオンにしてください。"
+          "マイク・カメラへのアクセスが拒否されました。\niOSの設定 > アプリ名 > マイク・カメラ をオンにしてください。",
         );
       } else if (err.name === "NotFoundError") {
         setPermissionStatus("denied");
@@ -56,30 +59,36 @@ export default function Interview({ roomName, userName }) {
 
   if (joined) {
     return (
-      <LiveKitRoom
-        serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
-        token={token}
-        connect={true}
-        video={true}
-        audio={true}
-        style={{ height: "100vh" }}
-        onDisconnected={() => {
-          redirect(`${getUrls()}/dashboard/chat/${roomName}`);
-        }}
-      >
-        <VideoConference />
-      </LiveKitRoom>
+      <div className="fixed inset-0 overflow-hidden">
+        <LiveKitRoom
+          serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
+          token={token}
+          connect={true}
+          video={true}
+          audio={true}
+          style={{ height: "100vh" }}
+          onDisconnected={() => {
+            redirect(`${getUrls()}/dashboard/chat/${roomName}`);
+          }}
+        >
+          <VideoConference />
+        </LiveKitRoom>
+      </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md text-center space-y-4">
-        <h2 className="text-xl font-semibold text-gray-800">面談を開始する前に</h2>
+        <h2 className="text-xl font-semibold text-gray-800">
+          面談を開始する前に
+        </h2>
 
         {permissionStatus === "idle" && (
           <>
-            <p className="text-gray-600">マイクとカメラへのアクセス許可が必要です。</p>
+            <p className="text-gray-600">
+              マイクとカメラへのアクセス許可が必要です。
+            </p>
             <p className="text-sm text-gray-400">
               📱 iPadをお使いの場合、次の画面で「許可」を選択してください。
             </p>
@@ -100,7 +109,9 @@ export default function Interview({ roomName, userName }) {
 
         {permissionStatus === "granted" && (
           <>
-            <p className="text-green-600 font-semibold">✅ マイク・カメラの準備ができました</p>
+            <p className="text-green-600 font-semibold">
+              ✅ マイク・カメラの準備ができました
+            </p>
             <button
               className="mt-2 w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
               onClick={() => setJoined(true)}
@@ -112,7 +123,9 @@ export default function Interview({ roomName, userName }) {
 
         {permissionStatus === "denied" && (
           <>
-            <p className="text-red-500 whitespace-pre-line text-sm">{permissionError}</p>
+            <p className="text-red-500 whitespace-pre-line text-sm">
+              {permissionError}
+            </p>
 
             <details className="text-left bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-700">
               <summary className="cursor-pointer font-medium text-gray-800 mb-2">
