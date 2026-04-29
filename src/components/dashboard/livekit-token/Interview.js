@@ -24,6 +24,21 @@ function ParticipantTile({ participant, isLocal, isSpeaking }) {
   const cameraPub = participant.getTrackPublication(Track.Source.Camera);
   const hasVideo = !!cameraPub?.track && !cameraPub.isMuted;
 
+
+  const videoTrackRef = {
+    participant,
+    publication: cameraPub,
+    source: Track.Source.Camera
+  };
+
+  const micPub = participant.getTrackPublication(Track.Source.Microphone)
+
+  const audioTrackRef = {
+    participant,
+    publication: micPub,
+    source: Track.Source.Microphone
+  };
+
   const initials = (participant.name || participant.identity || "?")
     .split(" ")
     .map((w) => w[0])
@@ -42,6 +57,7 @@ function ParticipantTile({ participant, isLocal, isSpeaking }) {
         <VideoTrack
           participant={participant}
           source={Track.Source.Camera}
+          trackRef={videoTrackRef}
           className="w-full h-full object-cover"
         />
       )}
@@ -50,6 +66,7 @@ function ParticipantTile({ participant, isLocal, isSpeaking }) {
         <AudioTrack
           participant={participant}
           source={Track.Source.Microphone}
+          trackRef={audioTrackRef}
         />
       )}
 
