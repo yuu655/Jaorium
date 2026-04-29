@@ -2,10 +2,10 @@
 import {
   LiveKitRoom,
   useParticipants,
-  useTracks,
   useLocalParticipant,
   VideoTrack,
   AudioTrack,
+  useTrackMutedIndicator
 } from "@livekit/components-react";
 import { Track, RoomEvent } from "livekit-client";
 import "@livekit/components-styles";
