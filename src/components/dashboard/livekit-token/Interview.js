@@ -6,6 +6,7 @@ import {
   VideoTrack,
   AudioTrack,
   useTrackMutedIndicator,
+  useTrackRef 
 } from "@livekit/components-react";
 import { Track, RoomEvent } from "livekit-client";
 import "@livekit/components-styles";
@@ -128,6 +129,8 @@ function RoomContent({ onLeave }) {
   const isMuted = !isMicrophoneEnabled;
   const isCameraOff = !isCameraEnabled;
 
+  const screenShareTrackRef = useTrackRef(screenSharePub);
+
   const toggleScreenShare = useCallback(async () => {
     try {
       await localParticipant.setScreenShareEnabled(!isScreenSharing);
@@ -205,6 +208,7 @@ function RoomContent({ onLeave }) {
               <VideoTrack
                 participant={screenSharePub.participant}
                 source={Track.Source.ScreenShare}
+                trackRef={screenShareTrackRef}
                 className="w-full h-full object-contain"
               />
             </div>
