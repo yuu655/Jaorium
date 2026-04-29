@@ -6,7 +6,6 @@ import {
   VideoTrack,
   AudioTrack,
   useTrackMutedIndicator,
-  useTrackRef 
 } from "@livekit/components-react";
 import { Track, RoomEvent } from "livekit-client";
 import "@livekit/components-styles";
@@ -129,7 +128,11 @@ function RoomContent({ onLeave }) {
   const isMuted = !isMicrophoneEnabled;
   const isCameraOff = !isCameraEnabled;
 
-  const screenShareTrackRef = useTrackRef(screenSharePub);
+  const screenShareTrackRef = {
+    participant: screenSharePub?.participant,
+    publication: screenSharePub,
+    source: Track.Source.ScreenShare,
+  };
 
   const toggleScreenShare = useCallback(async () => {
     try {
@@ -224,20 +227,19 @@ function RoomContent({ onLeave }) {
               ))}
             </div>
           </>
-        ):(
+        ) : (
           <div className={`w-full ${gridMaxW} grid ${gridCols} gap-3`}>
-          {allParticipants.map((p) => (
-            <ParticipantTile
-              key={p.identity}
-              participant={p}
-              isLocal={p.identity === localParticipant.identity}
-              isSpeaking={!!speakingMap[p.identity]}
-            />
-          ))}
-        </div>
+            {allParticipants.map((p) => (
+              <ParticipantTile
+                key={p.identity}
+                participant={p}
+                isLocal={p.identity === localParticipant.identity}
+                isSpeaking={!!speakingMap[p.identity]}
+              />
+            ))}
+          </div>
         )}
       </div>
-      
 
       {/* コントロールバー */}
       <div className="flex-none bg-gray-900/80 backdrop-blur-sm border-t border-white/10 px-6 py-3 flex items-center justify-between">
@@ -379,9 +381,19 @@ const PhoneOffIcon = () => (
   </svg>
 );
 const ScreenShareIcon = () => (
-  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+  <svg
+    className="w-4 h-4"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
     <rect x="2" y="3" width="20" height="14" rx="2" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8M12 17v4M9 10l3-3 3 3M12 7v6" />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M8 21h8M12 17v4M9 10l3-3 3 3M12 7v6"
+    />
   </svg>
 );
 
