@@ -307,7 +307,7 @@ function RoomContent({ onLeave }) {
           </button>
 
           {/* 画面共有（PC のみ表示）*/}
-          {isScreenShareSupported && (
+          {/* {isScreenShareSupported && (
             <button
               onClick={toggleScreenShare}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors
@@ -318,7 +318,7 @@ function RoomContent({ onLeave }) {
               <ScreenShareIcon />
               <span className="hidden sm:inline">{isScreenSharing ? "共有中" : "画面共有"}</span>
             </button>
-          )}
+          )} */}
 
           {/* 退出 */}
           <button
