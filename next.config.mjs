@@ -14,6 +14,11 @@ const nextConfig = {
       },
     ],
   },
+  turbopack: {
+    resolveAlias: {
+      canvas: "./empty-module.js", // pdfjs用
+    },
+  },
 };
 
 export default nextConfig;
