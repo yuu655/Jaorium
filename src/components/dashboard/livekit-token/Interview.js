@@ -196,39 +196,32 @@ function RoomContent({ onLeave }) {
   return (
     <div className="fixed inset-0 bg-gray-950 flex flex-col overflow-hidden">
       {/* ビデオグリッド */}
-      {/* <div
+      <div
         className={`flex-1 flex items-center justify-center p-4 overflow-hidden`}
       >
-        <div className={`w-full ${gridMaxW} grid ${gridCols} gap-3`}>
-          {allParticipants.map((p) => (
-            <ParticipantTile
-              key={p.identity}
-              participant={p}
-              isLocal={p.identity === localParticipant.identity}
-              isSpeaking={!!speakingMap[p.identity]}
-            />
-          ))}
-        </div>
-      </div> */}
-      {isScreenShareActive ? (
-        <>
-          <div
-            className={`flex-1 flex items-center justify-center p-4 overflow-hidden`}
-          >
-            <div className={`w-full ${gridMaxW} grid ${gridCols} gap-3`}>
+        {isScreenShareActive ? (
+          <>
+            <div className="flex-1 bg-gray-900 rounded-xl overflow-hidden flex items-center justify-center">
+              <VideoTrack
+                participant={screenSharePub.participant}
+                source={Track.Source.ScreenShare}
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <div className="flex flex-col gap-2 w-44 overflow-y-auto">
               {allParticipants.map((p) => (
                 <ParticipantTile
                   key={p.identity}
                   participant={p}
                   isLocal={p.identity === localParticipant.identity}
                   isSpeaking={!!speakingMap[p.identity]}
+                  compact
                 />
               ))}
             </div>
-          </div>
-        </>
-      ) : (
-        <div className={`w-full grid gap-3 content-center ${gridCols}`}>
+          </>
+        ):(
+          <div className={`w-full ${gridMaxW} grid ${gridCols} gap-3`}>
           {allParticipants.map((p) => (
             <ParticipantTile
               key={p.identity}
@@ -238,7 +231,9 @@ function RoomContent({ onLeave }) {
             />
           ))}
         </div>
-      )}
+        )}
+      </div>
+      
 
       {/* コントロールバー */}
       <div className="flex-none bg-gray-900/80 backdrop-blur-sm border-t border-white/10 px-6 py-3 flex items-center justify-between">
