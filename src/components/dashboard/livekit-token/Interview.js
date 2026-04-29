@@ -379,17 +379,30 @@ const PresentationIcon = ({ className }) => (
 );
 
 // ── エントリポイント ─────────────────────────────────────
-export default function Interview({ roomName, userName }) {
+export default function Interview({ roomName, userName, dateTime }) {
   const [token, setToken] = useState("");
   const [joined, setJoined] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState("idle");
   const [permissionError, setPermissionError] = useState("");
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
     fetch(`/api/livekit-token?roomName=${roomName}&userName=${userName}`)
       .then((r) => r.json())
       .then((data) => setToken(data.token));
   }, [roomName, userName]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setNow(new Date());
+    }, 60000);
+
+    return () => clearInterval(id);
+  }, []);
+
+  const isAfter = dateTime ? now > dateTime : false;
+  // console.log(isAfter, now, dateTime)
+
 
   const requestMediaPermissions = async () => {
     setPermissionStatus("checking");
@@ -411,6 +424,14 @@ export default function Interview({ roomName, userName }) {
       }
     }
   };
+
+  if(!isAfter){
+    return(
+      <div className="flex items-center justify-center h-screen bg-gray-950">
+        <p className="text-gray-400 animate-pulse">開始時間までお待ちください</p>
+      </div>
+    )
+  }
 
   if (!token) {
     return (

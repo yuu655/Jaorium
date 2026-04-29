@@ -10,13 +10,12 @@ export default async function InterviewPage({ params }) {
     .select("*")
     .eq("id", roomName)
     .single();
-  
+  const dateTime = new Date(`${meeting.date}T${meeting.time}:00+09:00`);
 
-  
   
   return (
     <>
-      <InterviewWrapper roomName={roomName} userName={user.id} />
+      <InterviewWrapper roomName={roomName} userName={user.id} dateTime={dateTime} />
     </>
   );
 }
