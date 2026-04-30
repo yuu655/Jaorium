@@ -65,8 +65,9 @@ async function updateMentorProfile(prevState, formData) {
     region: formData.get("region"),
     quote: formData.get("quote"),
     tagIds: formData.getAll("tagIds"),
+    is_allowed: formData.getAll("is_allowed"),
   };
-  console.log(data.tagIds);
+  console.log(data.is_allowed[0]);
   const { error } = await supabase
     .from("mentors")
     .update({
@@ -76,6 +77,7 @@ async function updateMentorProfile(prevState, formData) {
       bio: data.bio,
       region: data.region,
       quote: data.quote,
+      is_allowed: data.is_allowed[0] === null ? false : true,
     })
     .eq("id", user.id);
   
@@ -91,6 +93,8 @@ async function updateMentorProfile(prevState, formData) {
   const { error: error_insert } = await supabase
     .from("mentor_tags")
     .insert(data.tagIds.map((id) => ({ mentor_id: user.id, tag_id: id })));
+  
+    console.log(error);
   if (!error && !error_insert) {
     revalidateTag(`dashboard-mentor-${user.id}`);
     revalidateTag(`mentor-tags-${user.id}`);

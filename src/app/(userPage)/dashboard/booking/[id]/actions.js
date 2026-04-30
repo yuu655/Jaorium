@@ -36,7 +36,7 @@ export const submitBooking = async (mentorId, prevState, formData) => {
   if (user?.user_metadata.role !== "user") return { error: "権限がありません" };
 
   const { data: mentor } = await supabase
-    .from("public_mentors")
+    .from("mentors")
     .select("id")
     .eq("id", mentorId)
     .single();

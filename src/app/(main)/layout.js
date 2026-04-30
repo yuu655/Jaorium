@@ -4,7 +4,6 @@ import "@/app/globals.css";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 
-
 // import { SpeedInsights } from "@vercel/speed-insights/next"
 
 const geistSans = Geist({
@@ -23,13 +22,14 @@ const geistMono = Geist_Mono({
 // };
 
 export const metadata = {
-  title: 'JaoRium | 情報戦に、終止符を。',
-  description: 'JaoRiumは、受験生が無料で先輩の一次情報にアクセスできるオンラインメンタリングサービス。環境に左右されず、誰もが本物の情報で未来を選べる社会を目指します。',
+  title: "JaoRium | 情報戦に、終止符を。",
+  description:
+    "JaoRiumは、受験生が無料で先輩の一次情報にアクセスできるオンラインメンタリングサービス。環境に左右されず、誰もが本物の情報で未来を選べる社会を目指します。",
   openGraph: {
-    title: 'JaoRium',
-    description: '情報戦に、終止符を。',
-    url: 'https://www.jaorium.com',
-    siteName: 'JaoRium',
+    title: "JaoRium",
+    description: "情報戦に、終止符を。",
+    url: "https://www.jaorium.com",
+    siteName: "JaoRium",
     // images: [
     //   {
     //     url: 'https://example.com/og-image.png', // 公開URLを指定
@@ -37,8 +37,8 @@ export const metadata = {
     //     height: 630,
     //   },
     // ],
-    locale: 'ja_JP',
-    type: 'website',
+    locale: "ja_JP",
+    type: "website",
   },
   // twitter: {
   //   card: 'summary_large_image',
@@ -50,17 +50,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="jp">
-      {/* <speedInsights /> */}
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        
-        <Header propClassName="bg-white shadow-md relative z-0" />
-        {children}
-        
-        <Footer />
-      </body>
-    </html>
+    <>
+      <Header propClassName="bg-white shadow-md relative z-0" />
+      {children}
+
+      <Footer />
+    </>
   );
 }

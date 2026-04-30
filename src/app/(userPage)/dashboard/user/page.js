@@ -14,17 +14,17 @@ export default async function UserPage() {
         const [
           { data: profile },
           { data: mentors },
+          { data: mentor_admin_allow },
           { data: Meetings },
         ] = await Promise.all([
           supabase.from("users").select("*").eq("id", userId).single(),
-          supabase
-            .from("public_mentors")
-            .select("*"),
-          supabase
-            .from("meetings")
-            .select("*")
-            .eq("user", userId)
+          supabase.from("mentors").select("*").eq("is_allowed", true),
+          supabase.from("mentor_secret").select("*").eq("admin_allow", true),
+          supabase.from("meetings").select("*").eq("user", userId),
         ]);
+
+      const mentor_admin_allow_list = mentor_admin_allow.map(item => item.id);
+      const public_admin_allowed_mentor = mentors.filter(item => mentor_admin_allow_list.includes(item.id));
 
         const { data: meeting_sc } = await supabase
           .from("meeting_schedules")
@@ -56,12 +56,14 @@ export default async function UserPage() {
         // 結果を配列に戻す
         const merged_meetings = Array.from(map.values());
 
-        const nextMeetings = merged_meetings.filter(item => !item.is_finished)
-        const pastMeetings = merged_meetings.filter(item => item.is_finished)
+        const nextMeetings = merged_meetings.filter(
+          (item) => !item.is_finished,
+        );
+        const pastMeetings = merged_meetings.filter((item) => item.is_finished);
 
         return {
           profile,
-          mentors: mentors ?? [],
+          mentors: public_admin_allowed_mentor ?? [],
           meetings: { next: nextMeetings ?? [], past: pastMeetings ?? [] },
         };
       },

@@ -31,7 +31,7 @@ export default async function ChatPage({ params }) {
 
   const isMentor = meeting.mentor === user.id;
   const counterpartId = isMentor ? meeting.user : meeting.mentor;
-  const counterpartTable = isMentor ? "users" : "public_mentors";
+  const counterpartTable = isMentor ? "users" : "mentors";
 
   const { data: counterpart } = await supabase
     .from(counterpartTable)

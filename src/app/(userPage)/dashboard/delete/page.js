@@ -30,8 +30,8 @@ export default function DeleteAccountButton() {
 
       // ログアウトしてトップへ
       const supabase = createClient()
-      await supabase.auth.signOut({ scope: 'local' })
       router.push('/')
+      await supabase.auth.signOut({ scope: 'local' })
 
     } catch (err) {
       console.error(err)

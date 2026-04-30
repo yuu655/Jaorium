@@ -5,7 +5,7 @@ import { Eye, Lock, EyeOff } from "lucide-react";
 export default function AddMentorProfile({
   profile,
   onUpload,
-  mentorTags=[],
+  mentorTags = [],
   allTags,
   setIsIcon = null,
   user,
@@ -44,11 +44,35 @@ export default function AddMentorProfile({
   //     setIsIcon(true);
   //   }
   // }, [state]);
+  console.log(profile)
 
   return (
     <>
       {state?.error && <p className="text-red-500 text-sm">{state.error}</p>}
       <form action={action}>
+        {!isFirst && (
+          <div className="mb-6">
+            <label
+                htmlFor="is_allowed"
+                className="block text-sm font-medium mb-2"
+              >公開</label>
+            <div className="flex items-start gap-3">
+              <input
+                id="is_allowed"
+                name="is_allowed"
+                type="checkbox"
+                defaultChecked={profile?.is_allowed}
+                className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+              />
+              <label
+                htmlFor="is_allowed"
+                className="text-sm text-gray-600 cursor-pointer"
+              >
+                面談を受け付ける（プロフィールを公開する）
+              </label>
+            </div>
+          </div>
+        )}
         <div className="mb-6">
           <label htmlFor="name" className="block text-sm font-medium mb-2">
             ユーザーネーム
@@ -63,7 +87,7 @@ export default function AddMentorProfile({
           />
         </div>
 
-        {(user?.app_metadata?.provider === "email" && isFirst) && (
+        {user?.app_metadata?.provider === "email" && isFirst && (
           <>
             {/* Password */}
             <div>
