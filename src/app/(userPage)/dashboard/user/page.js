@@ -14,8 +14,7 @@ export default async function UserPage() {
         const [
           { data: profile },
           { data: mentors },
-          { data: nextMeetings },
-          { data: pastMeetings },
+          { data: Meetings },
         ] = await Promise.all([
           supabase.from("users").select("*").eq("id", userId).single(),
           supabase
@@ -25,13 +24,40 @@ export default async function UserPage() {
             .from("meetings")
             .select("*")
             .eq("user", userId)
-            .eq("is_finished", false),
-          supabase
-            .from("meetings")
-            .select("*")
-            .eq("user", userId)
-            .eq("is_finished", true),
         ]);
+
+        const { data: meeting_sc } = await supabase
+          .from("meeting_schedules")
+          .select("*")
+          .in(
+            "meeting_id",
+            Meetings.map((item) => item.id),
+          );
+
+        const normalized_meeting_sc = meeting_sc.map((item) => ({
+          id: item.meeting_id,
+          ...item,
+        }));
+
+        const map = new Map();
+
+        Meetings.forEach((item) => {
+          map.set(item.id, { ...item });
+        });
+
+        normalized_meeting_sc.forEach((item) => {
+          if (map.has(item.id)) {
+            Object.assign(map.get(item.id), item);
+          } else {
+            map.set(item.id, { ...item });
+          }
+        });
+
+        // 結果を配列に戻す
+        const merged_meetings = Array.from(map.values());
+
+        const nextMeetings = merged_meetings.filter(item => !item.is_finished)
+        const pastMeetings = merged_meetings.filter(item => item.is_finished)
 
         return {
           profile,

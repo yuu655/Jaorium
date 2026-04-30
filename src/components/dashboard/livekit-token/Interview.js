@@ -378,6 +378,18 @@ const PresentationIcon = ({ className }) => (
   </svg>
 );
 
+const formatDate = (date) => {
+  if (!date) return null;
+  
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  
+  return `${year}/${month}/${day} ${hours}:${minutes}`;
+};
+
 // ── エントリポイント ─────────────────────────────────────
 export default function Interview({ roomName, userName, dateTime }) {
   const [token, setToken] = useState("");
@@ -428,6 +440,7 @@ export default function Interview({ roomName, userName, dateTime }) {
   if(!isAfter){
     return(
       <div className="flex items-center justify-center h-screen bg-gray-950">
+        <p className="text-gray-400 animate-pulse">{formatDate(dateTime)}</p>
         <p className="text-gray-400 animate-pulse">開始時間までお待ちください</p>
       </div>
     )

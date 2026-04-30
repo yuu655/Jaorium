@@ -6,11 +6,12 @@ export default async function InterviewPage({ params }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data: meeting } = await supabase
-    .from("meetings")
+    .from("meeting_schedules")
     .select("*")
-    .eq("id", roomName)
+    .eq("meeting_id", roomName)
     .single();
   const dateTime = new Date(`${meeting.date}T${meeting.time}:00+09:00`);
+  // console.log(dateTime)
 
   
   return (

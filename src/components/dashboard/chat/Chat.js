@@ -40,6 +40,7 @@ const supabase = createClient();
 
 export default function Chat({
   meeting: initialMeeting,
+  meeting_schedule,
   currentUserId,
   counterpart,
   initialMessages,
@@ -47,6 +48,7 @@ export default function Chat({
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [meeting, setMeeting] = useState(initialMeeting);
+  const [meeting_sc, setMeeting_sc] = useState(meeting_schedule);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
@@ -56,6 +58,7 @@ export default function Chat({
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showMeetingInfo, setShowMeetingInfo] = useState(false);
+  // console.log(meeting_sc)
 
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
@@ -136,6 +139,18 @@ export default function Chat({
         },
         (payload) => {
           setMeeting(payload.new);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "meeting_schedules",
+          filter: `meeting_id=eq.${meeting.id}`,
+        },
+        (payload) => {
+          setMeeting_sc(payload.new);
         },
       )
       .subscribe();
@@ -279,11 +294,11 @@ export default function Chat({
 
         <div className="hidden sm:flex flex-col items-end gap-1 shrink-0">
           <p className="text-sm text-gray-700 font-medium">{meeting.title}</p>
-          {meeting.is_commit ? (
+          {meeting_sc.is_commit ? (
             <div className="flex items-center gap-1.5">
               <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
                 <CheckCircle size={12} />
-                {formatProposalDate(meeting.date)} {meeting.time}
+                {formatProposalDate(meeting_sc.date)} {meeting_sc.time}
               </span>
               {/* 日時リセットボタン */}
               <button
@@ -321,12 +336,12 @@ export default function Chat({
       </div>
 
       {/* 確定バナー */}
-      {meeting.is_commit && (
+      {meeting_sc.is_commit && (
         <div className="bg-green-50 border-b border-green-200 px-4 py-2 shrink-0">
           <div className="flex items-center justify-between max-w-4xl mx-auto">
             <p className="text-sm text-green-700 font-medium flex items-center gap-1">
               <CheckCircle size={14} />
-              {formatProposalDate(meeting.date)} {meeting.time} で確定
+              {formatProposalDate(meeting_sc.date)} {meeting_sc.time} で確定
             </p>
             {/* モバイル用リセットボタン */}
             <button
@@ -392,7 +407,7 @@ export default function Chat({
                 const isMine = msg.sender_id === currentUserId;
                 const isDateProposal = msg.type === "date_proposal";
                 const canConfirm =
-                  isDateProposal && !isMine && !meeting.is_commit;
+                  isDateProposal && !isMine && !meeting_sc.is_commit;
 
                 return (
                   <div
@@ -453,9 +468,9 @@ export default function Chat({
                                   </button>
                                 )}
 
-                                {meeting.is_commit &&
-                                  meeting.date === pDate &&
-                                  meeting.time === pTime && (
+                                {meeting_sc.is_commit &&
+                                  meeting_sc.date === pDate &&
+                                  meeting_sc.time === pTime && (
                                     <div className="mt-2 flex items-center gap-1 text-green-600 text-xs font-medium">
                                       <CheckCircle size={12} />
                                       確定済み
@@ -501,7 +516,7 @@ export default function Chat({
       <div className="bg-white border-t px-4 py-3 shrink-0">
         <div className="flex items-end gap-2 max-w-4xl mx-auto">
           <div className="relative group">
-            {!meeting.is_commit && (
+            {!meeting_sc.is_commit && (
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-800 text-white text-xl rounded-lg whitespace-nowrap pointer-events-none opacity-100">
                 日時を提案しましょう
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
@@ -509,10 +524,10 @@ export default function Chat({
             )}
             <button
               onClick={() => setShowDateModal(true)}
-              disabled={meeting.is_commit}
+              disabled={meeting_sc.is_commit}
               className="w-11 h-11 border border-gray-300 text-gray-500 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
               title={
-                meeting.is_commit
+                meeting_sc.is_commit
                   ? "日時確定済み（リセットで再提案可能）"
                   : "日時を提案する"
               }
@@ -556,7 +571,7 @@ export default function Chat({
           <AlertDialogHeader>
             <AlertDialogTitle>日時をリセットしますか？</AlertDialogTitle>
             <AlertDialogDescription>
-              確定した日時（{formatProposalDate(meeting.date)} {meeting.time}
+              確定した日時（{formatProposalDate(meeting_sc.date)} {meeting_sc.time}
               ）をリセットします。 再度日時の提案が必要になります。
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -643,10 +658,10 @@ export default function Chat({
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
                   日時
                 </p>
-                {meeting.is_commit ? (
+                {meeting_sc.is_commit ? (
                   <p className="text-sm text-green-600 font-medium flex items-center gap-1">
                     <CheckCircle size={13} />
-                    {formatProposalDate(meeting.date)} {meeting.time}
+                    {formatProposalDate(meeting_sc.date)} {meeting_sc.time}
                   </p>
                 ) : (
                   <p className="text-sm text-gray-400">未定</p>

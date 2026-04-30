@@ -2,8 +2,8 @@ import MentorDashboard from "@/components/dashboard/mentor/MentorDashboard";
 import { createClient } from "@/lib/supabase/server";
 import { unstable_cache } from "next/cache";
 
-export default async function MentorPage({searchParams}) {
-  const {side} = await searchParams;
+export default async function MentorPage({ searchParams }) {
+  const { side } = await searchParams;
   // console.log(side);
 
   const supabase = await createClient();
@@ -15,25 +15,12 @@ export default async function MentorPage({searchParams}) {
   const getCachedData = (userId) =>
     unstable_cache(
       async () => {
-        const [
-          { data: profile },
-          { data: nextMeetings },
-          { data: pastMeetings },
-        ] = await Promise.all([
+        const [{ data: profile }, { data: Meetings }] = await Promise.all([
           supabase.from("mentors").select("*").eq("id", userId).single(),
-          supabase
-            .from("meetings")
-            .select("*")
-            .eq("mentor", userId)
-            .eq("is_finished", false),
-          supabase
-            .from("meetings")
-            .select("*")
-            .eq("mentor", userId)
-            .eq("is_finished", true),
+          supabase.from("meetings").select("*").eq("mentor", userId),
         ]);
-        const allMeetings = [...(nextMeetings ?? []), ...(pastMeetings ?? [])];
-        const userIds = [...new Set(allMeetings.map((m) => m.user))];
+        // const allMeetings = [...(nextMeetings ?? []), ...(pastMeetings ?? [])];
+        const userIds = [...new Set(Meetings.map((m) => m.user))];
         const { data: users } =
           userIds.length > 0
             ? await supabase
@@ -41,6 +28,38 @@ export default async function MentorPage({searchParams}) {
                 .select("id, name, grade, icon")
                 .in("id", userIds)
             : { data: [] };
+
+        const { data: meeting_sc } = await supabase
+          .from("meeting_schedules")
+          .select("*")
+          .in(
+            "meeting_id",
+            Meetings.map((item) => item.id),
+          );
+        const normalized_meeting_sc = meeting_sc.map((item) => ({
+          id: item.meeting_id,
+          ...item,
+        }));
+
+        const map = new Map();
+
+        Meetings.forEach((item) => {
+          map.set(item.id, { ...item });
+        });
+
+        normalized_meeting_sc.forEach((item) => {
+          if (map.has(item.id)) {
+            Object.assign(map.get(item.id), item);
+          } else {
+            map.set(item.id, { ...item });
+          }
+        });
+
+        // 結果を配列に戻す
+        const merged_meetings = Array.from(map.values());
+
+        const nextMeetings = merged_meetings.filter(item => !item.is_finished)
+        const pastMeetings = merged_meetings.filter(item => item.is_finished)
 
         return {
           profile,
@@ -61,7 +80,9 @@ export default async function MentorPage({searchParams}) {
         ]);
         if (mentorTag_ids === null) return [];
         const mentorTagIds = mentorTag_ids.map((t) => t.tag_id);
-        const mentorTags = allTags.filter((tag) => mentorTagIds.includes(tag.id));
+        const mentorTags = allTags.filter((tag) =>
+          mentorTagIds.includes(tag.id),
+        );
         // console.log(mentorTags);
         return { allTags, mentorTags };
       },
@@ -70,9 +91,10 @@ export default async function MentorPage({searchParams}) {
     );
 
   const { profile, meetings, users } = await getCachedData(user.id)();
-  console.log(profile);
+  // console.log(profile);
   const { allTags, mentorTags } = await getTags(user.id)();
   // console.log(meetings);
+  // console.log(meetings)
 
   return (
     <MentorDashboard

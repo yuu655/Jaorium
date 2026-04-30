@@ -16,6 +16,14 @@ export default async function ChatPage({ params }) {
     .select("*")
     .eq("id", meetingId)
     .single();
+  
+  const { data: meeting_schedule } = await supabase
+    .from("meeting_schedules")
+    .select("*")
+    .eq("meeting_id", meetingId)
+    .single();
+
+  // console.log(meeting_schedule)
 
   if (!meeting || (meeting.user !== user.id && meeting.mentor !== user.id)) {
     redirect("/dashboard/user");
@@ -40,6 +48,7 @@ export default async function ChatPage({ params }) {
   return (
     <ChatWrapper
       meeting={meeting}
+      meeting_schedule={meeting_schedule}
       currentUserId={user.id}
       counterpart={counterpart}
       initialMessages={initialMessages ?? []}
