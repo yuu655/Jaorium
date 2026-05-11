@@ -337,22 +337,34 @@ export default function Chat({
 
       {/* 確定バナー */}
       {meeting_sc.is_commit && (
-        <div className="bg-green-50 border-b border-green-200 px-4 py-2 shrink-0">
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
-            <p className="text-sm text-green-700 font-medium flex items-center gap-1">
-              <CheckCircle size={14} />
-              {formatProposalDate(meeting_sc.date)} {meeting_sc.time} で確定
-            </p>
-            {/* モバイル用リセットボタン */}
-            <button
-              onClick={() => setShowResetDialog(true)}
-              className="sm:hidden flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
-            >
-              <RotateCcw size={12} />
-              日時を変更
-            </button>
+        <>
+          <div className="bg-green-50 border-b border-green-200 px-4 py-2 shrink-0">
+            <div className="flex items-center justify-between max-w-4xl mx-auto">
+              <p className="text-sm text-green-700 font-medium flex items-center gap-1">
+                <CheckCircle size={14} />
+                {formatProposalDate(meeting_sc.date)} {meeting_sc.time} で確定
+              </p>
+              {/* モバイル用リセットボタン */}
+              <button
+                onClick={() => setShowResetDialog(true)}
+                className="sm:hidden flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
+              >
+                <RotateCcw size={12} />
+                日時を変更
+              </button>
+            </div>
           </div>
-        </div>
+          <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 shrink-0">
+            <div className="flex items-center justify-between max-w-4xl mx-auto">
+              <Link
+                href={`/dashboard/Interview/${meeting.id}`}
+                className="text-blue-500 hover:text-blue-700 transition-colors text-1xl font-bold"
+              >
+                ミーティングに飛ぶ
+              </Link>
+            </div>
+          </div>
+        </>
       )}
 
       {/* 終了申請バナー */}
@@ -453,7 +465,9 @@ export default function Chat({
                                 </p>
                                 <p className="text-gray-600 text-sm">{pTime}</p>
                                 {isMine && (
-                                  <p className="font-bold text-base">相手からの承認をお待ちください</p>
+                                  <p className="font-bold text-base">
+                                    相手からの承認をお待ちください
+                                  </p>
                                 )}
 
                                 {canConfirm && (
@@ -571,7 +585,8 @@ export default function Chat({
           <AlertDialogHeader>
             <AlertDialogTitle>日時をリセットしますか？</AlertDialogTitle>
             <AlertDialogDescription>
-              確定した日時（{formatProposalDate(meeting_sc.date)} {meeting_sc.time}
+              確定した日時（{formatProposalDate(meeting_sc.date)}{" "}
+              {meeting_sc.time}
               ）をリセットします。 再度日時の提案が必要になります。
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -703,11 +718,14 @@ export default function Chat({
                 </p>
               </div>
 
-              <div>
-                <Link href={`/dashboard/Interview/${meeting.id}`} className="text-blue-500 hover:text-blue-700 transition-colors">
+              {/* <div>
+                <Link
+                  href={`/dashboard/Interview/${meeting.id}`}
+                  className="text-blue-500 hover:text-blue-700 transition-colors"
+                >
                   ミーティングに飛ぶ
                 </Link>
-              </div>
+              </div> */}
             </div>
           </div>
         </>
