@@ -5,8 +5,7 @@ export default function PrivacyPage() {
       title: "基本方針",
       content: (
         <p>
-          <Placeholder text="[運営者名]" />
-          （以下「当方」）は、jaorium（以下「本サービス」）の運営において、ユーザーの個人情報を適切に取り扱うことを重要な責務と考えています。本プライバシーポリシーは、本サービスにおける個人情報の収集・利用・管理について定めるものです。
+          Jaorium運営（以下「当方」）は、jaorium（以下「本サービス」）の運営において、ユーザーの個人情報を適切に取り扱うことを重要な責務と考えています。本プライバシーポリシーは、本サービスにおける個人情報の収集・利用・管理について定めるものです。
         </p>
       ),
     },
@@ -107,7 +106,28 @@ export default function PrivacyPage() {
       ),
     },
     {
-      num: "05",
+  num: "05",
+  title: "電気通信事業者としての届出",
+  content: (
+    <>
+      <p>
+        当方は、電気通信事業法に基づき、電気通信事業の届出を行っています。
+      </p>
+      <div className="mt-4 rounded-lg border border-stone-200 bg-white px-5 py-4 text-sm space-y-1">
+        <p>
+          <span className="font-medium">届出番号</span>：
+          <Placeholder text="A-XX-XXXXX" />
+        </p>
+      </div>
+      <p className="mt-4">
+        本サービスでは、ユーザーの通信の秘密を保護するため、
+        電気通信事業法の定めに従い、適切な管理・運営を行います。
+      </p>
+    </>
+  ),
+},
+    {
+      num: "06",
       title: "Cookie について",
       content: (
         <>
@@ -123,7 +143,7 @@ export default function PrivacyPage() {
       ),
     },
     {
-      num: "06",
+      num: "07",
       title: "情報の管理・安全対策",
       content: (
         <>
@@ -138,7 +158,7 @@ export default function PrivacyPage() {
       ),
     },
     {
-      num: "07",
+      num: "08",
       title: "ユーザーの権利",
       content: (
         <>
@@ -157,7 +177,7 @@ export default function PrivacyPage() {
       ),
     },
     {
-      num: "08",
+      num: "09",
       title: "プライバシーポリシーの変更",
       content: (
         <p>
@@ -166,7 +186,7 @@ export default function PrivacyPage() {
       ),
     },
     {
-      num: "09",
+      num: "10",
       title: "お問い合わせ",
       content: (
         <>
