@@ -13,11 +13,10 @@ const egressClient = new EgressClient(
 );
 
 export async function POST(request) {
-  const { searchParams } = new URL(request.url);
-  const meeting_id = searchParams.get("id");
-
   const body = await request.text();
   const event = receiver.receive(body, request.headers.get("Authorization"));
+
+  console.log("aa");
 
   switch (event.event) {
     case "room_started":
@@ -26,12 +25,15 @@ export async function POST(request) {
         {
           file: {
             fileType: EncodedFileType.MP4,
-            filepath: `recordings/${meeting_id}/{time}.mp4`,
+            filepath: `recordings/${event.room.name}/{time}.mp4`,
             s3: {
               accessKey: process.env.CLOUDFLARE_ACCESS_KEY_ID,
               secret: process.env.CLOUDFLARE_SECRET_ACCESS_KEY,
-              bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
-              region: "ap-northeast-1",
+              bucket: process.env.CLOUDFLARE_BUCKET_NAME,
+              region: "auto",
+              // ここだけS3と違う：R2のエンドポイントを明示
+              endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+              forcePathStyle: true, // R2では必須
             },
           },
         }
