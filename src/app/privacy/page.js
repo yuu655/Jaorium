@@ -115,8 +115,7 @@ export default function PrivacyPage() {
       </p>
       <div className="mt-4 rounded-lg border border-stone-200 bg-white px-5 py-4 text-sm space-y-1">
         <p>
-          <span className="font-medium">届出番号</span>：
-          <Placeholder text="A-XX-XXXXX" />
+          <span className="font-medium">届出番号</span>：E-08-05658
         </p>
       </div>
       <p className="mt-4">
