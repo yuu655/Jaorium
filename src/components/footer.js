@@ -45,20 +45,20 @@ export default function Footer() {
             <h3 className="font-bold mb-4">情報</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/articles" className="text-sm text-gray-300 hover:text-white transition-colors">
+                <Link href="/articles/1" className="text-sm text-gray-300 hover:text-white transition-colors">
                   記事・お知らせ
                 </Link>
               </li>
               <li>
-                <Link href="/forCompanies" className="text-sm text-gray-300 hover:text-white transition-colors">
-                  企業の方へ
+                <Link href="/recruitment" className="text-sm text-gray-300 hover:text-white transition-colors">
+                  メンター募集
                 </Link>
               </li>
             </ul>
           </div>
 
           {/* Contact */}
-          <div className="col-span-1">
+          {/* <div className="col-span-1">
             <h3 className="font-bold mb-4">お問い合わせ</h3>
             <div className="flex gap-4">
               <a
@@ -87,7 +87,7 @@ export default function Footer() {
                 <Instagram size={20} />
               </a>
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="border-t border-gray-600 pt-8 text-center">

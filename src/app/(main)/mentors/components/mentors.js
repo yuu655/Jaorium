@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import Mentor from "@/components/mentor";
 import { createClient } from "@/lib/supabase/client";
-import { Search, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 const supabase = createClient();
+const basePath = "/mentors";
 export default function Mentors({ mentors }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredMentors, setFilteredMentors] = useState(mentors);
@@ -36,7 +37,7 @@ export default function Mentors({ mentors }) {
     },
     {
       title: "大学生活で重視したいことは？",
-      options: [          
+      options: [
         { label: "部活・サークル活動", keyword: "部活・サークル" },
         { label: "資格取得や専門的な学び", keyword: "資格・就職" },
         { label: "留学・国際交流", keyword: "留学" },
@@ -60,7 +61,7 @@ export default function Mentors({ mentors }) {
     life: "大学生活",
     career: "キャリア",
     env: "環境",
-    sub: "得意教科"
+    sub: "得意教科",
   };
 
   const tagGroups = Object.entries(
@@ -405,7 +406,7 @@ export default function Mentors({ mentors }) {
             <br />
             過去の苦労や成功体験を、次の世代へつなぎませんか？
           </p>
-          <Link href="/signup">
+          <Link href="/signup/mentor">
             <button className="px-8 py-4 bg-black text-white text-lg font-medium rounded-lg hover:bg-gray-800 transition-colors">
               メンター応募
             </button>

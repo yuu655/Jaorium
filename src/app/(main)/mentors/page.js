@@ -34,8 +34,10 @@ export default async function Mentors() {
   //   next: { revalidate: 10, tags: ["mentor"] },
   // }).then((res) => res.json());
   // console.log(mentors);
+  // const { id } = await params;
   const supabase = await createClient();
   const mentors = await getMentors(supabase)();
+  
   return (
     <>
       <Mentor mentors={mentors} />

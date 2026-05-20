@@ -15,14 +15,14 @@ export default async function sitemap() {
 
   // ブログ記事のURLリストを作成
   const postUrls = articles.contents.map((post) => ({
-    url: `${baseUrl}/articles/${post.id}`,
+    url: `${baseUrl}/articles/id/${post.id}`,
     lastModified: new Date(post.updatedAt),
     changeFrequency: "weekly",
     priority: 0.7,
   }));
 
   // 固定ページのURLリスト
-  const routes = ["", "/concept", "/forCompanies", "/mentors", "/articles"].map((route) => ({
+  const routes = ["", "/concept", "/recruitment", "/mentors", "/articles/1"].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
     changeFrequency: "monthly",

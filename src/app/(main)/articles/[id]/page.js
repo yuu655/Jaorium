@@ -1,76 +1,43 @@
 import Image from "next/image";
-import { draftMode } from "next/headers";
-
-import Blog from "../components/blog";
-import ExitButton from "../components/button";
+import Link from "next/link";
 const API_URL = process.env.API_URL;
 const API_KEY = process.env.API_KEY;
+import ArticleList from "../components/articleList";
 
-// async function getPost(slug) {
-//   const res = await fetch(`https://api.example.com/posts/${slug}`);
-//   return res.json();
-// }
+import { Calendar, Tag, ArrowRight } from "lucide-react";
+import { createExhaustiveParamsProxy } from "next/dist/server/app-render/instant-validation/instant-samples";
 
-// 2. メタデータを動的に生成
-export async function generateMetadata({ params }) {
+export default async function Articles({params}) {
   const { id } = await params;
-  const result = await fetch(`${API_URL}blogs/${id}`, {
-    next: { revalidate: 3600, tags: ["blog"] },
-    headers: {
-      "X-MICROCMS-API-KEY": API_KEY,
-    },
-  }).then((res) => res.json());
+  const currentPage = Number(id);
+  const limit = 10; // 1ページあたりの記事数
 
-  return {
-    title: `${result.title} | サービス名`,
-    description: result.excerpt,
-    openGraph: {
-      images: [result.eyecatch.url],
-    },
-  };
-}
-
-export async function generateStaticParams() {
-  const result = await fetch(`${API_URL}blogs?limit=10`, {
+  const firstArticle = await fetch(`${API_URL}blogs?limit=1`, {
     headers: {
       "X-MICROCMS-API-KEY": API_KEY,
     },
     next: { revalidate: 3600, tags: ["blog"] },
   }).then((res) => res.json());
 
-  return result.contents.map((article) => ({
-    id: article.id,
-  }));
-}
+  const articles = await fetch(
+    `${API_URL}blogs?limit=${limit}&offset=${(currentPage - 1) * limit}`,
+    {
+      headers: {
+        "X-MICROCMS-API-KEY": API_KEY,
+      },
+      next: { revalidate: 10, tags: ["blog"] },
+    }
+  ).then((res) => res.json());
 
-export default async function Page({ params, searchParams }) {
-  const { id } = await params;
-  const { draftKey } = await searchParams; // searchParams も await が必要
-
-  // 2. draftMode() も await が必要
-  const draft = await draftMode();
-  const isDraft = draft.isEnabled;
-
-  const endpoint = new URL(`${API_URL}blogs/${id}`);
-
-  // 3. draftKey が存在し、かつプレビューモードの時だけクエリを付与
-  if (isDraft && draftKey) {
-    endpoint.searchParams.set("draftKey", draftKey);
-  }
-
-  // console.log(endpoint.toString());
-
-  const result = await fetch(endpoint.toString(), {
-    next: { revalidate: 3600, tags: ["blog"] },
+  // articles.totalCount で総記事数が取れる
+  const totalPages = Math.ceil(articles.totalCount / limit);
+  const categories = await fetch(`${API_URL}categories?limit=10`, {
     headers: {
       "X-MICROCMS-API-KEY": API_KEY,
     },
+    next: { revalidate: 60 },
   }).then((res) => res.json());
-  // console.log(result);
   return (
-    <div className="bg-white min-h-screen">
-      <Blog isDraft={isDraft} result={result} />
-      
-    </div>
+    <ArticleList firstArticle={firstArticle} articles={articles} totalPages={totalPages} categories={categories} currentPage={currentPage}></ArticleList>
   );
 }

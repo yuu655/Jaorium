@@ -1,4 +1,5 @@
 import Image from "next/image";
+import {ShieldCheck, Gift, MonitorPlay, Presentation, Lightbulb, CheckSquare, BookOpen, Award, Globe, CheckCircle2, Play, Check} from "lucide-react";
 
 export default function Features() {
   return (
@@ -72,7 +73,7 @@ export default function Features() {
               <div className="w-full md:w-1/2 mt-10 md:mt-0 flex justify-center z-10 order-2 md:order-1">
                 <div className="w-full max-w-md mx-auto aspect-square md:aspect-auto md:h-[400px] bg-gradient-to-br from-slate-50 to-blue-50/50 rounded-[2.5rem] border-8 border-white shadow-xl flex items-center justify-center relative overflow-hidden">
                   <div className="absolute -bottom-10 -left-10 text-blue-100/50">
-                    <i data-lucide="shield-check" className="w-64 h-64"></i>
+                    <ShieldCheck className="w-64 h-64" />
                   </div>
 
                   <div className="relative z-10 text-center w-full px-6 flex flex-col justify-center h-full">
@@ -113,10 +114,7 @@ export default function Features() {
 
                         <div className="flex justify-center mb-2 mt-2">
                           <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center border border-slate-600 shadow-inner">
-                            <i
-                              data-lucide="gift"
-                              className="w-5 h-5 text-amber-400 drop-shadow-sm"
-                            ></i>
+                            <Gift className="w-5 h-5 text-amber-400 drop-shadow-sm"></Gift>
                           </div>
                         </div>
 
@@ -162,7 +160,7 @@ export default function Features() {
               <div className="w-full md:w-1/2 mt-10 md:mt-0 flex justify-center z-10">
                 <div className="w-full max-w-md mx-auto aspect-square md:aspect-auto md:h-[400px] bg-blue-50/80 rounded-[2.5rem] shadow-[inset_0_4px_20px_rgba(0,0,0,0.03)] border border-blue-100/50 flex items-center justify-center relative overflow-hidden">
                   <div className="absolute -top-12 -right-12 text-blue-200/30">
-                    <i data-lucide="monitor-play" className="w-64 h-64"></i>
+                    <MonitorPlay className="w-64 h-64" />
                   </div>
 
                   <div className="relative z-10 w-full px-6 flex flex-col items-center">
@@ -173,10 +171,7 @@ export default function Features() {
 
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
-                          <i
-                            data-lucide="presentation"
-                            className="w-4 h-4 text-blue-500"
-                          ></i>
+                          <Presentation className="w-4 h-4 text-blue-500" />
                         </div>
                         <div className="font-bold text-slate-800 text-sm">
                           オリジナル解説スライド
@@ -201,10 +196,7 @@ export default function Features() {
 
                         <div className="absolute inset-0 bg-slate-900/5 group-hover:bg-slate-900/30 transition-colors duration-300 flex items-center justify-center">
                           <div className="bg-white/95 backdrop-blur-sm text-blue-600 font-bold text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5 transform scale-95 group-hover:scale-100 transition-all duration-300">
-                            <i
-                              data-lucide="play"
-                              className="w-3 h-3 fill-current"
-                            ></i>
+                            <Play className="w-3 h-3 fill-current" />
                             実際に見てみる
                           </div>
                         </div>
@@ -214,10 +206,7 @@ export default function Features() {
                     <div className="bg-white p-4 rounded-2xl shadow-md border border-slate-100 w-full max-w-[260px] transform rotate-2 relative z-10 ml-8 opacity-95">
                       <div className="flex items-center gap-2 mb-2">
                         <div className="w-6 h-6 rounded-full bg-yellow-50 flex items-center justify-center">
-                          <i
-                            data-lucide="lightbulb"
-                            className="w-3 h-3 text-yellow-500"
-                          ></i>
+                          <Lightbulb className="w-3 h-3 text-yellow-500" />
                         </div>
                         <div className="font-bold text-slate-700 text-xs">
                           ネットにない一次情報
@@ -260,13 +249,13 @@ export default function Features() {
               <div className="w-full md:w-1/2 mt-10 md:mt-0 flex justify-center z-10 order-2 md:order-1">
                 <div className="w-full max-w-md mx-auto md:aspect-auto h-[400px] bg-linear-to-br from-emerald-50 to-teal-100 rounded-[2.5rem] border-8 border-white shadow-xl flex items-center justify-center relative overflow-hidden">
                   <div className="absolute -bottom-10 -right-10 text-emerald-200/50">
-                    <i data-lucide="check-square" className="w-64 h-64"></i>
+                    <CheckSquare className="w-64 h-64" />
                   </div>
 
                   <div className="relative z-10 w-full px-6 flex flex-col gap-4">
                     <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 flex items-center gap-4 transform transition-transform hover:-translate-y-1 hover:shadow-md">
                       <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold shrink-0">
-                        <i data-lucide="book-open" className="w-6 h-6"></i>
+                        <BookOpen className="w-6 h-6" />
                       </div>
                       <div className="flex-1">
                         <div className="font-bold text-slate-800 text-sm">
@@ -276,15 +265,14 @@ export default function Features() {
                           共通テスト・二次試験の対策に
                         </div>
                       </div>
-                      <i
-                        data-lucide="check-circle-2"
+                      <CheckCircle2
                         className="w-5 h-5 text-emerald-500 shrink-0"
-                      ></i>
+                      />
                     </div>
 
                     <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 flex items-center gap-4 transform transition-transform hover:-translate-y-1 hover:shadow-md ml-6">
                       <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600 font-bold flex-shrink-0">
-                        <i data-lucide="award" className="w-6 h-6"></i>
+                        <Award className="w-6 h-6" />
                       </div>
                       <div className="flex-1">
                         <div className="font-bold text-slate-800 text-sm">
@@ -294,15 +282,14 @@ export default function Features() {
                           志望理由書や面接の対策に
                         </div>
                       </div>
-                      <i
-                        data-lucide="check-circle-2"
+                      <CheckCircle2
                         className="w-5 h-5 text-emerald-500 shrink-0"
-                      ></i>
+                      />
                     </div>
 
                     <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 flex items-center gap-4 transform transition-transform hover:-translate-y-1 hover:shadow-md">
                       <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 font-bold flex-shrink-0">
-                        <i data-lucide="globe" className="w-6 h-6"></i>
+                        <Globe className="w-6 h-6" />
                       </div>
                       <div className="flex-1">
                         <div className="font-bold text-slate-800 text-sm">
@@ -312,10 +299,9 @@ export default function Features() {
                           海外経験のアピール方法などに
                         </div>
                       </div>
-                      <i
-                        data-lucide="check-circle-2"
+                      <CheckCircle2
                         className="w-5 h-5 text-emerald-500 shrink-0"
-                      ></i>
+                      />
                     </div>
                   </div>
                 </div>

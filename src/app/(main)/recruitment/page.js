@@ -1,4 +1,6 @@
+import Link from "next/link";
 import Image from "next/image";
+import { Coins, Presentation, Building2, UserPlus, ClipboardList, Video, User, GraduationCap, Users , Star, Mic, PhoneOff, ArrowRight } from "lucide-react";
 
 export default function Recruitment() {
   return (
@@ -31,12 +33,12 @@ export default function Recruitment() {
             <span className="text-red-400 font-bold">乗り越えた経験</span>
             」を求めている高校生とマッチングするプラットフォーム。報酬を得ながら、就活に直結するスキルと人脈を手に入れませんか？
           </p>
-          <a
-            href="#register"
+          <Link
+            href="/signup/mentor"
             className="inline-block bg-brand-blue text-white px-10 py-4 rounded-md font-bold text-lg hover:bg-blue-600 transition-colors shadow-lg"
           >
             今すぐメンターを始める
-          </a>
+          </Link>
         </div>
       </section>
 
@@ -56,7 +58,7 @@ export default function Recruitment() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
               <div className="text-brand-blue mb-6">
-                <i data-lucide="coins" className="w-10 h-10"></i>
+                <Coins className="w-10 h-10" />
               </div>
               <div className="flex items-baseline gap-2 mb-4">
                 <span className="text-brand-blue font-black text-xl">01</span>
@@ -71,7 +73,7 @@ export default function Recruitment() {
 
             <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
               <div className="text-brand-orange mb-6">
-                <i data-lucide="presentation" className="w-10 h-10"></i>
+                <Presentation className="w-10 h-10" />
               </div>
               <div className="flex items-baseline gap-2 mb-4">
                 <span className="text-brand-orange font-black text-xl">02</span>
@@ -86,7 +88,7 @@ export default function Recruitment() {
 
             <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
               <div className="text-emerald-600 mb-6">
-                <i data-lucide="building-2" className="w-10 h-10"></i>
+                <Building2 className="w-10 h-10" />
               </div>
               <div className="flex items-baseline gap-2 mb-4">
                 <span className="text-emerald-600 font-black text-xl">03</span>
@@ -126,10 +128,7 @@ export default function Recruitment() {
                     まずはこのページからアカウントを作成。基本的なプロフィール情報を入力します。
                   </p>
                   <div className="bg-slate-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto md:mx-0">
-                    <i
-                      data-lucide="user-plus"
-                      className="w-6 h-6 text-brand-blue"
-                    ></i>
+                    <UserPlus className="w-6 h-6 text-brand-blue" />
                   </div>
                 </div>
                 <div className="flex-1 order-1 md:order-2 flex justify-center">
@@ -186,10 +185,7 @@ export default function Recruitment() {
                     運営から送られるGoogleフォームで、自身の受験経験や得意な指導内容を詳しく記入します。
                   </p>
                   <div className="bg-slate-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto md:mx-0">
-                    <i
-                      data-lucide="clipboard-list"
-                      className="w-6 h-6 text-brand-blue"
-                    ></i>
+                    <ClipboardList className="w-6 h-6 text-brand-blue" />
                   </div>
                 </div>
                 <div className="flex-1 order-1 md:order-2 flex justify-center">
@@ -250,10 +246,7 @@ export default function Recruitment() {
                     記入いただいた情報を元に、運営側で生徒へのプレゼン用スライドを作成します。手間なく準備完了！
                   </p>
                   <div className="bg-slate-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto md:mx-0">
-                    <i
-                      data-lucide="presentation"
-                      className="w-6 h-6 text-brand-blue"
-                    ></i>
+                    <Presentation className="w-6 h-6 text-brand-blue" />
                   </div>
                 </div>
                 <div className="flex-1 order-1 md:order-2 flex justify-center">
@@ -308,37 +301,25 @@ export default function Recruitment() {
                             <div className="flex flex-1 gap-1">
                               <div className="flex-1 flex flex-col justify-center gap-1">
                                 <div className="flex items-center gap-1">
-                                  <i
-                                    data-lucide="user"
-                                    className="w-2.5 h-2.5 text-brand-blue"
-                                  ></i>
+                                  <User className="w-2.5 h-2.5 text-brand-blue" />
                                   <div className="text-[5px] text-slate-500">
                                     氏名: [ 入力 ]
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <i
-                                    data-lucide="graduation-cap"
-                                    className="w-2.5 h-2.5 text-purple-700"
-                                  ></i>
+                                  <GraduationCap className="w-2.5 h-2.5 text-purple-700" />
                                   <div className="text-[5px] text-slate-500">
                                     所属: [ 大学・学部 ]
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <i
-                                    data-lucide="users"
-                                    className="w-2.5 h-2.5 text-purple-700"
-                                  ></i>
+                                  <Users className="w-2.5 h-2.5 text-purple-700" />
                                   <div className="text-[5px] text-slate-500">
                                     サークル等: [ 入力 ]
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <i
-                                    data-lucide="star"
-                                    className="w-2.5 h-2.5 text-brand-blue"
-                                  ></i>
+                                  <Star className="w-2.5 h-2.5 text-brand-blue" />
                                   <div className="text-[5px] text-slate-500">
                                     趣味・特技: [ 入力 ]
                                   </div>
@@ -381,10 +362,7 @@ export default function Recruitment() {
                     生徒から指名が入ったら、日程を調整して面談を実施。作成されたスライドを使って話すだけ！
                   </p>
                   <div className="bg-slate-100 w-12 h-12 rounded-lg flex items-center justify-center mx-auto md:mx-0">
-                    <i
-                      data-lucide="video"
-                      className="w-6 h-6 text-brand-blue"
-                    ></i>
+                    <Video className="w-6 h-6 text-brand-blue" />
                   </div>
                 </div>
                 <div className="flex-1 order-1 md:order-2 flex justify-center">
@@ -411,22 +389,13 @@ export default function Recruitment() {
                         </div>
                         <div className="absolute bottom-4 inset-x-0 flex justify-center gap-4">
                           <div className="w-8 h-8 rounded-full bg-slate-700/80 flex items-center justify-center backdrop-blur-sm">
-                            <i
-                              data-lucide="mic"
-                              className="w-4 h-4 text-white"
-                            ></i>
+                            <Mic className="w-4 h-4 text-white" />
                           </div>
                           <div className="w-8 h-8 rounded-full bg-slate-700/80 flex items-center justify-center backdrop-blur-sm">
-                            <i
-                              data-lucide="video"
-                              className="w-4 h-4 text-white"
-                            ></i>
+                            <Video className="w-4 h-4 text-white" />
                           </div>
                           <div className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center">
-                            <i
-                              data-lucide="phone-off"
-                              className="w-4 h-4 text-white"
-                            ></i>
+                            <PhoneOff className="w-4 h-4 text-white" />
                           </div>
                         </div>
                       </div>
@@ -455,13 +424,13 @@ export default function Recruitment() {
           <p className="text-slate-600 text-lg mb-10">
             登録は無料です。まずは簡単なプロフィール登録から始めましょう。
           </p>
-          <a
-            href="#register"
-            className="inline-flex items-center gap-2 bg-brand-blue text-white px-12 py-5 rounded-md font-bold text-xl hover:bg-blue-600 transition-colors shadow-lg"
+          <Link
+            href="/signup/mentor"
+            className="inline-flex items-center gap-2 bg-brand-blue text-blue-500 px-12 py-5 rounded-md font-bold text-xl hover:bg-blue-600 hover:text-white transition-colors shadow-lg"
           >
             今すぐメンターを始める
-            <i data-lucide="arrow-right" className="w-6 h-6"></i>
-          </a>
+            <ArrowRight className="w-6 h-6" />
+          </Link>
         </div>
       </section>
     </>

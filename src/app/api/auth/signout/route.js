@@ -11,7 +11,7 @@ export async function POST(req) {
     await supabase.auth.signOut();
   }
   revalidatePath("/", "layout");
-  return NextResponse.redirect(new URL("/signup/mentor", req.url), {
+  return NextResponse.redirect(new URL("/", req.url), {
     status: 302,
   });
 }
