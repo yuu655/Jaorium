@@ -66,7 +66,6 @@ export default async function Page({ params, searchParams }) {
       "X-MICROCMS-API-KEY": API_KEY,
     },
   }).then((res) => res.json());
-  // console.log(result);
   return (
     <div className="bg-white min-h-screen">
       <Blog isDraft={isDraft} result={result} />

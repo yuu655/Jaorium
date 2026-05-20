@@ -112,22 +112,27 @@ export default async function Articles({
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold mb-8">最新記事</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
             {articles.contents.map((article) => (
-              <Link href={`/articles/id/${article.id}`} key={article.id}>
-                <article className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group">
+              <Link
+                href={`/articles/id/${article.id}`}
+                key={article.id}
+                className="flex"
+              >
+                <article className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-shadow cursor-pointer group flex flex-col w-full">
                   {/* Thumbnail */}
-                  <div className="relative bg-linear-to-br from-gray-200 to-gray-300 h-48 flex items-center justify-center group-hover:opacity-90 transition-opacity rounded-xl">
+                  <div className="bg-linear-to-br from-gray-200 to-gray-300 flex items-center justify-center group-hover:opacity-90 transition-opacity rounded-t-xl">
                     <Image
                       alt="eyecatch"
                       src={article.eyecatch.url}
-                      fill
-                      className="object-cover rounded-xl"
+                      width={article.eyecatch.width}
+                      height={article.eyecatch.height}
+                      className="rounded-t-xl w-full object-cover"
                     />
                   </div>
 
                   {/* Content */}
-                  <div className="p-6">
+                  <div className="p-6 flex flex-col flex-1">
                     {/* Category & Date */}
                     <div className="flex items-center gap-2 mb-3">
                       <span className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded">
@@ -143,28 +148,10 @@ export default async function Articles({
                       {article.title}
                     </h3>
 
-                    {/* Excerpt */}
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                    {/* Excerpt — flex-1で残りスペースを埋める */}
+                    <p className="text-sm text-gray-600 line-clamp-3 flex-1">
                       {article.excerpt}
                     </p>
-
-                    {/* Tags */}
-                    {/* <div className="flex flex-wrap gap-2 mb-4">
-                    {article.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="flex items-center gap-1 text-xs text-gray-600"
-                      >
-                        <Tag size={12} />
-                        {tag}
-                      </span>
-                    ))}
-                  </div> */}
-
-                    {/* Author */}
-                    {/* <p className="text-xs text-gray-500">
-                      by {article.author.name}
-                    </p> */}
                   </div>
                 </article>
               </Link>

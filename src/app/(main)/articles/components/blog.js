@@ -1,7 +1,7 @@
 import Image from "next/image";
 import ExitButton from "../components/button";
 import { Calendar } from "lucide-react";
- 
+
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
  
@@ -81,8 +81,6 @@ const styles = `
   }
   .blog-eyecatch-img {
     width: 100%;
-    aspect-ratio: 16 / 7;
-    object-fit: cover;
     border-radius: 8px;
     display: block;
   }
@@ -251,12 +249,12 @@ const styles = `
     margin: 3rem 0;
   }
 `;
- 
+
 export default function Blog({ isDraft, result }) {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: styles }} />
- 
+
       <div className="blog-page">
         {/* ── ヘッダー：カテゴリ・タイトル・メタ ── */}
         <div className="blog-header">
@@ -270,18 +268,18 @@ export default function Blog({ isDraft, result }) {
             <span>{result.updatedAt}</span>
           </div>
         </div>
- 
+
         {/* ── アイキャッチ画像（小さめ） ── */}
         <div className="blog-eyecatch">
-          <Image
-            src="/photo-1456513080510-7bf3a84b82f8.jpg"
+          <img
+            src={result.eyecatch.url}
             alt={result.title}
             width={result.eyecatch.width}
             height={result.eyecatch.height}
             className="blog-eyecatch-img"
           />
         </div>
- 
+
         {/* ── 本文 ── */}
         <article className="blog-article">
           <div
@@ -290,7 +288,7 @@ export default function Blog({ isDraft, result }) {
           />
         </article>
       </div>
- 
+
       {isDraft && <ExitButton redirectTo="/" />}
     </>
   );
