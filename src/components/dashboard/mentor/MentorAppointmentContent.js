@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Calendar } from "lucide-react";
 import MentorAppointmentTab from "./MentorAppointmentTab";
 import MentorAppointmentUnit from "./MentorAppointmentUnit";
-import AppointmentUnitPast from "../appointment/appointmentUnitPast";
+// import AppointmentUnitPast from "../appointment/appointmentUnitPast";
+import MentorAppointmentUnitPast from "./MentorAppointmentUnitPast";
 
 export default function MentorAppointmentContent({ meetings, users }) {
   const [isActive, setIsActive] = useState("upcoming");
@@ -39,7 +40,7 @@ export default function MentorAppointmentContent({ meetings, users }) {
         {isActive === "past" && (
           <div className="space-y-4">
             {meetings.past.map((appointment) => (
-              <AppointmentUnitPast
+              <MentorAppointmentUnitPast
                 key={appointment.id}
                 appointment={appointment}
                 counterpart={userMap[appointment.user]}
