@@ -13,8 +13,14 @@ const getMentors = (supabase) =>
       //   .from("mentors")
       //   .select("*")
       //   .limit(3);
+
       const mentor_admin_allow_list = mentor_admin_allow.map(item => item.id);
       const public_admin_allowed_mentor = mentors.filter(item => mentor_admin_allow_list.includes(item.id));
+
+      await Promise.all(public_admin_allowed_mentor.map(async (mentor) => {
+        const{ data: review_sum } = await supabase.from("review_sum").select("star_avg").eq("mentor_id", mentor.id).single();
+        mentor.review_sum = review_sum?.star_avg || 0;
+      }));
       // console.log(public_admin_allowed_mentor);
       
       return public_admin_allowed_mentor ?? [];
