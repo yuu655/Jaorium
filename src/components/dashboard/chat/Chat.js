@@ -718,14 +718,14 @@ export default function Chat({
                 </p>
               </div>
 
-              {/* <div>
+              <div>
                 <Link
-                  href={`/dashboard/Interview/${meeting.id}`}
+                  href={`/dashboard/review/${meeting.id}`}
                   className="text-blue-500 hover:text-blue-700 transition-colors"
                 >
-                  ミーティングに飛ぶ
+                  レビューを書く
                 </Link>
-              </div> */}
+              </div>
             </div>
           </div>
         </>

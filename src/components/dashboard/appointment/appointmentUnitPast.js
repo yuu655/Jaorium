@@ -1,5 +1,6 @@
 import { Calendar, Clock } from "lucide-react";
 import Icon from "../profile/icon";
+import Link from "next/link";
 
 // past (is_finished=true) の予約カード。user/mentor共通で使用
 export default function AppointmentUnitPast({ appointment, counterpart }) {
@@ -35,9 +36,12 @@ export default function AppointmentUnitPast({ appointment, counterpart }) {
       </div>
 
       <div className="flex gap-3">
-        <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-          レビューを書く
-        </button>
+        <Link href={`/dashboard/review/${appointment.id}`}>
+          <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+            レビューを書く
+          </button>
+        </Link>
+        <Link href={`/dashboard/booking/${appointment.id}`}></Link>
         <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
           もう一度予約
         </button>

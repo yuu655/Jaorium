@@ -62,15 +62,17 @@ export default function Mentor({ mentor, toggleTag }) {
         <div className="p-6 flex-1 flex flex-col">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-xl font-bold text-slate-800">{mentor.name}</h3>
-            <div className="flex gap-0.5">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  size={10}
-                  className="fill-yellow-400 text-yellow-400"
-                />
-              ))}
-            </div>
+            {mentor.review_sum > 0 && (
+              <div className="flex gap-0.5">
+                {Array.from({ length: mentor.review_sum }, (_, idx) => idx + 1).map((star) => (
+                  <Star
+                    key={star}
+                    size={10}
+                    className="fill-yellow-400 text-yellow-400"
+                  />
+                ))}
+              </div>
+            )}
           </div>
           <p className="text-emerald-700 font-bold text-sm mb-3">
             "{mentor.quote}"
