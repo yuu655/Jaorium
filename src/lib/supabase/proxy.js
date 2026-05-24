@@ -48,10 +48,10 @@ export async function updateSession(request) {
     error,
   } = await supabase.auth.getUser();
 
-  console.log("pathname:", pathname);
-  console.log("user:", user);
-  console.log("error:", error);
-  console.log("role:", user?.app_metadata?.role);
+  // console.log("pathname:", pathname);
+  // console.log("user:", user);
+  // console.log("error:", error);
+  // console.log("role:", user?.app_metadata?.role);
 
   // ⑤ クッキーはあるのにuserが取れない = 壊れたクッキー
   const hasSbCookies = request.cookies

@@ -8,24 +8,24 @@ export async function POST() {
   try {
     const headersList = await headers();
     const origin = headersList.get("origin");
-    console.log("origin:", origin);
+    // console.log("origin:", origin);
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const { data: customerData } = await supabase
+    const { data } = await supabase
       .from("users")
       .select("*")
       .eq("id", user.id)
       .single();
 
-    console.log(customerData.customer_id);
+    // console.log(data);
 
     // Create Checkout Sessions from body params.
     const session = await stripe.checkout.sessions.create({
-      ...(customerData?.customer_id
-        ? { customer: customerData.customer_id }
+      ...(data?.customer_id
+        ? { customer: data.customer_id }
         : {
             customer_email: user.user_metadata.email,
             customer_creation: "always",
