@@ -6,7 +6,6 @@ import HeaderNav from "./headerComponents/headerNav";
 // import Humberger from "./headerComponents/humberger";
 import Humberger from "@/components/headerComponents/drawerMenu";
 
-
 export default function Header({ propClassName }) {
   const nav_list = [
     { name: "コンセプト", href: "/concept" },
@@ -22,13 +21,14 @@ export default function Header({ propClassName }) {
       <div className="w-full max-w-300 px-4">
         <nav className="flex p-4 justify-between items-center">
           <Link href="/">
-            <Image
-              src="/logo.png"
-              alt="ロゴ"
-              width={70}
-              height={70}
-              className="object-contain"
-            />
+            <div className="relative w-[70px] h-[70px]">
+              <Image
+                src="/logo.png"
+                alt="ロゴ"
+                fill
+                className="object-contain"
+              />
+            </div>
           </Link>
 
           <HeaderNav nav_list={nav_list} />
