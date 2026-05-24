@@ -1,28 +1,20 @@
-"use server";
+"use server"
 
-import { createClient } from "@/lib/supabase/server";
+export default async function IndexPage({ searchParams }) {
+  const { canceled } = await searchParams
 
-export default async function Acount() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user?.id)
-    .single();
-  // console.log(profile.role)
+  if (canceled) {
+    console.log(
+      'Order canceled -- continue to shop around and checkout when you’re ready.'
+    )
+  }
   return (
-    <>
-      <div>あなたは{profile.role}です。</div>
-
-      <form action="/auth/signout" method="post">
-        <button className="button block" type="submit">
-          Sign out
+    <form action="/api/checkout_sessions" method="POST">
+      <section>
+        <button type="submit" role="link">
+          Checkout
         </button>
-      </form>
-    </>
-  );
+      </section>
+    </form>
+  )
 }

@@ -1,18 +1,24 @@
 "use client"
 
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { getAvatarUrl } from "./actions";
 
 export default function Icon({ size, url }) {
   const [loaded, setLoaded] = useState(false);
-  const isValidUrl = typeof url === "string" && url.length > 0;
+  // const isValidUrl = typeof url === "string" && url.length > 0;
 
-  let avatarUrl = "/default.jpg";
-  if (isValidUrl) {
-    const supabase = createClient();
-    avatarUrl = supabase.storage.from("avatars").getPublicUrl(url).data.publicUrl;
-  }
+  const avatarUrl = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${url}` || "/default.jpg";
+  // console.log("Avatar URL:", avatarUrl);
+  // if (isValidUrl) {
+  //   // const supabase = createClient();
+  //   // avatarUrl = supabase.storage.from("avatars").getPublicUrl(url).data.publicUrl;
+  //   getAvatarUrl(url).then((result) => {
+  //     if (result.success) {
+  //       avatarUrl = result.url;
+  //     }
+  //   });
+  // }
 
   return (
     <div style={{ height: size, width: size }} className="relative mx-auto mb-3">
@@ -24,7 +30,7 @@ export default function Icon({ size, url }) {
         />
       )}
       <Image
-        loading="lazy"
+        loading="eager"
         width={size}
         height={size}
         src={avatarUrl}

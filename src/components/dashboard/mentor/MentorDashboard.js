@@ -27,7 +27,7 @@ export default function MentorDashboard({ profile, meetings, users, mentorTags, 
                 <MentorAppointmentContent meetings={meetings} users={users} />
               )}
               {side === "profile" && (
-                <MentorProfile funcProfile={updateMentorProfile} funcIcon={updateMentorIcon} profile={profile} mentorTags={mentorTags} allTags={allTags} />
+                <MentorProfile funcProfile={updateMentorProfile} profile={profile} mentorTags={mentorTags} allTags={allTags} />
               )}
               {side === "template" && (
                 <MentorTemplateContent />

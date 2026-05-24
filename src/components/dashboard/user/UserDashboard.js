@@ -8,7 +8,7 @@ import StatusCode from "../common/statusCode";
 
 import { updateUserIcon, updateUserProfile } from "../profile/actions";
 
-export default function UserDashboard({ profile, meetings, mentors }) {
+export default function UserDashboard({ profile, meetings, mentors, mentorTagsMap, tags }) {
   const [side, setSide] = useState("appointment");
 
   return (
@@ -24,10 +24,10 @@ export default function UserDashboard({ profile, meetings, mentors }) {
 
             <div className="bg-white rounded-lg shadow-sm">
               {side === "appointment" && (
-                <UserAppointmentContent meetings={meetings} mentors={mentors} />
+                <UserAppointmentContent meetings={meetings} mentors={mentors} mentorTagsMap={mentorTagsMap} tags={tags} />
               )}
               {side === "profile" && (
-                <UserProfile funcProfile={updateUserProfile} funcIcon={updateUserIcon} profile={profile} />
+                <UserProfile funcProfile={updateUserProfile} profile={profile} />
               )}
             </div>
           </main>

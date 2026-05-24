@@ -5,20 +5,15 @@ import { Eye, Lock, EyeOff } from "lucide-react";
 export default function AddUserProfile({
   profile,
   onUpload,
-  setIsIcon = null,
   user,
   isFirst = false,
 }) {
-  // const wrappedAction = setIsIcon
-  //   ? (prevState, formData) => onUpload(prevState, formData, setIsIcon)
-  //   : onUpload;
-
   const [state, action, isPending] = useActionState(onUpload, null);
   const [showPassword, setShowPassword] = useState(false);
   const [showPassword_check, setShowPassword_check] = useState(false);
 
   useEffect(() => {
-    console.log(setIsIcon, state);
+    // console.log(setIsIcon, state);
     if (state?.success && setIsIcon) {
       setIsIcon(true);
     }

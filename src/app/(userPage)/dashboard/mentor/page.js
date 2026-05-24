@@ -1,3 +1,4 @@
+"use server";
 import MentorDashboard from "@/components/dashboard/mentor/MentorDashboard";
 import { createClient } from "@/lib/supabase/server";
 import { unstable_cache } from "next/cache";
@@ -90,6 +91,7 @@ export default async function MentorPage({ searchParams }) {
       { revalidate: 3600, tags: [`mentor-tags-${userId}`] },
     );
 
+    // console.log(user);
   const { profile, meetings, users } = await getCachedData(user.id)();
   // console.log(profile);
   const { allTags, mentorTags } = await getTags(user.id)();

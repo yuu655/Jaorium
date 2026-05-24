@@ -1,32 +1,17 @@
-"use client";
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+"use server";
+import { createClient } from "@/lib/supabase/server";
 
-import AddIcon from "@/components/dashboard/profile/addIcon";
 import AddMentorProfile from "@/components/dashboard/mentor/addMentorProfile";
 
 import { submitMentor } from "../actions";
-import {
-  updateMentorIcon,
-} from "@/components/dashboard/profile/actions";
 
-export default function SetAccount() {
-  // const [role, setRole] = useState("");
-  const [isIcon, setIsIcon] = useState(false);
-  const [allTags, setAllTags] = useState([]);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const fetchAllTags = async () => {
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase.from("tags").select("*");
-      setAllTags(data ?? []);
-      setUser(user);
-    };
-
-    fetchAllTags();
-  }, []);
+export default async function SetAccount() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data, error } = await supabase.from("tags").select("*");
+  const allTags = (data ?? []);
 
   return (
     <div className="bg-white min-h-screen">
@@ -56,26 +41,11 @@ export default function SetAccount() {
                   onUpload={submitMentor}
                   profile={null}
                   allTags={allTags}
-                  setIsIcon={setIsIcon}
                   user={user}
                   isFirst={true}
                 />
               </div>
             </div>
-            {isIcon && (
-              <div className="max-w-3xl mx-auto px-4 my-8 sm:px-6 lg:px-8">
-                <button onClick={() => setIsIcon((prev) => !prev)}>
-                  戻る
-                </button>
-                <AddIcon
-                  format="private/user"
-                  uid={null}
-                  // onUpload={(inputFiles) => updateUserIcon(inputFiles)}
-                  onUpload={(inputFiles) => updateMentorIcon(inputFiles)}
-                  profile={null}
-                />
-              </div>
-            )}
           </section>
         </div>
       </section>
