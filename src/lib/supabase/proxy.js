@@ -1,79 +1,122 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse } from 'next/server'
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse } from "next/server";
 
 export async function updateSession(request) {
-  const pathname = request.nextUrl.pathname;
+  // ① supabaseResponseを最初に作る
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
 
-  let supabaseResponse = NextResponse.next({ request });
+  // ② Supabaseクライアント作成（getAll/setAllで橋渡し）
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
       cookies: {
-        getAll() { return request.cookies.getAll() },
+        getAll() {
+          // ブラウザから届いたクッキーをSupabaseに渡す
+          return request.cookies.getAll();
+        },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          // Supabaseがトークンをリフレッシュした時、新しい値をsupabaseResponseに書き込む
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
-  // getSession() はCookieを読むだけ = ネットワーク通信なし
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
-  const role = user?.user_metadata?.role;
-  const role_admin = user?.app_metadata?.role_admin;
+  const pathname = request.nextUrl.pathname;
 
-  // 未ログイン → リダイレクトa
-  if (!user && (
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/setAccount') ||
-    pathname.startsWith('/resetPass')
-  )) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
+  // ③ supabaseResponseのクッキーを引き継いでredirectするヘルパー
+  const redirectTo = (url) => {
+    const redirectResponse = NextResponse.redirect(new URL(url, request.url));
 
-  // console.log("ユーザー情報:", user);
-  // 無効なセッションのクッキーを自動削除
-  if (!user) {
+    // supabaseResponseの新しいトークンをコピー（これをしないと捨てられる）
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
+    });
+
+    return redirectResponse;
+  };
+
+  // ④ トークンの検証（ここでgetAll/setAllが動く）
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  console.log("pathname:", pathname);
+  console.log("user:", user);
+  console.log("error:", error);
+  console.log("role:", user?.app_metadata?.role);
+
+  // ⑤ クッキーはあるのにuserが取れない = 壊れたクッキー
+  const hasSbCookies = request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.startsWith("sb-"));
+
+  if (error && !user && hasSbCookies) {
+    const redirectResponse = NextResponse.redirect(
+      new URL("/login", request.url),
+    );
+
     request.cookies.getAll().forEach((cookie) => {
       if (cookie.name.startsWith("sb-")) {
-        request.cookies.delete(cookie.name);
+        redirectResponse.cookies.delete(cookie.name);
       }
     });
 
-    // 保護ページならリダイレクト
-    if (request.nextUrl.pathname.startsWith("/dashboard")) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
+    return redirectResponse;
   }
 
-  if (user) {
-    // if(pathname === '/login' || pathname.startsWith('/signup')) {
-    //   return NextResponse.redirect(new URL('/dashboard', request.url));
-    // }
-    if (role === undefined && pathname === '/setAccount') {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL('/signup/mentor', request.url));
+  // ⑥ 未ログイン（クッキー自体がない or 無効）
+  if (!user) {
+    if (
+      pathname.startsWith("/dashboard") ||
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/setAccount") ||
+      pathname.startsWith("/resetPass")
+    ) {
+      return redirectTo("/login");
     }
-    // if(role === undefined && (pathname.startsWith('/dashboard'))) {
-    // 
-    // }
-    if (role === "user" && (pathname === '/login' || pathname === '/setAccount' || pathname === '/setAccount/mentor' || pathname === '/setAccount/user' || pathname.startsWith('/signup') || pathname === '/dashboard' || pathname === '/dashboard/mentor')) {
-      return NextResponse.redirect(new URL('/dashboard/user', request.url));
-    }
-    if (role === "mentor" && (pathname === '/login' || pathname === '/setAccount' || pathname === '/setAccount/mentor' || pathname === '/setAccount/user' || pathname.startsWith('/signup')|| pathname === '/dashboard'  || pathname === '/dashboard/user')) {
-      return NextResponse.redirect(new URL('/dashboard/mentor', request.url));
-    }
-    if (pathname.startsWith('/admin') && role_admin !== 'admin') {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
+
+    return supabaseResponse;
   }
 
+  // ⑦ ログイン済みの処理
+  const role = user?.user_metadata?.role;
+
+  // roleが未設定のままsetAccountに来た場合は不正なので強制サインアウト
+  if (role === undefined && pathname === "/setAccount") {
+    await supabase.auth.signOut();
+    return redirectTo("/signup/mentor");
+  }
+
+  if (
+    role === "user" &&
+    (pathname === "/login" ||
+      pathname.startsWith("/setAccount") ||
+      pathname.startsWith("/signup") ||
+      pathname === "/dashboard" ||
+      pathname === "/dashboard/mentor")
+  ) {
+    return redirectTo("/dashboard/user");
+  }
+
+  if (
+    role === "mentor" &&
+    (pathname === "/login" ||
+      pathname.startsWith("/setAccount") ||
+      pathname.startsWith("/signup") ||
+      pathname === "/dashboard" ||
+      pathname === "/dashboard/user")
+  ) {
+    return redirectTo("/dashboard/mentor");
+  }
+
+  // ⑧ 何も該当しない場合はそのまま通す
   return supabaseResponse;
 }
