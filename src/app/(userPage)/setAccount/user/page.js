@@ -1,32 +1,14 @@
-"use client";
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
-
-import AddIcon from "@/components/dashboard/profile/addIcon";
+"use server";
+import { createClient } from "@/lib/supabase/server";
 import AddUserProfile from "@/components/dashboard/user/addUserProfile";
 
 import { submitUser } from "../actions";
-import {
-  updateUserIcon,
-} from "@/components/dashboard/profile/actions";
 
-export default function SetAccount() {
-  // const [role, setRole] = useState("");
-  const [isIcon, setIsIcon] = useState(false);
-  const [allTags, setAllTags] = useState([]);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const fetchAllTags = async () => {
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase.from("tags").select("*");
-      setAllTags(data ?? []);
-      setUser(user);
-    };
-
-    fetchAllTags();
-  }, []);
+export default async function SetAccount() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <div className="bg-white min-h-screen">
@@ -55,26 +37,11 @@ export default function SetAccount() {
                 <AddUserProfile
                   onUpload={submitUser}
                   profile={null}
-                  user = {user}
-                  setIsIcon={setIsIcon}
+                  user={user}
                   isFirst={true}
                 />
               </div>
             </div>
-            {isIcon && (
-              <div className="max-w-3xl mx-auto px-4 my-8 sm:px-6 lg:px-8">
-                <button onClick={() => setIsIcon((prev) => !prev)}>
-                  戻る
-                </button>
-                <AddIcon
-                  format="private/user"
-                  uid={null}
-                  // onUpload={(inputFiles) => updateUserIcon(inputFiles)}
-                  onUpload={(inputFiles) => updateUserIcon(inputFiles)}
-                  profile={null}
-                />
-              </div>
-            )}
           </section>
         </div>
       </section>

@@ -87,14 +87,11 @@ async function submitMentor(prevState, formData) {
     .insert(data.tagIds.map((id) => ({ mentor_id: user.id, tag_id: id })));
   if (error_insert) {
     throw error_insert;
-    alert("メンター情報の保存に失敗しました");
   }
   if (error_insert_mentor_tags) {
     throw error_insert_mentor_tags;
-    alert("メンター情報の保存に失敗しました2");
   }
   redirect("/setAccount/mentor/icon");
-  return { success: true };
 }
 
 export { submitMentor, submitUser };

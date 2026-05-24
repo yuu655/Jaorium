@@ -1,31 +1,8 @@
 "use client";
 import AddIcon from "@/components/dashboard/profile/addIcon";
-import { updateUserIcon } from "@/components/dashboard/profile/actions";
-
-import { createClient } from "@/lib/supabase/client";
-import { useState, useEffect } from "react";
 import Link from "next/link";
 
-// import {
-//   submitUser,
-//   updateUserIcon,
-// } from "@/components/dashboard/profile/actions";
-
 export default function SetAccount() {
-  const [profile, setProfile] = useState(null);
-  useEffect(() => {
-    const fetchData = async () => {
-      const supabase = await createClient();
-      supabase.auth.getUser().then(({ data: { user } }) => {
-            console.log("ユーザーデータ:", user);
-        if (user) {
-          setProfile(user);
-        }
-      });
-    };
-    fetchData();
-  }, []);
-
   return (
     <div className="bg-white min-h-screen">
       {/* Header */}
@@ -45,13 +22,7 @@ export default function SetAccount() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <section className="py-16">
             <div className="max-w-3xl mx-auto px-4 my-8 sm:px-6 lg:px-8">
-              <AddIcon
-                format="private/user"
-                uid={profile?.id}
-                // onUpload={(inputFiles) => updateUserIcon(inputFiles)}
-                onUpload={(inputFiles) => updateUserIcon(inputFiles)}
-                profile={profile}
-              />
+              <AddIcon/>
             </div>
             <div className="text-center mt-6">
               <Link href="/dashboard/user" className="text-xl text-blue-600 hover:text-gray-900">

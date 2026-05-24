@@ -8,17 +8,13 @@ export async function POST(req) {
   }
 
   const body = await req.json();
-  const table = body.table; // Supabase が送ってくるペイロード
-//   console.log("Received webhook for table:", table);
+  const table = body.table;
+  console.log("Received webhook for table:", table);
 
   switch (table) {
     case "mentors":
-    //   console.log("Revalidating mentors tag");
-      revalidateTag("mentors", { expire: 0 });
+      revalidateTag("mentors");
       break;
-    // case 'posts':
-    //   revalidateTag('posts')
-    //   break
   }
 
   return NextResponse.json({ revalidated: true });

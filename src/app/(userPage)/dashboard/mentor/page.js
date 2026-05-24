@@ -11,6 +11,7 @@ export default async function MentorPage({ searchParams }) {
     data: { user },
   } = await supabase.auth.getUser();
 
+
   // supabaseとuserIdをキャッシュの外で取得してから渡す
   const getCachedData = (userId) =>
     unstable_cache(

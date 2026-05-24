@@ -1,14 +1,37 @@
+"use server";
+
 import Mentor from "./components/mentors";
 import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import MentorSearch from "@/components/common/mentorSearch";
+
+const fetchMentorTags = async (mentorId, supabase) => {
+    const { data } = await supabase
+      .from("mentor_tags")
+      .select("tag_id")
+      .eq("mentor_id", mentorId);
+    return data;
+  };
 
 const getMentors = (supabase) =>
   unstable_cache(
     async () => {
-      const [{ data: mentors }, { data: mentor_admin_allow }] = await Promise.all([
+      const [{ data: mentors }, { data: mentor_admin_allow }, { data: tags }] = await Promise.all([
         supabase.from("mentors").select("*").eq("is_allowed", true),
         supabase.from("mentor_secret").select("*").eq("admin_allow", true),
-      ])
+        supabase.from("tags").select("*"),
+      ]);
+
+      const mentorTagsMap = Object.fromEntries(
+          await Promise.all(
+            mentors.map(async (mentor) => [
+              mentor.id,
+              await fetchMentorTags(mentor.id, supabase),
+            ]),
+          ),
+        );
+
+
       // const { data: mentors } = await supabase
       //   .from("mentors")
       //   .select("*")
@@ -23,7 +46,7 @@ const getMentors = (supabase) =>
       }));
       // console.log(public_admin_allowed_mentor);
       
-      return public_admin_allowed_mentor ?? [];
+      return { mentors: public_admin_allowed_mentor ?? [], mentorTagsMap, tags };
     },
     ["mentors-list"],
     { revalidate: 3600, tags: ["mentors"] },
@@ -42,11 +65,16 @@ export default async function Mentors() {
   // console.log(mentors);
   // const { id } = await params;
   const supabase = await createClient();
-  const mentors = await getMentors(supabase)();
+  const { mentors, mentorTagsMap, tags } = await getMentors(supabase)();
   
   return (
     <>
-      <Mentor mentors={mentors} />
+    <div className="bg-white">
+      <MentorSearch mentors={mentors} mentorTagsMap={mentorTagsMap} tags={tags}>
+        <Mentor/>
+      </MentorSearch>
+
+    </div>
     </>
   );
 }

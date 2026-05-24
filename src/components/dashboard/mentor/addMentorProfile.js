@@ -7,7 +7,6 @@ export default function AddMentorProfile({
   onUpload,
   mentorTags = [],
   allTags,
-  setIsIcon = null,
   user,
   isFirst = false,
 }) {
@@ -26,11 +25,6 @@ export default function AddMentorProfile({
     setSelected(next);
   };
 
-  useEffect(() => {
-    if (state?.success && setIsIcon) {
-      setIsIcon(true);
-    }
-  }, [state]);
 
   // カテゴリごとにグループ化
   const groupedTags = allTags.reduce((acc, tag) => {
@@ -44,7 +38,6 @@ export default function AddMentorProfile({
   //     setIsIcon(true);
   //   }
   // }, [state]);
-  console.log(profile)
 
   return (
     <>
