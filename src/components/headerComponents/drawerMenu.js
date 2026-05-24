@@ -40,13 +40,13 @@ export default function DrawerWithSides({nav_list}) {
             })}
             {/* <li><button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">予約</button></li> */}
             <li>
-              <Button className="bg-orange-500 mb-10" asChild>
-                <Link className="text-sm" href="/signup/user">予約する</Link>
+              <Button className="bg-blue-500" asChild>
+                <Link className="text-sm" href="/recruitment">メンター希望の方へ</Link>
               </Button>
             </li>
             <li>
-              <Button className="bg-blue-500 mb-10" asChild>
-                <Link className="text-sm" href="/signup/mentor">メンターになる</Link>
+              <Button className="bg-orange-500 my-5" asChild>
+                <Link className="text-sm" href="/signup/user">予約する</Link>
               </Button>
             </li>
             <li>
