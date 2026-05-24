@@ -25,7 +25,7 @@ export async function updateSession(request) {
   // getSession() はCookieを読むだけ = ネットワーク通信なし
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
-  const role = user?.user_metadata?.role;  // JWTから取得
+  const role = user?.user_metadata?.role;
   const role_admin = user?.app_metadata?.role_admin;
 
   // 未ログイン → リダイレクトa
@@ -36,6 +36,21 @@ export async function updateSession(request) {
     pathname.startsWith('/resetPass')
   )) {
     return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // console.log("ユーザー情報:", user);
+  // 無効なセッションのクッキーを自動削除
+  if (!user) {
+    request.cookies.getAll().forEach((cookie) => {
+      if (cookie.name.startsWith("sb-")) {
+        request.cookies.delete(cookie.name);
+      }
+    });
+
+    // 保護ページならリダイレクト
+    if (request.nextUrl.pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
   }
 
   if (user) {
