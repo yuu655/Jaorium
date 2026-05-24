@@ -7,9 +7,10 @@ import UserAppointmentUnit from "./UserAppointmentUnit";
 // import AppointmentUnitPast from "../appointment/appointmentUnitPast";
 import UserAppointmentUnitPast from "./UserAppointmentUnitPast";
 import Mentors from "./UserMentors";
+import MentorSearch from "@/components/common/mentorSearch";
 import { useState } from "react";
 
-export default function UserAppointmentContent({ meetings, mentors }) {
+export default function UserAppointmentContent({ meetings, mentors, mentorTagsMap, tags }) {
   const [isActive, setIsActive] = useState("upcoming");
 
   // meeting.mentor (ID) からmentorオブジェクトを引くためのMap
@@ -59,7 +60,9 @@ export default function UserAppointmentContent({ meetings, mentors }) {
 
         {isActive === "mentor" && (
           <div className="space-y-4">
-            <Mentors mentors={mentors} />
+            <MentorSearch  mentors={mentors} mentorTagsMap={mentorTagsMap} tags={tags} >
+              <Mentors/>
+            </MentorSearch>
           </div>
         )}
       </div>

@@ -8,6 +8,14 @@ export default async function UserPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const fetchMentorTags = async (mentorId) => {
+    const { data } = await supabase
+      .from("mentor_tags")
+      .select("tag_id")
+      .eq("mentor_id", mentorId);
+    return data;
+  };
+
   const getCachedData = (supabase, userId) =>
     unstable_cache(
       async () => {
@@ -16,12 +24,23 @@ export default async function UserPage() {
           { data: mentors },
           { data: mentor_admin_allow },
           { data: Meetings },
+          { data: tags },
         ] = await Promise.all([
           supabase.from("users").select("*").eq("id", userId).single(),
           supabase.from("mentors").select("*").eq("is_allowed", true),
           supabase.from("mentor_secret").select("*").eq("admin_allow", true),
           supabase.from("meetings").select("*").eq("user", userId),
+          supabase.from("tags").select("*"),
         ]);
+
+        const mentorTagsMap = Object.fromEntries(
+          await Promise.all(
+            mentors.map(async (mentor) => [
+              mentor.id,
+              await fetchMentorTags(mentor.id),
+            ]),
+          ),
+        );
 
         const mentor_admin_allow_list = mentor_admin_allow.map(
           (item) => item.id,
@@ -80,18 +99,20 @@ export default async function UserPage() {
           profile,
           mentors: public_admin_allowed_mentor ?? [],
           meetings: { next: nextMeetings ?? [], past: pastMeetings ?? [] },
+          mentorTagsMap,
+          tags,
         };
       },
       [`dashboard-user-${userId}`],
       { revalidate: 60, tags: [`dashboard-user-${userId}`, "meetings"] },
     );
 
-  const { profile, mentors, meetings } = await getCachedData(
+  const { profile, mentors, meetings, mentorTagsMap, tags } = await getCachedData(
     supabase,
     user.id,
   )();
 
   return (
-    <UserDashboard profile={profile} meetings={meetings} mentors={mentors} />
+    <UserDashboard profile={profile} meetings={meetings} mentors={mentors} mentorTagsMap={mentorTagsMap} tags={tags} />
   );
 }

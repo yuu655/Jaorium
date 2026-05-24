@@ -5,7 +5,7 @@ import AddMentorProfile from "./addMentorProfile";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default function MentorProfile({ funcProfile, funcIcon, profile=null, mentorTags, allTags }) {
+export default function MentorProfile({ funcProfile, profile=null, mentorTags, allTags }) {
   return (
     <section className="py-16">
       <h3 className="text-2xl font-bold text-center mb-15">プロフィール編集</h3>
@@ -18,12 +18,7 @@ export default function MentorProfile({ funcProfile, funcIcon, profile=null, men
         </div>
       </div>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <AddIcon
-          format="public/mentor"
-          uid={profile.id}
-          onUpload={(inputFiles) => funcIcon(inputFiles)}
-          profile={profile}
-        />
+        <AddIcon/>
       </div>
       <div className="max-w-3xl mx-auto px-4 my-8 sm:px-6 lg:px-8">
         <Link href="/dashboard/delete">
