@@ -37,6 +37,11 @@ export default function Footer() {
                   予約する
                 </Link>
               </li>
+              <li>
+                <Link href="/contact" className="text-sm text-gray-300 hover:text-blue-400 transition-colors">
+                  お問い合わせ
+                </Link>
+              </li>
             </ul>
           </div>
 

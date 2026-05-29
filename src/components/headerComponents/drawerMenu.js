@@ -54,6 +54,11 @@ export default function DrawerWithSides({nav_list}) {
                 <Link className="text-sm" href="/login">ログインする</Link>
               </Button>
             </li>
+            <li>
+              <Button className="bg-pink-500" asChild>
+                <Link className="text-sm" href="/contact">お問い合わせ</Link>
+              </Button>
+            </li>
           </ul>
         </div>
         {/* <DrawerFooter>
