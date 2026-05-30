@@ -1,5 +1,4 @@
 "use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import FadeIn from "./common/FadeIn";
@@ -9,13 +8,13 @@ import FadeIn from "./common/FadeIn";
 function Bubble({ top, lines }) {
   return (
     <div
-      className="absolute right-4 md:right-5 bg-white border-[1.5px] border-gray-200 rounded-xl px-3 py-2 md:px-[18px] md:py-[10px] text-[11px] md:text-[12px] font-medium text-gray-950 text-center shadow-lg whitespace-nowrap z-10"
+      className="absolute right-4 md:right-5 bg-white border-[1.5px] border-gray-200 rounded-xl px-3.5 py-2.5 md:px-[20px] md:py-[12px] text-[13px] md:text-[14px] font-medium text-gray-950 text-center shadow-lg whitespace-nowrap z-10"
       style={{ top }}
     >
       {/* 外枠の矢印 */}
-      <span className="absolute -left-2 top-[13px] border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent border-r-[8px] border-r-gray-200" />
+      <span className="absolute -left-2 top-[15px] border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent border-r-[8px] border-r-gray-200" />
       {/* 内側の白い矢印 */}
-      <span className="absolute -left-[6px] top-[14px] border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[7px] border-r-white" />
+      <span className="absolute -left-[6px] top-[16px] border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[7px] border-r-white" />
       
       {lines.map((l, i) => (
         <span key={i} className="block leading-[1.55]">
@@ -74,10 +73,10 @@ function HeroSection() {
   return (
     <section className="bg-white">
       {/* 上段 */}
-      <div className="max-w-[1100px] mx-auto px-4 md:pl-14 md:pr-4 grid grid-cols-1 lg:grid-cols-[420px_1fr] items-stretch">
+      <div className="max-w-[1100px] mx-auto px-4 md:pl-14 md:pr-4 grid grid-cols-1 lg:grid-cols-[440px_1fr] items-stretch">
         {/* 左テキスト */}
         <FadeIn className="pt-10 pb-6 md:py-13 pr-0 lg:pr-10 flex flex-col justify-center">
-          <h1 className="text-3xl md:text-[42px] font-black leading-[1.35] tracking-tight text-gray-950 mb-5 md:mb-[22px]">
+          <h1 className="text-4xl md:text-[46px] font-black leading-[1.35] tracking-tight text-gray-950 mb-5 md:mb-[22px]">
             志望校の先輩から
             <br />
             <span
@@ -94,7 +93,7 @@ function HeroSection() {
             <br />
             直接もらえる。
           </h1>
-          <p className="text-[14px] text-gray-700 leading-[1.9]">
+          <p className="text-[16px] text-gray-700 leading-[1.9]">
             JaoRiumは、聞きたいときに、
             <br />
             聞きたい人に、知りたい情報を聞ける
@@ -104,7 +103,7 @@ function HeroSection() {
         </FadeIn>
 
         {/* 右：写真＋吹き出し */}
-        <FadeIn delay={80} className="relative overflow-visible h-[380px] sm:h-[450px] lg:h-auto w-full min-h-[380px]">
+        <FadeIn delay={80} className="relative overflow-visible h-[420px] sm:h-[480px] lg:h-auto w-full min-h-[420px]">
           <Image
             src="/heroGirl.png"
             alt="女子高生"
@@ -112,8 +111,8 @@ function HeroSection() {
             className="object-cover object-top"
           />
           <Bubble top={32} lines={["「面接ってどんなこと", "聞かれたの？」"]} />
-          <Bubble top={150} lines={["「北大農学部と九大農学部", "迷ってるけど…」"]} />
-          <Bubble top={280} lines={["「共通テストの", "勉強法が知りたい！」"]} />
+          <Bubble top={160} lines={["「北大農学部と九大農学部", "迷ってるけど…」"]} />
+          <Bubble top={290} lines={["「共通テストの", "勉強法が知りたい！」"]} />
         </FadeIn>
       </div>
 
@@ -128,7 +127,7 @@ function HeroSection() {
               <div className="w-[46px] h-[46px] rounded-full bg-blue-600 flex items-center justify-center shrink-0">
                 {b.icon}
               </div>
-              <span className="text-[13px] font-bold text-gray-950 leading-[1.4]">
+              <span className="text-[15px] font-bold text-gray-950 leading-[1.4]">
                 {b.text[0]}
                 <br />
                 {b.text[1]}
@@ -165,7 +164,7 @@ function WorriesSection() {
     <section className="bg-white px-4 py-12 md:py-16 border-t border-gray-100">
       <div className="max-w-[860px] mx-auto">
         <FadeIn>
-          <h2 className="text-center text-2xl md:text-[26px] font-black text-gray-950 tracking-tight mb-9">
+          <h2 className="text-center text-3xl md:text-[32px] font-black text-gray-950 tracking-tight mb-9">
             こんなお悩み、ありませんか？
           </h2>
         </FadeIn>
@@ -173,7 +172,7 @@ function WorriesSection() {
           {items.map((item, i) => (
             <FadeIn key={i} delay={i * 80}>
               <div className="bg-white border-[1.5px] border-gray-200 rounded-xl flex flex-col p-5 md:pt-6 md:pb-5 h-full">
-                <p className="text-[14px] font-bold text-gray-950 leading-[1.6] text-left mb-5">
+                <p className="text-[16px] font-bold text-gray-950 leading-[1.6] text-left mb-5">
                   {item.lines[0]}
                   <br />
                   {item.lines[1]}
@@ -233,16 +232,16 @@ function SolutionSection() {
   steps.forEach((s, i) => {
     cols.push(
       <FadeIn key={`s${i}`} delay={i * 80}>
-        <div className="bg-white border-[1.5px] border-gray-200 rounded-xl p-5 md:px-5 md:pt-[22px] md:pb-[18px] text-center h-full">
-          <div className="flex items-center gap-2 mb-1.5">
-            <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-[12px] font-black flex items-center justify-center shrink-0">
+        <div className="bg-white border-[1.5px] border-gray-200 rounded-xl p-5 md:px-4 md:pt-[22px] md:pb-[18px] text-center h-full">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-6 h-6 rounded-full bg-blue-600 text-white text-[13px] font-black flex items-center justify-center shrink-0">
               {s.num}
             </div>
-            <span className="text-[14px] font-bold text-blue-600">
+            <span className="text-[16px] font-bold text-blue-600">
               {s.label}
             </span>
           </div>
-          <p className="text-[12px] text-gray-500 leading-[1.65] mb-3.5 text-left">
+          <p className="text-[14px] text-gray-500 leading-[1.65] mb-3.5 text-left">
             {s.sub[0]}
             <br />
             {s.sub[1]}
@@ -275,7 +274,7 @@ function SolutionSection() {
     <section className="bg-white px-4 py-12 md:py-16 border-t border-gray-100">
       <div className="max-w-[860px] mx-auto">
         <FadeIn>
-          <h2 className="text-center text-2xl md:text-[26px] font-black text-gray-950 tracking-tight mb-9">
+          <h2 className="text-center text-3xl md:text-[32px] font-black text-gray-950 tracking-tight mb-9">
             <span className="text-blue-600">JaoRium</span>を使えば解決できます！
           </h2>
         </FadeIn>
@@ -304,13 +303,13 @@ function ExampleSection() {
           </div>
         </FadeIn>
         <FadeIn delay={80}>
-          <div className="bg-white rounded-xl border border-gray-200 p-5 md:px-7 md:py-5 flex flex-col sm:flex-row items-center justify-between gap-5">
-            <p className="text-[14px] font-bold text-gray-950 text-center sm:text-left">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 md:px-7 md:py-6 flex flex-col sm:flex-row items-center justify-between gap-5">
+            <p className="text-[16px] font-bold text-gray-950 text-center sm:text-left">
               あなたの受験を、リアルな情報でサポートします。
             </p>
             <Link
               href="signup/user"
-              className="inline-flex items-center gap-2 bg-amber-500 text-white text-[14px] font-bold py-[13px] px-7 rounded-full no-underline whitespace-nowrap shadow-[0_3px_12px_rgba(245,158,11,0.35)] hover:bg-amber-600 transition-colors"
+              className="inline-flex items-center gap-2 bg-amber-500 text-white text-[16px] font-bold py-[14px] px-8 rounded-full no-underline whitespace-nowrap shadow-[0_3px_12px_rgba(245,158,11,0.35)] hover:bg-amber-600 transition-colors"
             >
               今すぐ先輩を探してみる
               <svg
