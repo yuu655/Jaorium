@@ -52,7 +52,7 @@ export default async function ChatPage({ params }) {
       currentUserId={user.id}
       counterpart={counterpart}
       initialMessages={initialMessages ?? []}
-      isMentor={isMentor}
+      isUser={!isMentor}
     />
   );
 }

@@ -1,8 +1,11 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { stripe } from "@/lib/stripe";
 import { revalidateTag } from "next/cache";
 import getUrls from "@/utils/getUrls";
+import { redirect } from "next/navigation";
 
 async function getMeetingWithAuth(supabase, meetingId, userId) {
   const { data: meeting } = await supabase
@@ -203,4 +206,89 @@ export async function cancelFinishRequest(meetingId) {
 
   if (error) return { error: "キャンセルに失敗しました" };
   return { success: true };
+}
+
+
+export async function consumeCredit(meetingId) {
+  // 認証済みユーザーの取得
+  const supabaseAuth = await createClient();
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_SECRET_KEY,
+  );
+ 
+  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+  if (authError || !user) {
+    return { error: "ログインが必要です" };
+  }
+ 
+  // Service Roleで操作（RLSをバイパス）
+  // const supabase = createClient(
+  //   process.env.NEXT_PUBLIC_SUPABASE_URL,
+  //   process.env.NEXT_SECRET_KEY
+  // );
+ 
+  // 残高確認
+  const { data: credit, error: creditError } = await supabase
+    .from("credits")
+    .select("balance")
+    .eq("user_id", user.id)
+    .single();
+ 
+  if (creditError || !credit || credit.balance < 1) {
+    return { error: "INSUFFICIENT_CREDITS" };
+  }
+ 
+  // consume_credit RPCで残高チェック＋消費をトランザクションで実行
+  // → トリガーでbalance -1、meeting_confirmations INSERTが自動で行われる
+  const { error: rpcError } = await supabase.rpc("consume_credit", {
+    p_user_id: user.id,
+    p_meeting_id: meetingId,
+  });
+ 
+  if (rpcError) {
+    if (rpcError.message.includes("INSUFFICIENT_CREDITS")) {
+      return { error: "INSUFFICIENT_CREDITS" };
+    }
+    console.error("consume_credit error:", rpcError);
+    return { error: "クレジットの消費に失敗しました" };
+  }
+ 
+  return { success: true };
+}
+
+export async function redirectToCheckout(meetingId) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "ログインが必要です" };
+ 
+  const { data } = await supabase
+    .from("users")
+    .select("customer_id")
+    .eq("id", user.id)
+    .single();
+ 
+  const session = await stripe.checkout.sessions.create({
+    ...(data?.customer_id
+      ? { customer: data.customer_id }
+      : {
+          customer_email: user.user_metadata.email,
+          customer_creation: "always",
+        }),
+    line_items: [
+      {
+        price: "price_1TZOHlRbUCCpa1iAiLdVGIRj",
+        quantity: 1,
+      },
+    ],
+    mode: "payment",
+    metadata: {
+      supabase_user_id: user.id,
+      credits_granted: 1,
+    },
+    success_url: `${getUrls()}/dashboard/chat/${meetingId}?success=true`,
+    cancel_url: `${getUrls()}/dashboard/chat/${meetingId}?canceled=true`,
+  });
+ 
+  redirect(session.url);
 }
