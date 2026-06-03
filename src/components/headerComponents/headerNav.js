@@ -24,13 +24,13 @@ export default function HeaderNav({ nav_list }){
               </Button>
             </li>
             <li>
-              <Button className="bg-orange-500" asChild>
-                <Link className="text-sm" href="/signup/user">予約する</Link>
+              <Button className="bg-gray-500" asChild>
+                <Link className="text-sm" href="/login">ログインする</Link>
               </Button>
             </li>
             <li>
-              <Button className="bg-gray-500" asChild>
-                <Link className="text-sm" href="/login">ログインする</Link>
+              <Button className="bg-pink-500" asChild>
+                <Link className="text-sm" href="/contact">お問い合わせ</Link>
               </Button>
             </li>
             {/* <li>

@@ -1,5 +1,8 @@
+"use client"
+
 import { ChevronRight, Search, User, Star, ArrowLeft, Calendar, Send, MessageCircle, Video } from 'lucide-react';
 import Link from 'next/link';
+import FadeIn from './common/FadeIn';
 
 export default function HowWork() {
   const textShadow = {
@@ -32,7 +35,7 @@ export default function HowWork() {
           <div className="space-y-32 md:space-y-24 mt-20">
 
             {/* */}
-            <div className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:mr-auto md:ml-0">
+            <FadeIn className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:mr-auto md:ml-0">
               <div className="absolute -top-12 md:-top-16 -left-4 md:-left-12 text-[100px] md:text-[140px] font-black italic leading-none z-20 text-yellow-400" style={textShadow}>
                 01
               </div>
@@ -67,10 +70,10 @@ export default function HowWork() {
                   </div>
                 </div>
               </div>
-            </div>
+            </FadeIn>
 
             {/* */}
-            <div className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:ml-auto md:mr-0">
+            <FadeIn className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:ml-auto md:mr-0">
               <div className="absolute -top-12 md:-top-16 -right-4 md:-right-12 text-[100px] md:text-[140px] font-black italic leading-none z-20 text-yellow-400" style={textShadow}>
                 02
               </div>
@@ -135,10 +138,10 @@ export default function HowWork() {
                   </div>
                 </div>
               </div>
-            </div>
+            </FadeIn>
 
             {/* */}
-            <div className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:mr-auto md:ml-0">
+            <FadeIn className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:mr-auto md:ml-0">
               <div className="absolute -top-12 md:-top-16 -left-4 md:-left-12 text-[100px] md:text-[140px] font-black italic leading-none z-20 text-yellow-400" style={textShadow}>
                 03
               </div>
@@ -214,9 +217,9 @@ export default function HowWork() {
                   </div>
                 </div>
               </div>
-            </div>
+            </FadeIn>
 
-            <div className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:ml-auto md:mr-0">
+            <FadeIn className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:ml-auto md:mr-0">
               <div className="absolute -top-12 md:-top-16 -right-4 md:-right-12 text-[100px] md:text-[140px] font-black italic leading-none z-20 text-yellow-400" style={textShadow}>
                 04
               </div>
@@ -249,7 +252,7 @@ export default function HowWork() {
                   </div>
                 </div>
               </div>
-            </div>
+            </FadeIn>
 
           </div>
 

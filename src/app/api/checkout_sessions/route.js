@@ -40,6 +40,7 @@ export async function POST() {
       mode: "payment",
       metadata: {
         supabase_user_id: user.id,
+        credits_granted: 1,
       },
       success_url: `${origin}/dashboard/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/dashboard/account?canceled=true`,

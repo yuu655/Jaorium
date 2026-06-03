@@ -22,6 +22,7 @@ export default function Header({ propClassName }) {
           <Link href="/">
             <div className="relative w-[70px] h-[70px]">
               <Image
+                loading="eager"
                 src="/logo.png"
                 alt="ロゴ"
                 fill

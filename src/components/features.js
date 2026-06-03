@@ -1,5 +1,9 @@
+"use client"
+
 import Image from "next/image";
 import {ShieldCheck, Gift, MonitorPlay, Presentation, Lightbulb, CheckSquare, BookOpen, Award, Globe, CheckCircle2, Play, Check} from "lucide-react";
+import FadeIn from "./common/FadeIn";
+
 
 export default function Features() {
   return (
@@ -17,7 +21,7 @@ export default function Features() {
           </div>
 
           <div className="space-y-32 md:space-y-24 mt-20">
-            <div className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:mr-auto md:ml-0 border border-slate-100">
+            <FadeIn className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:mr-auto md:ml-0 border border-slate-100">
               <div
                 className="absolute -top-12 md:-top-16 -left-4 md:-left-12 text-[100px] md:text-[140px] font-black italic leading-none z-20 text-blue-500"
                 style={{ textShadow: "0 10px 20px rgba(0,0,0,0.05)" }}
@@ -52,9 +56,9 @@ export default function Features() {
                   </div>
                 </div>
               </div>
-            </div>
+            </FadeIn>
 
-            <div className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:ml-auto md:mr-0 border border-slate-100">
+            <FadeIn className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:ml-auto md:mr-0 border border-slate-100">
               <div
                 className="absolute -top-12 md:-top-16 -right-4 md:-right-12 text-[100px] md:text-[140px] font-black italic leading-none z-20 text-blue-500"
                 style={{ textShadow: "0 10px 20px rgba(0,0,0,0.05)" }}
@@ -129,9 +133,9 @@ export default function Features() {
                   </div>
                 </div>
               </div>
-            </div>
+            </FadeIn>
 
-            <div className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:mr-auto md:ml-0 border border-slate-100">
+            <FadeIn className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mx-auto w-full md:w-[85%] md:mr-auto md:ml-0 border border-slate-100">
               <div
                 className="absolute -top-12 md:-top-16 -left-4 md:-left-12 text-[100px] md:text-[140px] font-black italic leading-none z-20 text-blue-500"
                 style={{ textShadow: "0 10px 20px rgba(0,0,0,0.05)" }}
@@ -219,9 +223,9 @@ export default function Features() {
                   </div>
                 </div>
               </div>
-            </div>
+            </FadeIn>
 
-            <div className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mxauto w-full md:w-[85%] md:ml-auto md:mr-0 border border-slate-100">
+            <FadeIn className="relative flex flex-col md:flex-row items-center bg-white rounded-[2rem] p-8 md:p-12 shadow-xl shadow-slate-200/50 max-w-4xl mxauto w-full md:w-[85%] md:ml-auto md:mr-0 border border-slate-100">
               <div
                 className="absolute -top-12 md:-top-16 -right-4 md:-right-12 text-[100px] md:text-[140px] font-black italic leading-none z-20 text-blue-500"
                 style={{ textShadow: "0 10px 20px rgba(0,0,0,0.05)" }}
@@ -306,7 +310,7 @@ export default function Features() {
                   </div>
                 </div>
               </div>
-            </div>
+            </FadeIn>
           </div>
         </div>
       </section>

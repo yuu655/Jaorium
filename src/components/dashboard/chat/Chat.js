@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import CheckoutToast from "./CheckoutToast";
 import Image from "next/image";
 import Link from "next/link";
+import { Router } from "next/router";
 import {
   ArrowLeft,
+  ArrowRight,
   CheckCircle,
   CalendarClock,
   Send,
@@ -13,6 +17,10 @@ import {
   LogOut,
   X,
   Info,
+  AlertCircle,
+  ShoppingCart,
+  CreditCard,
+  Check,
 } from "lucide-react";
 import DateProposalModal from "./DateProposalModal";
 import {
@@ -22,6 +30,8 @@ import {
   requestFinish,
   approveFinish,
   cancelFinishRequest,
+  consumeCredit,
+  redirectToCheckout,
 } from "./actions";
 
 // shadcn/ui
@@ -35,6 +45,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { is } from "zod/v4/locales";
 
 const supabase = createClient();
 
@@ -44,7 +55,7 @@ export default function Chat({
   currentUserId,
   counterpart,
   initialMessages,
-  isMentor,
+  isUser,
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [meeting, setMeeting] = useState(initialMeeting);
@@ -58,10 +69,20 @@ export default function Chat({
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showMeetingInfo, setShowMeetingInfo] = useState(false);
+  const [meetingConfirmation, setMeetingConfirmation] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [credit, setCredit] = useState(null);
   // console.log(meeting_sc)
 
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
+
+  const router = useRouter();
+
+  const searchParams = useSearchParams();
+const success = searchParams.get("success");
+const canceled = searchParams.get("canceled");
+
 
   const counterpartIconUrl = counterpart?.icon
     ? supabase.storage.from("avatars").getPublicUrl(counterpart.icon).data
@@ -153,6 +174,30 @@ export default function Chat({
           setMeeting_sc(payload.new);
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "meeting_confirmations",
+          filter: `meeting_id=eq.${meeting.id}`,
+        },
+        (payload) => {
+          setMeetingConfirmation(payload.new);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // INSERT・UPDATEどちらも拾う
+          schema: "public",
+          table: "credits",
+          filter: `user_id=eq.${currentUserId}`,
+        },
+        (payload) => {
+          setCredit(payload.new);
+        },
+      )
       .subscribe();
 
     // クリーンアップ関数でチャンネルを破棄
@@ -160,6 +205,34 @@ export default function Chat({
       supabase.removeChannel(channel);
     };
   }, [meeting.id]);
+
+  useEffect(() => {
+    const fetchConfirmation = async () => {
+      const { data } = await supabase
+        .from("meeting_confirmations")
+        .select()
+        .eq("meeting_id", meeting.id)
+        .single();
+
+      if (data) setMeetingConfirmation(data);
+    };
+
+    fetchConfirmation();
+  }, [meeting.id]);
+
+  useEffect(() => {
+    const fetchCredit = async () => {
+      const { data } = await supabase
+        .from("credits")
+        .select("balance")
+        .eq("user_id", currentUserId)
+        .single();
+
+      if (data) setCredit(data);
+    };
+
+    fetchCredit();
+  }, [currentUserId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -254,6 +327,21 @@ export default function Chat({
     return groups;
   }, {});
 
+  // クレジット消費
+  const handleConsume = async () => {
+    setLoading(true);
+    const result = await consumeCredit(meeting.id);
+    setLoading(false);
+
+    if (result.error === "INSUFFICIENT_CREDITS") {
+      // クレジット不足 → Checkoutへ
+      router.push("/dashboard/account");
+    } else if (result.error) {
+      alert(result.error);
+    }
+    // 成功時は何もしない → Realtimeで自動切り替わる
+  };
+
   // 終了申請の状態
   const iRequested = meeting.finish_requested_by === currentUserId;
   const theyRequested =
@@ -265,7 +353,7 @@ export default function Chat({
       {/* チャットヘッダー */}
       <div className="bg-white border-b px-4 py-3 flex items-center gap-3 shrink-0">
         <Link
-          href={`/dashboard/${isMentor ? "mentor" : "user"}`}
+          href={`/dashboard/${isUser ? "user" : "mentor"}`}
           className="text-gray-500 hover:text-gray-700 transition-colors shrink-0"
         >
           <ArrowLeft size={20} />
@@ -354,16 +442,78 @@ export default function Chat({
               </button>
             </div>
           </div>
-          <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 shrink-0">
-            <div className="flex items-center justify-between max-w-4xl mx-auto">
-              <Link
-                href={`/dashboard/Interview/${meeting.id}`}
-                className="text-blue-500 hover:text-blue-700 transition-colors text-1xl font-bold"
-              >
-                ミーティングに飛ぶ
-              </Link>
-            </div>
-          </div>
+
+          {meeting_sc.is_commit &&
+            (meetingConfirmation ? (
+              <div className="bg-green-50 border-b border-green-200 px-4 py-2 shrink-0">
+                <div className="flex items-center justify-between max-w-4xl mx-auto">
+                  <span className="text-sm font-medium text-green-600 flex items-center gap-1.5">
+                    <CheckCircle size={14} />
+                    支払い済み・確定
+                  </span>
+                  <Link
+                    href={`/dashboard/Interview/${meeting.id}`}
+                    className="text-sm font-medium text-blue-500 hover:text-blue-700 flex items-center gap-1"
+                  >
+                    ミーティングに参加する
+                    <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </div>
+              
+            ) : (
+              <>
+              {isUser && (
+                <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 shrink-0">
+                <div className="flex items-center justify-between max-w-4xl mx-auto gap-3">
+                  <span className="text-sm text-gray-500 flex items-center gap-1.5">
+                    {(credit?.balance ?? 0) > 0 ? (
+                      <>
+                        <CreditCard size={14} className="text-blue-400" />
+                        残りクレジット{" "}
+                        <strong className="text-gray-700 font-medium">
+                          {credit.balance}
+                        </strong>{" "}
+                        回
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle size={14} className="text-amber-400" />
+                        残りクレジット{" "}
+                        <strong className="text-amber-600 font-medium">
+                          0
+                        </strong>{" "}
+                        回
+                      </>
+                    )}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-px h-4 bg-gray-200" />
+                    {(credit?.balance ?? 0) > 0 ? (
+                      <button
+                        onClick={handleConsume}
+                        disabled={loading}
+                        className="flex items-center gap-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg px-3 py-1.5 hover:bg-blue-700 disabled:bg-gray-300"
+                      >
+                        <Check size={13} />
+                        {loading ? "処理中..." : "クレジットを消費して確定"}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => redirectToCheckout(meeting.id)}
+                        className="flex items-center gap-1.5 text-xs font-medium bg-amber-600 text-white rounded-lg px-3 py-1.5 hover:bg-amber-700"
+                      >
+                        <ShoppingCart size={13} />
+                        購入して確定する
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              )}
+              </>
+              
+            ))}
         </>
       )}
 
