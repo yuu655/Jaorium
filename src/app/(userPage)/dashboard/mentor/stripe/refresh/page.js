@@ -1,7 +1,7 @@
 // app/dashboard/mentor/stripe/refresh/page.js
 "use client";
 import { useEffect } from "react";
-import { createStripeOnboarding } from "../../actions/mentorActions";
+import { createStripeOnboarding } from "@/components/dashboard/mentor/actions";
 
 export default function RefreshPage() {
   useEffect(() => {
