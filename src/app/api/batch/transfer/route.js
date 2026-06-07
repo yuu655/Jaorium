@@ -13,80 +13,99 @@ export async function POST(req) {
     process.env.NEXT_SECRET_KEY
   );
 
-  // 先月の期間を計算
-  const now = new Date();
-  const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
-  const to = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const period = `${from.getUTCFullYear()}-${String(from.getUTCMonth() + 1).padStart(2, "0")}`;
+  // 未送金の月を全て取得
+  const { data: unpaidPeriods, error: periodsError } = await supabase.rpc("get_unpaid_periods");
 
-  // 集計クエリ実行
-  const { data: summaries, error } = await supabase.rpc("get_monthly_transfer_summary", {
-    p_from: from.toISOString(),
-    p_to: to.toISOString(),
-  });
-
-  if (error) {
-    console.error("Summary query failed:", error);
-    return Response.json({ error: "Failed to fetch summary" }, { status: 500 });
+  if (periodsError) {
+    console.error("get_unpaid_periods failed:", periodsError);
+    return Response.json({ error: "Failed to fetch unpaid periods" }, { status: 500 });
   }
 
-  const results = [];
+  if (!unpaidPeriods || unpaidPeriods.length === 0) {
+    return Response.json({ message: "未送金の月はありません", results: [] });
+  }
 
-  for (const summary of summaries) {
-    // onboarding未完了・金額0はスキップ
-    if (!summary.stripe_onboarding_completed) continue;
-    if (!summary.stripe_account_id) continue;
-    if (summary.transfer_amount <= 0) continue;
+  const allResults = [];
 
-    // 二重送金防止：同じperiodのtransferが既にあればスキップ
-    const { data: existing } = await supabase
-      .from("transfers")
-      .select("id")
-      .eq("mentor_id", summary.mentor_id)
-      .eq("period", period)
-      .single();
+  for (const { period, from_date, to_date } of unpaidPeriods) {
+    // 該当月の集計
+    const { data: summaries, error: summaryError } = await supabase.rpc("get_monthly_transfer_summary", {
+      p_from: from_date,
+      p_to: to_date,
+    });
 
-    if (existing) {
-      results.push({ mentor_id: summary.mentor_id, status: "skipped" });
+    if (summaryError) {
+      console.error(`Summary failed for ${period}:`, summaryError);
+      allResults.push({ period, status: "error", error: summaryError.message });
       continue;
     }
 
-    try {
-      const transfer = await stripe.transfers.create({
-        amount: summary.transfer_amount,
-        currency: "jpy",
-        destination: summary.stripe_account_id,
-        metadata: {
+    for (const summary of summaries) {
+      // onboarding未完了・金額0はスキップ
+      if (!summary.stripe_onboarding_completed) continue;
+      if (!summary.stripe_account_id) continue;
+      if (summary.transfer_amount <= 0) continue;
+
+      // 二重送金防止
+      const { data: existing } = await supabase
+        .from("transfers")
+        .select("id")
+        .eq("mentor_id", summary.mentor_id)
+        .eq("period", period)
+        .single();
+
+      if (existing) {
+        allResults.push({ period, mentor_id: summary.mentor_id, status: "skipped" });
+        continue;
+      }
+
+      try {
+        const transfer = await stripe.transfers.create({
+          amount: summary.transfer_amount,
+          currency: "jpy",
+          destination: summary.stripe_account_id,
+          metadata: {
+            mentor_id: summary.mentor_id,
+            period,
+            consultation_count: String(summary.consultation_count),
+          },
+        });
+
+        await supabase.from("transfers").insert({
+          mentor_id: summary.mentor_id,
+          stripe_transfer_id: transfer.id,
+          period,
+          consultation_count: summary.consultation_count,
+          amount: summary.transfer_amount,
+          status: "completed",
+        });
+
+        allResults.push({
+          period,
+          mentor_id: summary.mentor_id,
+          status: "completed",
+          amount: summary.transfer_amount,
+        });
+      } catch (err) {
+        console.error(`Transfer failed for mentor ${summary.mentor_id} period ${period}:`, err);
+
+        await supabase.from("transfers").insert({
           mentor_id: summary.mentor_id,
           period,
-          consultation_count: String(summary.consultation_count),
-        },
-      });
+          consultation_count: summary.consultation_count,
+          amount: summary.transfer_amount,
+          status: "failed",
+        });
 
-      await supabase.from("transfers").insert({
-        mentor_id: summary.mentor_id,
-        stripe_transfer_id: transfer.id,
-        period,
-        consultation_count: summary.consultation_count,
-        amount: summary.transfer_amount,
-        status: "completed",
-      });
-
-      results.push({ mentor_id: summary.mentor_id, status: "completed", amount: summary.transfer_amount });
-    } catch (err) {
-      console.error(`Transfer failed for mentor ${summary.mentor_id}:`, err);
-
-      await supabase.from("transfers").insert({
-        mentor_id: summary.mentor_id,
-        period,
-        consultation_count: summary.consultation_count,
-        amount: summary.transfer_amount,
-        status: "failed",
-      });
-
-      results.push({ mentor_id: summary.mentor_id, status: "failed", error: err.message });
+        allResults.push({
+          period,
+          mentor_id: summary.mentor_id,
+          status: "failed",
+          error: err.message,
+        });
+      }
     }
   }
 
-  return Response.json({ period, results });
+  return Response.json({ results: allResults });
 }
