@@ -95,6 +95,10 @@ export default async function MentorPage({ searchParams }) {
   const { profile, meetings, users } = await getCachedData(user.id)();
   // console.log(profile);
   const { allTags, mentorTags } = await getTags(user.id)();
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  
   // console.log(meetings);
   // console.log(meetings)
 
@@ -106,6 +110,7 @@ export default async function MentorPage({ searchParams }) {
       mentorTags={mentorTags}
       allTags={allTags}
       initialSide={side}
+      session={session}
     />
   );
 }

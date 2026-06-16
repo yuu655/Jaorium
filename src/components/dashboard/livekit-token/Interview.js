@@ -462,9 +462,9 @@ export default function Interview({ roomName, userName, dateTime }) {
         connect={true}
         video={true}
         audio={true}
-        onDisconnected={() => redirect(`${getUrls()}/dashboard/chat/${roomName}`)}
+        onDisconnected={() => redirect(`${getUrls()}/dashboard/review/${roomName}`)}
       >
-        <RoomContent onLeave={() => redirect(`${getUrls()}/dashboard/chat/${roomName}`)} />
+        <RoomContent onLeave={() => redirect(`${getUrls()}/dashboard/review/${roomName}`)} />
       </LiveKitRoom>
     );
   }

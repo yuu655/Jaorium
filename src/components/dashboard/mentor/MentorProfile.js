@@ -2,6 +2,7 @@
 
 import AddIcon from "../profile/addIcon";
 import AddMentorProfile from "./addMentorProfile";
+import MentorPayout from "./MentorPayment";
 import { Button } from "@/components/ui/button";
 import { createStripeOnboarding } from "./actions";
 import Link from "next/link";
@@ -28,13 +29,9 @@ export default function MentorProfile({ funcProfile, profile=null, mentorTags, a
           </Button>
         </Link>
       </div>
-      <div className="max-w-3xl mx-auto px-4 my-8 sm:px-6 lg:px-8">
-        <Link href="/dashboard/mentor/stripe/guide">
-          <Button variant="outline" className="w-full">
-            Stripe口座登録
-          </Button>
-        </Link>
-      </div>
+
+      {/* <MentorPayout currentUserId={profile.id} session={session} /> */}
+
       {/* <div className="max-w-3xl mx-auto px-4 my-8 sm:px-6 lg:px-8">
         <button onClick={() => createStripeOnboarding()}>
           口座を確認する

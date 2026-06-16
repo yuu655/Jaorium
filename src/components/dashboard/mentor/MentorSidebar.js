@@ -1,6 +1,7 @@
 "use client";
 
 import { Calendar, MessageCircle, User, Settings, FileChartColumn } from "lucide-react";
+import { IconBuildingBank } from "@tabler/icons-react";
 import Icon from "../profile/icon";
 
 export default function MentorSidebar({ profile, side, setSide }) {
@@ -32,6 +33,10 @@ export default function MentorSidebar({ profile, side, setSide }) {
 
           <button className={`${baseStyle} ${side === "template" ? activeStyle : inactiveStyle}`} onClick={() => setSide("template")}>
             <FileChartColumn size={20} />テンプレート
+          </button>
+
+          <button className={`${baseStyle} ${side === "payout" ? activeStyle : inactiveStyle}`} onClick={() => setSide("payout")}>
+            <IconBuildingBank size={20} />支払い
           </button>
           {/* <button className={`${baseStyle} ${side === "setting" ? activeStyle : inactiveStyle}`} onClick={() => setSide("setting")}>
             <Settings size={20} />設定

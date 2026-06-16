@@ -4,11 +4,12 @@ import { useState } from "react";
 import MentorSidebar from "./MentorSidebar";
 import MentorAppointmentContent from "./MentorAppointmentContent";
 import MentorTemplateContent from "./MentorTemplateContent";
+import MentorPayout from "./MentorPayment";
 import { updateMentorIcon, updateMentorProfile } from "../profile/actions";
 import MentorProfile from "./MentorProfile";
 import StatusCode from "../common/statusCode";
 
-export default function MentorDashboard({ profile, meetings, users, mentorTags, allTags, initialSide }) {
+export default function MentorDashboard({ profile, meetings, users, mentorTags, allTags, initialSide, session }) {
   const [side, setSide] = useState(initialSide || "appointment");
 
   return (
@@ -31,6 +32,9 @@ export default function MentorDashboard({ profile, meetings, users, mentorTags, 
               )}
               {side === "template" && (
                 <MentorTemplateContent />
+              )}
+              {side === "payout" && (
+                <MentorPayout profile={profile} currentUserId={profile.id} session={session} />
               )}
             </div>
           </main>

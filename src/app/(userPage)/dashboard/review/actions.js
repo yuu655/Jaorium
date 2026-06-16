@@ -2,6 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import getUrls from "@/utils/getUrls";
 
 export const submitReview = async (meetingId, prevState, formData) => {
   const comments = formData.get("comments");
@@ -27,7 +28,7 @@ export const submitReview = async (meetingId, prevState, formData) => {
     .single();
   console.log(meeting);
 
-  const {data: review_exist} = await supabase
+  const { data: review_exist } = await supabase
     .from("reviews")
     .select("*")
     .eq("meeting_id", meetingId)
@@ -37,8 +38,10 @@ export const submitReview = async (meetingId, prevState, formData) => {
     return { error: "このミーティングに対するレビューは既に存在します" };
   }
 
-  if(meeting.user !== user.id) {
-    return { error: "このミーティングに対するレビューを作成する権限がありません" };
+  if (meeting.user !== user.id) {
+    return {
+      error: "このミーティングに対するレビューを作成する権限がありません",
+    };
   }
 
   const { data: reviewData, error } = await supabase
@@ -52,8 +55,21 @@ export const submitReview = async (meetingId, prevState, formData) => {
     })
     .select();
 
-  console.log(error);
+  const response = await fetch(`${getUrls()}/api/meeting/${meetingId}`, {
+    method: "PATCH",
+    headers: { "x-api-key": process.env.NEXT_APIROUTE_SECRET },
+    body: JSON.stringify({
+      action: "finish",
+    }),
+  });
+
+  if (!response.ok) {
+    // APIが4xx/5xxを返した場合
+    return { error: data.error ?? "エラーが発生しました" };
+  }
   if (error) return { error: "レビューの作成に失敗しました" };
 
+  revalidateTag(`dashboard-user-${meeting.user}`);
+  revalidateTag(`dashboard-mentor-${meeting.mentor}`);
   redirect(`/dashboard/`);
 };
