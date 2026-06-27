@@ -3,7 +3,7 @@
 import { Search, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import Mentor from "../mentor";
 
-export default function UserMentors({ diagState, setDiagState, currentQIndex, diagnosisQuestions, resetDiagnosis, tagGroups, toggleTag, filteredMentors, selectedTags, searchTerm, setSearchTerm }) {
+export default function UserMentors({ diagState, setDiagState, currentQIndex, diagnosisQuestions, resetDiagnosis, tagGroups, toggleTag, filteredMentors, selectedTags, searchTerm, setSearchTerm, handleAnswer }) {
   return (
     <div className="bg-white">
       <section className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden my-12 relative max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">

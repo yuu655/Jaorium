@@ -1,14 +1,38 @@
-"use server";
-import { createClient } from "@/lib/supabase/server";
+"use client";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import AddUserProfile from "@/components/dashboard/user/addUserProfile";
 
 import { submitUser } from "../actions";
 
-export default async function SetAccount() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+export default function SetAccount() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    async function confilmUserRole() {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const { error: error_update } = await supabase
+        .from("profiles")
+        .update({
+          role: "user",
+        })
+        .eq("id", user.id);
+
+      if (error_update) {
+        console.error(error_update);
+        return;
+      }
+
+      setUser(user);
+    }
+
+    confilmUserRole();
+  }, []);
 
   return (
     <div className="bg-white min-h-screen">

@@ -4,7 +4,7 @@ import Mentor from "@/components/mentor";
 import { Search, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
-export default function Mentors({ diagState, setDiagState, currentQIndex, diagnosisQuestions, resetDiagnosis, tagGroups, toggleTag, filteredMentors, selectedTags, searchTerm, setSearchTerm }) {
+export default function Mentors({ diagState, setDiagState, currentQIndex, diagnosisQuestions, handleAnswer, resetDiagnosis, tagGroups, toggleTag, filteredMentors, selectedTags, searchTerm, setSearchTerm }) {
   return (
     <div className="bg-white min-h-screen">
       {/* Header */}

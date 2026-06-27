@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import getUrls from "@/utils/getUrls";
 
 export async function login(prevState, formData) {
@@ -56,9 +57,27 @@ export async function signup_user(prevState, formData) {
 
 export async function signup_mentor(prevState, formData) {
   const supabase = await createClient();
+  const masterSupabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_SECRET_KEY,
+  );
   const data = {
     email: formData.get("email"),
   };
+
+  const { data: exists, error: rpcError } = await masterSupabase.rpc("email_exists", {
+    check_email: data.email,
+  });
+
+  if (rpcError) {
+    console.error("email_exists error:", rpcError.message);
+    return { success: false, error: "確認に失敗しました。" };
+  }
+
+  if (exists) {
+    return { success: false, error: "このメールアドレスは既に登録されています。" };
+  }
+
 
   // const { error } = await supabase.auth.signUp({
   //   email: data.email,
@@ -87,13 +106,27 @@ export async function handleVerifyOtp(prevState, formData) {
   const supabase = await createClient();
   const token = formData.get("token");
   const email = formData.get("email");
-
-  const { error } = await supabase.auth.verifyOtp({
+  if (!token || !email) {
+    return { success: false, error: "コードを入力してください。" };
+  }
+  const { data, error } = await supabase.auth.verifyOtp({
     email,
     token,
     type: "email", // signup後の検証なら 'signup' または 'email'
   });
+  if (error) {
+    console.error("verifyOtp error:", error.message); // サーバーログ用
 
+    // ユーザー向けには分かりやすいメッセージに変換
+    let userMessage = "認証に失敗しました。もう一度お試しください。";
+    if (error.message.includes("expired")) {
+      userMessage = "コードの有効期限が切れています。再送信してください。";
+    } else if (error.message.includes("invalid")) {
+      userMessage = "コードが正しくありません。";
+    }
+
+    return { success: false, error: userMessage };
+  }
   redirect("/setAccount/mentor");
   return { success: true };
 }

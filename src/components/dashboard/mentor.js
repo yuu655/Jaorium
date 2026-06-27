@@ -53,15 +53,19 @@ export default function Mentor({ mentor, toggleTag }) {
           <Icon size={120} url={mentor?.icon} />
           <div className="absolute inset-0 via-transparent to-transparent"></div>
           <div className="absolute bottom-3 left-5 text-gray-600">
-            <p className="text-[10px] font-bold tracking-widest uppercase mb-0.5 opacity-90">
+            {/* <p className="text-[10px] font-bold tracking-widest uppercase mb-0.5 opacity-90">
               {mentor.university}
             </p>
-            <p className="text-sm font-bold">{mentor.faculty}</p>
+            <p className="text-sm font-bold">{mentor.faculty}</p> */}
+            <p className="text-sm font-bold">{mentor.name}</p>
           </div>
         </div>
         <div className="p-6 flex-1 flex flex-col">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-xl font-bold text-slate-800">{mentor.name}</h3>
+            <div>
+            <h3 className="text-xl font-bold text-slate-800">{mentor.university}/{mentor.faculty}</h3>
+
+            </div>
             {mentor.review_sum > 0 && (
               <div className="flex gap-0.5">
                 {Array.from({ length: mentor.review_sum }, (_, idx) => idx + 1).map((star) => (

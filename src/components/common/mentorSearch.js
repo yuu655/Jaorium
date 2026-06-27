@@ -167,6 +167,7 @@ export default function MentorSearch({
           selectedTags,
           searchTerm,
           setSearchTerm,
+          handleAnswer
         }),
       )}
     </>

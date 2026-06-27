@@ -1,17 +1,47 @@
-"use server";
-import { createClient } from "@/lib/supabase/server";
+"use client";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 import AddMentorProfile from "@/components/dashboard/mentor/addMentorProfile";
 
 import { submitMentor } from "../actions";
 
-export default async function SetAccount() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data, error } = await supabase.from("tags").select("*");
-  const allTags = (data ?? []);
+export default function SetAccount() {
+  const [user, setUser] = useState(null);
+  const [allTags, setAllTags] = useState([]);
+
+  useEffect(() => {
+      async function confilmUserRole() {
+        const supabase = await createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+  
+        const { error: error_update } = await supabase
+          .from("profiles")
+          .update({
+            role: "mentor",
+          })
+          .eq("id", user.id);
+  
+        if (error_update) {
+          console.error(error_update);
+          return;
+        }
+  
+        setUser(user);
+
+        const { data, error } = await supabase.from("tags").select("*");
+        setAllTags((data ?? []))
+      }
+  
+      confilmUserRole();
+      console.log(allTags)
+    }, []);
+  // const supabase = await createClient();
+  // const {
+  //   data: { user },
+  // } = await supabase.auth.getUser();
 
   return (
     <div className="bg-white min-h-screen">

@@ -12,9 +12,11 @@ export async function login(prevState, formData) {
 
   const { data: { user }, error } = await supabase.auth.signInWithPassword(data);
   // ログイン成功後のユーザーデータを確認
-  if (user.user_metadata.role !== undefined) {
-    return( {error: "アカウント登録が途中で終了しています。もう一度サインアップしてください。"} )
-  }
+  // if (user.user_metadata.role !== undefined) {
+  //   return( {error: "アカウント登録が途中で終了しています。もう一度サインアップしてください。"} )
+  // }
+
+  console.log(user)
 
   if (error) {
     if (error.message === "Invalid login credentials") {

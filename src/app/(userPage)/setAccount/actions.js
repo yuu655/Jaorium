@@ -21,7 +21,7 @@ async function submitUser(prevState, formData) {
   const { error: error_update } = await supabase
     .from("profiles")
     .update({
-      role: "user",
+      set: true,
     })
     .eq("id", user.id);
   if (error_update) {
@@ -61,11 +61,11 @@ async function submitMentor(prevState, formData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  await supabase.auth.updateUser({ password: data.password, data: { role: "mentor" } });
+  // await supabase.auth.updateUser({ password: data.password, data: { role: "mentor" } });
   const { error: error_update } = await supabase
     .from("profiles")
     .update({
-      role: "mentor",
+      set: true,
     })
     .eq("id", user.id);
   if (error_update) {
