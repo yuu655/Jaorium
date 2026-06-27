@@ -231,7 +231,7 @@ const canceled = searchParams.get("canceled");
       if (data) setCredit(data);
     };
 
-    fetchCredit();
+    if(isUser) fetchCredit();
   }, [currentUserId]);
 
   useEffect(() => {
