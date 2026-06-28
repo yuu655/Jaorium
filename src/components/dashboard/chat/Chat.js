@@ -868,14 +868,14 @@ const canceled = searchParams.get("canceled");
                 </p>
               </div>
 
-              <div>
+              {/* <div>
                 <Link
                   href={`/dashboard/review/${meeting.id}`}
                   className="text-blue-500 hover:text-blue-700 transition-colors"
                 >
                   レビューを書く
                 </Link>
-              </div>
+              </div> */}
             </div>
           </div>
         </>
