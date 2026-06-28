@@ -391,7 +391,7 @@ const formatDate = (date) => {
 };
 
 // ── エントリポイント ─────────────────────────────────────
-export default function Interview({ roomName, userName, dateTime }) {
+export default function Interview({ roomName, userName, userRole, dateTime }) {
   const [token, setToken] = useState("");
   const [joined, setJoined] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState("idle");
@@ -464,7 +464,13 @@ export default function Interview({ roomName, userName, dateTime }) {
         audio={true}
         onDisconnected={() => redirect(`${getUrls()}/dashboard/review/${roomName}`)}
       >
-        <RoomContent onLeave={() => redirect(`${getUrls()}/dashboard/review/${roomName}`)} />
+        <RoomContent onLeave={
+          () => {
+            if(userRole === "user") redirect(`${getUrls()}/dashboard/review/${roomName}`)
+            else if(userRole === "mentor") redirect(`${getUrls()}/dashboard/chat/${roomName}`)
+            else if(userRole === "admin") redirect(`${getUrls()}/dashboard`)
+            }
+          } />
       </LiveKitRoom>
     );
   }

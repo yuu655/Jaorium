@@ -41,6 +41,7 @@ export default async function InterviewPage({ params }) {
       <InterviewWrapper
         roomName={roomName}
         userName={user.id}
+        userRole={profile.role}
         dateTime={dateTime}
       />
     </>

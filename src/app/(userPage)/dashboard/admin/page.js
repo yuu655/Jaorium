@@ -90,6 +90,6 @@ export default async function UserPage() {
   // console.log(merged_meetings);
 
   return (
-    <AdminDashboard meetings={merged_meetings}/>
+    <AdminDashboard meetings={nextMeetings}/>
   );
 }

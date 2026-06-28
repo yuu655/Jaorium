@@ -9,12 +9,13 @@ const Interview = dynamic(
   },
 );
 
-export default function InterviewWrapper({ roomName, userName, dateTime }) {
+export default function InterviewWrapper({ roomName, userName, userRole, dateTime }) {
   return (
     <Interview
       roomName={roomName}
       userName={userName} // Supabaseのセッションから取得するのが理想
       dateTime={dateTime}
+      userRole={userRole}
     />
   );
 }
