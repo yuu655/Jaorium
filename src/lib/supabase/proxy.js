@@ -151,14 +151,14 @@ if (isGenuinelyCorrupted && !user) {
   //   await supabase.auth.signOut();
   //   return redirectTo("/signup/mentor");
   // }
-  // console.log("role:", role);
+  console.log("role:", role);
   if(role === "user"){
     
     if(pathname === "/setAccount/mentor"){
       return redirectTo("/dashboard/user");
     }
       console.log("b");
-    if(pathname === "/setAccount" || pathname === "/" || pathname === "/login" ||pathname.startsWith("/signup") || pathname === "/dashboard" || pathname === "/dashboard/mentor"){
+    if(pathname === "/setAccount" || pathname === "/setAccount/user" || pathname === "/" || pathname === "/login" ||pathname.startsWith("/signup") || pathname === "/dashboard" || pathname === "/dashboard/mentor"){
       console.log("dddddddddddddddddddddd")
       const {data: profile, error: profileError} = await supabase.from("profiles").select("*").eq("id", user?.id).single();
       if(profile?.set === false){
@@ -171,7 +171,7 @@ if (isGenuinelyCorrupted && !user) {
       return redirectTo("/dashboard/mentor");
     }
     console.log("c");
-    if(pathname === "/setAccount" || pathname === "/" || pathname === "/login" || pathname.startsWith("/signup") || pathname === "/dashboard" || pathname === "/dashboard/user"){
+    if(pathname === "/setAccount" || pathname === "/setAccount/mentor" || pathname === "/" || pathname === "/login" || pathname.startsWith("/signup") || pathname === "/dashboard" || pathname === "/dashboard/user"){
       const {data: profile, error: profileError} = await supabase.from("profiles").select("*").eq("id", user?.id).single();
       if(profile?.set === false){
         return redirectTo("/setAccount/mentor");
