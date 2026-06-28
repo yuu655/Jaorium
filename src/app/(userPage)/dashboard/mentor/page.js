@@ -18,7 +18,7 @@ export default async function MentorPage({ searchParams }) {
       async () => {
         const [{ data: profile }, { data: Meetings }] = await Promise.all([
           supabase.from("mentors").select("*").eq("id", userId).single(),
-          supabase.from("meetings").select("*").eq("mentor", userId),
+          supabase.from("meetings").select("*").eq("mentor", userId).order("created_at", { ascending: false }),
         ]);
         // const allMeetings = [...(nextMeetings ?? []), ...(pastMeetings ?? [])];
         const userIds = [...new Set(Meetings.map((m) => m.user))];

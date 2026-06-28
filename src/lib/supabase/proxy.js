@@ -123,6 +123,16 @@ if (isGenuinelyCorrupted && !user) {
   // ⑦ ログイン済みの処理
   const role = profile?.role;
 
+  if(role !== "admin"){
+    if(pathname === "/dashboard/admin"){
+      return redirectTo("/dashboard");
+    }
+  }else{
+    if(pathname === "/dashboard" || pathname === "/dashboard/user" || pathname === "/dashboard/mentor" || pathname.startsWith("/setAccount") || pathname === "/"){
+      return redirectTo("/dashboard/admin")
+    }
+  }
+
   // if(user){
   //   if(profile?.set === false){
   //     if(pathname === "/"){
@@ -149,6 +159,7 @@ if (isGenuinelyCorrupted && !user) {
     }
       console.log("b");
     if(pathname === "/setAccount" || pathname === "/" || pathname === "/login" ||pathname.startsWith("/signup") || pathname === "/dashboard" || pathname === "/dashboard/mentor"){
+      console.log("dddddddddddddddddddddd")
       const {data: profile, error: profileError} = await supabase.from("profiles").select("*").eq("id", user?.id).single();
       if(profile?.set === false){
         return redirectTo("/setAccount/user");

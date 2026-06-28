@@ -31,7 +31,7 @@ export default async function UserPage() {
           supabase.from("users").select("*").eq("id", userId).single(),
           supabase.from("mentors").select("*").eq("is_allowed", true),
           supabase.from("mentor_secret").select("*").eq("admin_allow", true),
-          supabase.from("meetings").select("*").eq("user", userId),
+          supabase.from("meetings").select("*").eq("user", userId).order("created_at", { ascending: false }),
           supabase.from("tags").select("*"),
         ]);
 
@@ -96,6 +96,8 @@ export default async function UserPage() {
           (item) => !item.is_finished,
         );
         const pastMeetings = merged_meetings.filter((item) => item.is_finished);
+
+        console.log(merged_meetings)
 
         return {
           profile,
