@@ -126,7 +126,7 @@ export default function Features() {
                           今だけ！
                         </h4>
                         <div className="text-xl font-black tracking-tight text-white whitespace-nowrap">
-                          初回相談料無料
+                          初回相談料無料<br/>(通常: ¥1,980)
                         </div>
                       </div>
                     </div>

@@ -31,7 +31,7 @@ export default async function Articles() {
           ))}
         </ul>
         <Button variant="outline" size="mentor" asChild className="mx-auto">
-          <Link className="text-[20px]" href="/articles">記事一覧を見る</Link>
+          <Link className="text-[20px]" href="/articles/1">記事一覧を見る</Link>
         </Button>
       </div>
     </div>

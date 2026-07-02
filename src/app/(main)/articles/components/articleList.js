@@ -75,7 +75,7 @@ export default async function Articles({
                   <div className="flex items-center gap-4 text-sm text-gray-600 mb-6">
                     <div className="flex items-center gap-2">
                       <Calendar size={16} />
-                      <span>{firstArticle?.contents[0].updatedAt}</span>
+                      <span>{firstArticle?.contents[0].updatedAt.split("T")[0]}</span>
                     </div>
                     {/* <span>by {firstArticle?.contents[0].author.name}</span> */}
                   </div>
@@ -141,7 +141,7 @@ export default async function Articles({
                         {article.category.name}
                       </span>
                       <span className="text-xs text-gray-500">
-                        {article.updatedAt}
+                        {article.updatedAt.split("T")[0]}
                       </span>
                     </div>
 

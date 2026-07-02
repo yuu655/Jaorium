@@ -265,7 +265,7 @@ export default function Blog({ isDraft, result }) {
           <h1 className="blog-title">{result.title}</h1>
           <div className="blog-meta">
             <Calendar size={14} />
-            <span>{result.updatedAt}</span>
+            <span>{result.updatedAt.split("T")[0]}</span>
           </div>
         </div>
 

@@ -9,9 +9,10 @@ import { createClient } from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
 
 import Icon from "./dashboard/profile/icon";
+import { is } from "zod/v4/locales";
 
 const supabase = createClient();
-export default function Mentor({ mentor, toggleTag }) {
+export default function Mentor({ mentor, toggleTag, isTop = false }) {
   const [tags, setTags] = useState([]);
   useEffect(() => {
     const fetchAll = async () => {
@@ -83,13 +84,23 @@ export default function Mentor({ mentor, toggleTag }) {
           {tags.length !== 0 && (
             <div className="flex flex-wrap gap-1.5 mb-6">
               {tags.map((tag, index) => (
+                isTop ? (
+
                 <span
+                  key={index}
+                  className="text-[10px] bg-slate-50 text-slate-500 px-2 py-1 rounded-md font-medium border border-slate-100 cursor-pointer hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                >
+                  {tag.name}
+                </span>
+                ) : (
+                  <span
                   key={index}
                   onClick={() => toggleTag(tag.id)}
                   className="text-[10px] bg-slate-50 text-slate-500 px-2 py-1 rounded-md font-medium border border-slate-100 cursor-pointer hover:bg-slate-100 hover:text-slate-700 transition-colors"
                 >
                   {tag.name}
                 </span>
+                )
               ))}
             </div>
           )}

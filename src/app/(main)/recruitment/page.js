@@ -2,6 +2,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { Coins, Presentation, Building2, UserPlus, ClipboardList, Video, User, GraduationCap, Users , Star, Mic, PhoneOff, ArrowRight } from "lucide-react";
 
+export const metadata = {
+  title: "メンター募集",
+  description: "Jaoriumへ参加するメンターの募集",
+};
+
+
 export default function Recruitment() {
   return (
     <>

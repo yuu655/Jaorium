@@ -1,3 +1,8 @@
+export const metadata = {
+  title: "コンセプト",
+  description: "Jaoriumについて",
+};
+
 export default function Concept() {
   return (
     <div className="bg-white">

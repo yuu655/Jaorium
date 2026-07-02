@@ -24,7 +24,7 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "JaoRium | 情報戦に、終止符を。",
   description:
-    "JaoRiumは、受験生が無料で先輩の一次情報にアクセスできるオンラインメンタリングサービス。環境に左右されず、誰もが本物の情報で未来を選べる社会を目指します。",
+    "JaoRiumは、受験生が先輩の一次情報にアクセスできるオンラインメンタリングサービス。環境に左右されず、誰もが本物の情報で未来を選べる社会を目指します。",
   openGraph: {
     title: "JaoRium",
     description: "情報戦に、終止符を。",
@@ -40,12 +40,6 @@ export const metadata = {
     locale: "ja_JP",
     type: "website",
   },
-  // twitter: {
-  //   card: 'summary_large_image',
-  //   title: 'サービス名',
-  //   description: 'Twitter用説明文',
-  //   images: ['https://example.com/og-image.png'],
-  // },
 };
 
 export default function RootLayout({ children }) {

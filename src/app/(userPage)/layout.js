@@ -29,22 +29,9 @@ export const metadata = {
     description: "情報戦に、終止符を。",
     url: "https://www.jaorium.com",
     siteName: "JaoRium",
-    // images: [
-    //   {
-    //     url: 'https://example.com/og-image.png', // 公開URLを指定
-    //     width: 1200,
-    //     height: 630,
-    //   },
-    // ],
     locale: "ja_JP",
     type: "website",
   },
-  // twitter: {
-  //   card: 'summary_large_image',
-  //   title: 'サービス名',
-  //   description: 'Twitter用説明文',
-  //   images: ['https://example.com/og-image.png'],
-  // },
 };
 
 export default function RootLayout({ children }) {

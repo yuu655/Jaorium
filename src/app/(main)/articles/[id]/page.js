@@ -7,6 +7,15 @@ import ArticleList from "../components/articleList";
 import { Calendar, Tag, ArrowRight } from "lucide-react";
 import { createExhaustiveParamsProxy } from "next/dist/server/app-render/instant-validation/instant-samples";
 
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+  const currentPage = Number(id);
+  return {
+    title: currentPage === 1 ? "記事一覧" : `記事一覧 - ${currentPage}ページ目`,
+    description: "投稿する記事の一覧",
+  };
+}
+
 export default async function Articles({params}) {
   const { id } = await params;
   const currentPage = Number(id);

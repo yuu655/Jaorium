@@ -1,9 +1,14 @@
-"use server";
 
 import Mentor from "./components/mentors";
 import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import MentorSearch from "@/components/common/mentorSearch";
+
+export const metadata = {
+  title: "メンター一覧",
+  description: "Jaoriumに所属するメンター一覧",
+};
+
 
 const fetchMentorTags = async (mentorId, supabase) => {
     const { data } = await supabase
