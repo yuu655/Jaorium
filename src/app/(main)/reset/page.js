@@ -6,10 +6,10 @@ import { useState, useActionState } from "react";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
-export const metadata = {
-  title: "パスワードリセット",
-  description: "Jaoriumのパスワードをリセット",
-};
+// export const metadata = {
+//   title: "パスワードリセット",
+//   description: "Jaoriumのパスワードをリセット",
+// };
 
 
 export default function LoginPage() {
