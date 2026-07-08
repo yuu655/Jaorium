@@ -41,12 +41,14 @@ function roleDestinationFor(role, pathname, isProfileSet) {
   }
 
   if (role === "user") {
-    if (pathname === "/setAccount/mentor") {
-      return "/setAccount";
+    if(isProfileSet === true) {
+      if(pathname === "/setAccount/user") {
+        return "/dashboard/user";
+      }
     }
     if (
       pathname === "/setAccount" ||
-      pathname === "/setAccount/mentor" ||
+      pathname === "/setAccount/user" ||
       pathname === "/" ||
       pathname === "/login" ||
       pathname.startsWith("/signup") ||
@@ -59,8 +61,10 @@ function roleDestinationFor(role, pathname, isProfileSet) {
   }
 
   if (role === "mentor") {
-    if (pathname === "/setAccount/user") {
-      return "/setAccount";
+    if(isProfileSet === true) {
+      if(pathname === "/setAccount/mentor") {
+        return "/dashboard/mentor";
+      }
     }
     if (
       pathname === "/setAccount" ||
