@@ -2,12 +2,14 @@
 
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import getBaseUrl from "@/utils/getUrls";
 
 async function fetchMentorStripeInfo(supabase, userId) {
+  // mentor_secret は本人SELECT可（本人セッションで読める）
   const { data } = await supabase
-    .from("mentors")
+    .from("mentor_secret")
     .select("stripe_account_id, stripe_onboarding_completed")
     .eq("id", userId)
     .single();
@@ -25,8 +27,11 @@ async function createExpressAccount() {
   });
 }
 
-async function saveMentorStripeAccountId(supabase, { userId, accountId }) {
-  return supabase.from("mentors").update({ stripe_account_id: accountId }).eq("id", userId);
+// mentor_secret は本人UPDATE不可（admin_allow/transfer_rate保護のため）。
+// Stripe列の更新は service role 経由で行う。
+async function saveMentorStripeAccountId({ userId, accountId }) {
+  const admin = createAdminSupabaseClient();
+  return admin.from("mentor_secret").update({ stripe_account_id: accountId }).eq("id", userId);
 }
 
 async function createOnboardingLink(accountId) {
@@ -53,7 +58,7 @@ export async function createStripeOnboarding() {
     const account = await createExpressAccount();
     accountId = account.id;
 
-    await saveMentorStripeAccountId(supabase, { userId: user.id, accountId });
+    await saveMentorStripeAccountId({ userId: user.id, accountId });
   }
 
   // Onboardingリンクを生成

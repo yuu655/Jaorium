@@ -16,10 +16,13 @@ export default async function MentorPage({ searchParams }) {
   const getCachedData = (userId) =>
     unstable_cache(
       async () => {
-        const [{ data: profile }, { data: Meetings }] = await Promise.all([
+        const [{ data: mentorProfile }, { data: secret }, { data: Meetings }] = await Promise.all([
           supabase.from("mentors").select("*").eq("id", userId).single(),
+          // Stripe連携状態は mentor_secret（本人SELECT可）から取得してマージする
+          supabase.from("mentor_secret").select("stripe_account_id, stripe_onboarding_completed").eq("id", userId).single(),
           supabase.from("meetings").select("*").eq("mentor", userId).order("created_at", { ascending: false }),
         ]);
+        const profile = { ...mentorProfile, ...(secret ?? {}) };
         // const allMeetings = [...(nextMeetings ?? []), ...(pastMeetings ?? [])];
         const userIds = [...new Set(Meetings.map((m) => m.user))];
         const { data: users } =

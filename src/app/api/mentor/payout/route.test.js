@@ -30,7 +30,8 @@ function baseSupabase({
       getUser: vi.fn(async () => ({ data: { user }, error: user ? null : { message: "no user" } })),
     },
     from: {
-      mentors: () => createChain({ data: mentor, error: mentor ? null : { message: "not found" } }),
+      // Stripe連携情報は mentor_secret から読む
+      mentor_secret: () => createChain({ data: mentor, error: mentor ? null : { message: "not found" } }),
       mentor_balances: () => createChain({ data: balance, error: balance ? null : { message: "not found" } }),
       transfers: () => transfersChain,
       mentor_balance_logs: () => balanceLogsChain,

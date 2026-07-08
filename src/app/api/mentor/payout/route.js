@@ -28,8 +28,9 @@ async function authenticateMentor(supabase, token) {
 }
 
 async function fetchMentorPayoutInfo(supabase, mentorId) {
+  // Stripe連携情報は機密テーブル mentor_secret にある（本ルートは service role なのでRLS外）
   const { data, error } = await supabase
-    .from("mentors")
+    .from("mentor_secret")
     .select("stripe_account_id, stripe_onboarding_completed")
     .eq("id", mentorId)
     .single();

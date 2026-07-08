@@ -29,10 +29,10 @@ JaoRium（jaorium.com）は、大学受験生（**ユーザー**）が、実際�
 | `admin` | 運営者。メンター審査・相談状況の閲覧などを行う |
 
 **役割確定の仕組み（DBトリガー `protect_role_update`）**:
-- `role` が `pending` の間は1回だけ `user`/`mentor`/`admin` への変更が許可される。
-- 一度 `pending` 以外になった後は、`service_role`キー（サーバー管理者操作）または `postgres` ユーザー以外からの変更は例外を発生させて拒否される（ロールの後からの変更を禁止する設計）。
+- `role` が `pending` の間は、一般ユーザー（`authenticated`）からは **`user` または `mentor` への確定のみ**許可される（`admin` への自己昇格は不可）。オンボーディング画面（`setAccount/user/page.js` 等）がブラウザからこの更新を行う。
+- `admin` の付与、および一度確定した role の変更は、`service_role`キー（サーバー管理者操作）または `postgres` ユーザーからのみ可能。それ以外は例外を発生させて拒否される。
 
-> **要確認**: 上記トリガーにより最初の1回だけ role を `pending` から `user`/`mentor` に変更できるが、アプリケーションコード（`src/`）内には `profiles.role` を更新する処理が見当たらない。現状、本番DBには `user`23件・`mentor`23件・`admin`2件・`pending`3件のデータが存在するため、何らかの方法（Supabase管理画面からの手動更新、または本書の対象外の仕組み）で設定されていると考えられる。新規サインアップしたユーザーの role がどの経路で `pending` から確定するのか、コードベースからは特定できなかった。運用上の重要な穴である可能性があるため、要確認。
+> **セキュリティ修正済み（2026-07-08）**: 以前のトリガーは「`pending` の間は**任意の値**へ変更可」だったため、サインアップ直後のユーザーがブラウザから `profiles.role = 'admin'` を書き込んで自己昇格できる脆弱性があった。上記のとおり `pending` からの遷移先を `user`/`mentor` に限定して修正済み。
 
 ---
 
@@ -201,8 +201,8 @@ Supabase (Postgres) 上の `public` スキーマ。すべてRLS有効。
 |---|---|
 | `profiles` | 全ユーザー共通のロール・オンボーディング状態 |
 | `users` | 受験生の詳細情報（名前・学年・志望校・アイコン・Stripe顧客ID） |
-| `mentors` | メンターの詳細情報（大学・学部・自己紹介・公開設定・Stripe Connect情報） |
-| `mentor_secret` | メンターの機密情報（運営承認フラグ・報酬率） |
+| `mentors` | メンターの詳細情報（大学・学部・自己紹介・公開設定）。SELECTは公開（氏名・大学等は公開情報） |
+| `mentor_secret` | メンターの機密情報（運営承認フラグ `admin_allow`・報酬率 `transfer_rate`・Stripe Connect情報 `stripe_account_id` / `stripe_onboarding_completed`）。SELECTは**本人のみ**。Stripe列の更新は service role 経由（本人UPDATE不可）で、本人が `admin_allow`/`transfer_rate` を書き換えられないようにしている |
 | `tags` / `mentor_tags` | 検索用タグとメンターとの中間テーブル |
 | `meetings` | 相談（面談）の本体。タイトル・アンケート回答・当事者ID |
 | `meeting_schedules` | 面談の日程確定状態・終了状態 |

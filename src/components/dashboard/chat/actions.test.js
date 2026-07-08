@@ -245,10 +245,23 @@ describe("cancelFinishRequest", () => {
 });
 
 describe("consumeCredit", () => {
-  it("blocks consumption when the balance is already below 1", async () => {
+  // service role でRPCを呼ぶadminクライアントのモック。meetingsは呼び出し者が
+  // user-1本人の面談を返す（参加者チェックを通す）。
+  function mockAdminClient({ balance = 3, rpc = vi.fn(async () => ({ error: null })), meetingRow = { id: "meeting-1", user: "user-1", mentor: "mentor-1" } } = {}) {
     createSupabaseClient.mockReturnValue(
-      createSupabaseMock({ from: { credits: () => createChain({ data: { balance: 0 }, error: null }) } }),
+      createSupabaseMock({
+        rpc,
+        from: {
+          meetings: () => createChain({ data: meetingRow, error: null }),
+          credits: () => createChain({ data: { balance }, error: null }),
+        },
+      }),
     );
+    return rpc;
+  }
+
+  it("blocks consumption when the balance is already below 1", async () => {
+    mockAdminClient({ balance: 0 });
     createClient.mockResolvedValue({ auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) } });
 
     const result = await consumeCredit("meeting-1");
@@ -256,14 +269,29 @@ describe("consumeCredit", () => {
     expect(result).toEqual({ error: "INSUFFICIENT_CREDITS" });
   });
 
-  it("calls the consume_credit RPC when balance is sufficient", async () => {
-    const rpc = vi.fn(async () => ({ error: null }));
-    createSupabaseClient.mockReturnValue(
-      createSupabaseMock({
-        rpc,
-        from: { credits: () => createChain({ data: { balance: 3 }, error: null }) },
-      }),
-    );
+  it("rejects when the caller is not the meeting's own user (only the student may consume)", async () => {
+    const rpc = mockAdminClient();
+    // 面談の user は user-1 だが、ログイン中はメンター。RPCまで到達させない
+    createClient.mockResolvedValue({ auth: { getUser: vi.fn(async () => ({ data: { user: { id: "mentor-1" } } })) } });
+
+    const result = await consumeCredit("meeting-1");
+
+    expect(result).toEqual({ error: "権限がありません" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the meeting does not exist", async () => {
+    const rpc = mockAdminClient({ meetingRow: null });
+    createClient.mockResolvedValue({ auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) } });
+
+    const result = await consumeCredit("missing-meeting");
+
+    expect(result).toEqual({ error: "権限がありません" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("calls the consume_credit RPC when the caller owns the meeting and balance is sufficient", async () => {
+    const rpc = mockAdminClient({ balance: 3 });
     createClient.mockResolvedValue({ auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) } });
 
     const result = await consumeCredit("meeting-1");
@@ -273,13 +301,7 @@ describe("consumeCredit", () => {
   });
 
   it("maps an INSUFFICIENT_CREDITS RPC error to the same sentinel", async () => {
-    const rpc = vi.fn(async () => ({ error: { message: "INSUFFICIENT_CREDITS: balance too low" } }));
-    createSupabaseClient.mockReturnValue(
-      createSupabaseMock({
-        rpc,
-        from: { credits: () => createChain({ data: { balance: 3 }, error: null }) },
-      }),
-    );
+    mockAdminClient({ balance: 3, rpc: vi.fn(async () => ({ error: { message: "INSUFFICIENT_CREDITS: balance too low" } })) });
     createClient.mockResolvedValue({ auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) } });
 
     const result = await consumeCredit("meeting-1");

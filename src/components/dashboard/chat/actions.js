@@ -247,6 +247,13 @@ export async function consumeCredit(meetingId) {
     return { error: "ログインが必要です" };
   }
 
+  // service role でRPCを呼ぶ（RLS迂回）ため、meetingId が呼び出し者自身の面談か
+  // をここで必ず検証する。クレジット消費は面談のユーザー（受験生）側だけが行う。
+  const meeting = await fetchMeetingById(supabase, meetingId);
+  if (!meeting || meeting.user !== user.id) {
+    return { error: "権限がありません" };
+  }
+
   const balance = await fetchCreditBalance(supabase, user.id);
   if (hasInsufficientCredits(balance)) {
     return { error: "INSUFFICIENT_CREDITS" };
