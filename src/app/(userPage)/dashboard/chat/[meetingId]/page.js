@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import ChatWrapper from "@/components/dashboard/chat/ChatWrapper";
 import Chat from "@/components/dashboard/chat/Chat";
+import { counterpartColumnsFor } from "@/lib/chatCounterpart";
 
 
 export default async function ChatPage({ params }) {
@@ -33,9 +34,10 @@ export default async function ChatPage({ params }) {
   const counterpartId = isMentor ? meeting.user : meeting.mentor;
   const counterpartTable = isMentor ? "users" : "mentors";
 
+  // 相手のプロフィールは必要な列だけに絞る（customer_id 等の機密列を渡さない）
   const { data: counterpart } = await supabase
     .from(counterpartTable)
-    .select("*")
+    .select(counterpartColumnsFor(counterpartTable))
     .eq("id", counterpartId)
     .single();
 
