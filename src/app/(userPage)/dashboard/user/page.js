@@ -21,16 +21,16 @@ export default async function UserPage() {
   const getCachedData = (supabase, userId) =>
     unstable_cache(
       async () => {
+        // mentor_secretはRLSで本人しか読めず、他ユーザーのセッションからは0行になる。
+        // admin_allowでの絞り込みはpublic_mentorsビュー(公開カラムのみ)に任せる。
         const [
           { data: profile },
           { data: mentors },
-          { data: mentor_admin_allow },
           { data: Meetings },
           { data: tags },
         ] = await Promise.all([
           supabase.from("users").select("*").eq("id", userId).single(),
-          supabase.from("mentors").select("*").eq("is_allowed", true),
-          supabase.from("mentor_secret").select("*").eq("admin_allow", true),
+          supabase.from("public_mentors").select("*"),
           supabase.from("meetings").select("*").eq("user", userId).order("created_at", { ascending: false }),
           supabase.from("tags").select("*"),
         ]);
@@ -44,15 +44,8 @@ export default async function UserPage() {
           ),
         );
 
-        const mentor_admin_allow_list = mentor_admin_allow.map(
-          (item) => item.id,
-        );
-        const public_admin_allowed_mentor = mentors.filter((item) =>
-          mentor_admin_allow_list.includes(item.id),
-        );
-
         await Promise.all(
-          public_admin_allowed_mentor.map(async (mentor) => {
+          mentors.map(async (mentor) => {
             const { data: review_sum } = await supabase
               .from("review_sum")
               .select("star_avg")
@@ -101,7 +94,7 @@ export default async function UserPage() {
 
         return {
           profile,
-          mentors: public_admin_allowed_mentor ?? [],
+          mentors: mentors ?? [],
           meetings: { next: nextMeetings ?? [], past: pastMeetings ?? [] },
           mentorTagsMap,
           tags,
@@ -115,6 +108,12 @@ export default async function UserPage() {
     supabase,
     user.id,
   )();
+
+  console.log(profile)
+  console.log(mentors)
+  console.log(meetings)
+  console.log(mentorTagsMap)
+  console.log(tags)
 
   return (
     <UserDashboard profile={profile} meetings={meetings} mentors={mentors} mentorTagsMap={mentorTagsMap} tags={tags} />

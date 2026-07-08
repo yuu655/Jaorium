@@ -21,9 +21,10 @@ const fetchMentorTags = async (mentorId, supabase) => {
 const getMentors = (supabase) =>
   unstable_cache(
     async () => {
-      const [{ data: mentors }, { data: mentor_admin_allow }, { data: tags }] = await Promise.all([
-        supabase.from("mentors").select("*").eq("is_allowed", true),
-        supabase.from("mentor_secret").select("*").eq("admin_allow", true),
+      // mentor_secretはRLSで本人しか読めず、一般ユーザー・未ログインからは0行になる。
+      // admin_allowでの絞り込みはpublic_mentorsビュー(公開カラムのみ)に任せる。
+      const [{ data: mentors }, { data: tags }] = await Promise.all([
+        supabase.from("public_mentors").select("*"),
         supabase.from("tags").select("*"),
       ]);
 
@@ -42,16 +43,12 @@ const getMentors = (supabase) =>
       //   .select("*")
       //   .limit(3);
 
-      const mentor_admin_allow_list = mentor_admin_allow.map(item => item.id);
-      const public_admin_allowed_mentor = mentors.filter(item => mentor_admin_allow_list.includes(item.id));
-
-      await Promise.all(public_admin_allowed_mentor.map(async (mentor) => {
+      await Promise.all(mentors.map(async (mentor) => {
         const{ data: review_sum } = await supabase.from("review_sum").select("star_avg").eq("mentor_id", mentor.id).single();
         mentor.review_sum = review_sum?.star_avg || 0;
       }));
-      // console.log(public_admin_allowed_mentor);
-      
-      return { mentors: public_admin_allowed_mentor ?? [], mentorTagsMap, tags };
+
+      return { mentors: mentors ?? [], mentorTagsMap, tags };
     },
     ["mentors-list"],
     { revalidate: 3600, tags: ["mentors"] },
