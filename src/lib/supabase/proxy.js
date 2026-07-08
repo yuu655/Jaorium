@@ -48,7 +48,7 @@ function roleDestinationFor(role, pathname, isProfileSet) {
     }
     if (
       pathname === "/setAccount" ||
-      pathname === "/setAccount/user" ||
+      pathname === "/setAccount/mentor" ||
       pathname === "/" ||
       pathname === "/login" ||
       pathname.startsWith("/signup") ||
