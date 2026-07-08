@@ -42,11 +42,11 @@ function roleDestinationFor(role, pathname, isProfileSet) {
 
   if (role === "user") {
     if (pathname === "/setAccount/mentor") {
-      return "/dashboard/user";
+      return "/setAccount";
     }
     if (
       pathname === "/setAccount" ||
-      pathname === "/setAccount/user" ||
+      pathname === "/setAccount/mentor" ||
       pathname === "/" ||
       pathname === "/login" ||
       pathname.startsWith("/signup") ||
@@ -60,11 +60,11 @@ function roleDestinationFor(role, pathname, isProfileSet) {
 
   if (role === "mentor") {
     if (pathname === "/setAccount/user") {
-      return "/dashboard/mentor";
+      return "/setAccount";
     }
     if (
       pathname === "/setAccount" ||
-      pathname === "/setAccount/mentor" ||
+      pathname === "/setAccount/user" ||
       pathname === "/" ||
       pathname === "/login" ||
       pathname.startsWith("/signup") ||
