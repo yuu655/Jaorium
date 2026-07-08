@@ -141,6 +141,33 @@ describe("POST /api/webhooks/stripe", () => {
     expect(paymentChain.insert).not.toHaveBeenCalled();
   });
 
+  // 冪等性: Stripeが同一イベントを再送した場合、payments.stripe_payment_intent_idの
+  // UNIQUE違反(23505)を「処理済み」とみなして200を返す(500を返すとStripeが再送し続ける)。
+  it("returns 200 without inserting a credit log when the payment already exists (duplicate webhook delivery)", async () => {
+    stripe.webhooks.constructEvent.mockReturnValue(checkoutCompletedEvent());
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const creditLogChain = createChain({ error: null });
+    const supabase = createSupabaseMock({
+      from: {
+        users: () => createChain({ error: null }),
+        payments: () =>
+          createChain({
+            data: null,
+            error: { code: "23505", message: "duplicate key value violates unique constraint" },
+          }),
+        credit_logs: () => creditLogChain,
+      },
+    });
+    createClient.mockReturnValue(supabase);
+
+    const res = await POST(makeRequest());
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ received: true });
+    expect(creditLogChain.insert).not.toHaveBeenCalled();
+  });
+
   it("returns 500 if the payment insert fails, without inserting a credit log", async () => {
     stripe.webhooks.constructEvent.mockReturnValue(checkoutCompletedEvent());
 

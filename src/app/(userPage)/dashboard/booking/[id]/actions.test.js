@@ -59,14 +59,32 @@ describe("submitBooking server action", () => {
     expect(result).toEqual({ error: "ログインが必要です" });
   });
 
-  it("rejects a caller whose role isn't \"user\"", async () => {
+  it("rejects a caller whose profiles.role isn't \"user\"", async () => {
+    createClient.mockResolvedValue(
+      createSupabaseMock({
+        auth: {
+          getUser: vi.fn(async () => ({ data: { user: { id: "u1" } } })),
+        },
+        from: { profiles: () => createChain({ data: { role: "mentor" }, error: null }) },
+      }),
+    );
+
+    const result = await submitBooking("mentor-1", null, formData(validFields));
+
+    expect(result).toEqual({ error: "権限がありません" });
+  });
+
+  // 現行のOTPサインアップではuser_metadata.roleが設定されないため、
+  // roleの判定はuser_metadataではなくprofilesテーブルを正とする(回帰テスト)
+  it("rejects a caller with no profiles row even if user_metadata claims role user", async () => {
     createClient.mockResolvedValue(
       createSupabaseMock({
         auth: {
           getUser: vi.fn(async () => ({
-            data: { user: { id: "u1", user_metadata: { role: "mentor" } } },
+            data: { user: { id: "u1", user_metadata: { role: "user" } } },
           })),
         },
+        from: { profiles: () => createChain({ data: null, error: null }) },
       }),
     );
 
@@ -79,9 +97,12 @@ describe("submitBooking server action", () => {
     createClient.mockResolvedValue(
       createSupabaseMock({
         auth: {
-          getUser: vi.fn(async () => ({ data: { user: { id: "u1", user_metadata: { role: "user" } } } })),
+          getUser: vi.fn(async () => ({ data: { user: { id: "u1" } } })),
         },
-        from: { mentors: () => createChain({ data: null, error: null }) },
+        from: {
+          profiles: () => createChain({ data: { role: "user" }, error: null }),
+          mentors: () => createChain({ data: null, error: null }),
+        },
       }),
     );
 
@@ -99,9 +120,10 @@ describe("submitBooking server action", () => {
     createClient.mockResolvedValue(
       createSupabaseMock({
         auth: {
-          getUser: vi.fn(async () => ({ data: { user: { id: "u1", user_metadata: { role: "user" } } } })),
+          getUser: vi.fn(async () => ({ data: { user: { id: "u1" } } })),
         },
         from: {
+          profiles: () => createChain({ data: { role: "user" }, error: null }),
           mentors: () => createChain({ data: { id: "mentor-1" }, error: null }),
           meetings: () => createChain({ data: null, error: { message: "insert failed" } }),
         },
@@ -124,10 +146,11 @@ describe("submitBooking server action", () => {
       createSupabaseMock({
         auth: {
           getUser: vi.fn(async () => ({
-            data: { user: { id: "u1", email: "user@example.com", user_metadata: { role: "user" } } },
+            data: { user: { id: "u1", email: "user@example.com" } },
           })),
         },
         from: {
+          profiles: () => createChain({ data: { role: "user" }, error: null }),
           mentors: () => createChain({ data: { id: "mentor-1" }, error: null }),
           meetings: () => createChain({ data: [{ id: "meeting-1" }], error: null }),
         },

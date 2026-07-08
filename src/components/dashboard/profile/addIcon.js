@@ -1,10 +1,11 @@
 "use client";
 import { useState, useRef } from "react";
 import { uploadAvatar } from "./actions";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 
 export default function AddIcon() {
+  const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [inputFiles, setInputFiles] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null); // 画像プレビュー用URL(R2に変更)
@@ -102,14 +103,18 @@ export default function AddIcon() {
             onClick={async () => {
               setUploading(true);
               try {
-                await uploadAvatar(inputFiles);
+                const result = await uploadAvatar(inputFiles);
+                if (result?.success) {
+                  alert("アイコンを更新しました！");
+                  router.push("/dashboard");
+                } else {
+                  alert(result?.message ?? "アップロードに失敗しました。もう一度お試しください。");
+                }
               } catch (error) {
                 alert("アップロードに失敗しました。もう一度お試しください。");
                 console.error("アップロードエラー:", error);
               } finally {
                 setUploading(false);
-                alert("アイコンを更新しました！");
-                redirect("/dashboard");
               }
             }}
             disabled={uploading || !previewUrl}

@@ -59,6 +59,18 @@ function getContentType(filename) {
   return AVATAR_CONTENT_TYPES[ext ?? ""] ?? "application/octet-stream";
 }
 
+// パストラバーサル防止: パス区切りや".."を含む値をR2キーに使わせない
+// (api/r2_upload/route.jsのisSafePathSegmentと同じ対策)
+function isSafePathSegment(value) {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    !value.includes("/") &&
+    !value.includes("\\") &&
+    !value.includes("..")
+  );
+}
+
 function buildAvatarKey({ role, userId, filename }) {
   return `${role}/${userId}/avatars/${filename}`;
 }
@@ -72,6 +84,17 @@ function resolveProfileRedirectPath(role) {
 }
 
 // ---- I/O ----
+
+// roleはmiddleware(proxy.js)と同じくprofilesテーブルを正とする。
+// user_metadata.roleは現行のOTPサインアップフローでは設定されず、nullのままになる。
+async function fetchCallerRole(supabase, userId) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+  return data?.role;
+}
 
 async function updateUserRecord(supabase, { userId, profile }) {
   return supabase.from("users").update(profile).eq("id", userId);
@@ -106,8 +129,10 @@ async function uploadFileToR2(url, file) {
   });
 }
 
+// .select()を付けて更新された行を返させる。0行更新(対象行なし)はエラーにならないため、
+// 呼び出し側で行数を確認して「成功と見せかけて何も起きていない」状態を検出する。
 async function saveAvatarKey(supabase, { table, userId, key }) {
-  return supabase.from(table).update({ icon: key }).eq("id", userId);
+  return supabase.from(table).update({ icon: key }).eq("id", userId).select("id");
 }
 
 // ---- Server Actions（オーケストレーション） ----
@@ -169,10 +194,18 @@ export async function uploadAvatar(inputFiles) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return new Response("Unauthorized", { status: 401 });
+    return { success: false, message: "ログインしてください" };
   }
 
-  const role = user.user_metadata.role;
+  if (!isSafePathSegment(inputFiles.name)) {
+    return { success: false, message: "不正なファイル名です" };
+  }
+
+  const role = await fetchCallerRole(supabase, user.id);
+  if (role !== "user" && role !== "mentor") {
+    return { success: false, message: "アカウント情報を取得できませんでした" };
+  }
+
   const key = buildAvatarKey({ role, userId: user.id, filename: inputFiles.name });
   const url = await createAvatarUploadUrl({ key, contentType: getContentType(inputFiles.name) });
 
@@ -182,7 +215,7 @@ export async function uploadAvatar(inputFiles) {
     return { success: false, message: "R2へのアップロードに失敗しました" };
   }
 
-  const { error } = await saveAvatarKey(supabase, {
+  const { data: updatedRows, error } = await saveAvatarKey(supabase, {
     table: resolveProfileTable(role),
     userId: user.id,
     key,
@@ -190,6 +223,10 @@ export async function uploadAvatar(inputFiles) {
 
   if (error) {
     return { success: false, message: error.message };
+  }
+
+  if (!updatedRows || updatedRows.length === 0) {
+    return { success: false, message: "プロフィールが見つかりませんでした" };
   }
 
   revalidatePath(resolveProfileRedirectPath(role));

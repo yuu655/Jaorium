@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { createSupabaseMock, createChain } from "@/test/supabaseMock";
 
 vi.mock("@/lib/r2", () => ({ r2: {} }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -23,10 +24,15 @@ function makeRequest(params, user) {
   };
 }
 
-function mockSupabase(user) {
-  createClient.mockResolvedValue({
-    auth: { getUser: vi.fn(async () => ({ data: { user } })) },
-  });
+// roleはuser_metadataではなくprofilesテーブルから読む(現行のOTPサインアップは
+// user_metadata.roleを設定しないため)
+function mockSupabase(user, role) {
+  createClient.mockResolvedValue(
+    createSupabaseMock({
+      auth: { getUser: vi.fn(async () => ({ data: { user } })) },
+      from: { profiles: () => createChain({ data: role ? { role } : null, error: null }) },
+    }),
+  );
 }
 
 describe("POST /api/r2_upload", () => {
@@ -38,8 +44,8 @@ describe("POST /api/r2_upload", () => {
     expect(res.status).toBe(401);
   });
 
-  it("builds a namespaced key from role/userId/kinds/filename and returns a signed URL", async () => {
-    mockSupabase({ id: "user-1", user_metadata: { role: "mentor" } });
+  it("builds a namespaced key from profiles.role/userId/kinds/filename and returns a signed URL", async () => {
+    mockSupabase({ id: "user-1" }, "mentor");
 
     const res = await POST(makeRequest({ filename: "photo.png", kinds: "icon" }));
     const body = await res.json();
@@ -54,8 +60,18 @@ describe("POST /api/r2_upload", () => {
     expect(getSignedUrl).toHaveBeenCalled();
   });
 
+  it("rejects a caller whose profiles.role is missing with 403, before touching S3", async () => {
+    mockSupabase({ id: "user-1" }, null);
+
+    const res = await POST(makeRequest({ filename: "photo.png", kinds: "icon" }));
+
+    expect(res.status).toBe(403);
+    expect(PutObjectCommand).not.toHaveBeenCalled();
+    expect(getSignedUrl).not.toHaveBeenCalled();
+  });
+
   it("falls back to application/octet-stream for unknown extensions", async () => {
-    mockSupabase({ id: "user-1", user_metadata: { role: "user" } });
+    mockSupabase({ id: "user-1" }, "user");
 
     await POST(makeRequest({ filename: "notes.xyz", kinds: "docs" }));
 
@@ -65,7 +81,7 @@ describe("POST /api/r2_upload", () => {
   });
 
   it("rejects a filename containing path-traversal segments with 400, before touching S3", async () => {
-    mockSupabase({ id: "user-1", user_metadata: { role: "user" } });
+    mockSupabase({ id: "user-1" }, "user");
 
     const res = await POST(
       makeRequest({ filename: "../../mentor/other-user-id/icon.png", kinds: "icon" }),
@@ -77,7 +93,7 @@ describe("POST /api/r2_upload", () => {
   });
 
   it("rejects a kinds value containing path-traversal segments with 400", async () => {
-    mockSupabase({ id: "user-1", user_metadata: { role: "user" } });
+    mockSupabase({ id: "user-1" }, "user");
 
     const res = await POST(makeRequest({ filename: "icon.png", kinds: "../shared" }));
 
@@ -86,7 +102,7 @@ describe("POST /api/r2_upload", () => {
   });
 
   it("rejects filenames containing a forward or back slash", async () => {
-    mockSupabase({ id: "user-1", user_metadata: { role: "user" } });
+    mockSupabase({ id: "user-1" }, "user");
 
     const slash = await POST(makeRequest({ filename: "sub/icon.png", kinds: "icon" }));
     const backslash = await POST(makeRequest({ filename: "sub\\icon.png", kinds: "icon" }));
@@ -96,7 +112,7 @@ describe("POST /api/r2_upload", () => {
   });
 
   it("rejects missing filename/kinds", async () => {
-    mockSupabase({ id: "user-1", user_metadata: { role: "user" } });
+    mockSupabase({ id: "user-1" }, "user");
 
     const res = await POST(makeRequest({ kinds: "icon" }));
 

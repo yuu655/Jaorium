@@ -2,6 +2,8 @@ import { stripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
+const UNIQUE_VIOLATION = "23505";
+
 function parseWebhookEvent(body, signature) {
   return stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET);
 }
@@ -43,6 +45,12 @@ async function handleCheckoutSessionCompleted(supabase, session) {
   });
 
   if (paymentError) {
+    // 同一payment_intentのUNIQUE違反 = 処理済みイベントの再送。
+    // credit_logsへの二重付与を避けつつ200を返し、Stripeのリトライを止める。
+    if (paymentError.code === UNIQUE_VIOLATION) {
+      console.log(`Duplicate webhook event ignored: payment_intent=${session.payment_intent}`);
+      return null;
+    }
     console.error("Error inserting payment:", paymentError);
     return NextResponse.json({ error: "Failed to insert payment" }, { status: 500 });
   }

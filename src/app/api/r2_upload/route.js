@@ -35,6 +35,17 @@ function buildUploadKey({ role, userId, kinds, filename }) {
   return `${role}/${userId}/${kinds}/${filename}`
 }
 
+// roleはmiddleware(proxy.js)と同じくprofilesテーブルを正とする。
+// user_metadata.roleは現行のOTPサインアップフローでは設定されず、nullのままになる。
+async function fetchCallerRole(supabase, userId) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle()
+  return data?.role
+}
+
 async function createUploadUrl({ key, contentType }) {
   return getSignedUrl(
     r2,
@@ -64,7 +75,12 @@ export async function POST(req) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const key = buildUploadKey({ role: user.user_metadata.role, userId: user.id, kinds, filename });
+  const role = await fetchCallerRole(supabase, user.id);
+  if (role !== "user" && role !== "mentor") {
+    return new Response("Role not found", { status: 403 });
+  }
+
+  const key = buildUploadKey({ role, userId: user.id, kinds, filename });
   const url = await createUploadUrl({ key, contentType: getContentType(filename) });
 
   return Response.json(url);

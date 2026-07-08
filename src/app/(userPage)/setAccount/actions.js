@@ -70,8 +70,9 @@ async function markProfileAsSet(supabase, userId) {
   if (error) throw error;
 }
 
-async function setUserPasswordAndRole(supabase, password) {
-  await supabase.auth.updateUser({ password, data: { role: "user" } });
+async function setPasswordAndRole(supabase, { password, role }) {
+  const { error } = await supabase.auth.updateUser({ password, data: { role } });
+  if (error) throw error;
 }
 
 async function insertUserRecord(supabase, record) {
@@ -101,7 +102,7 @@ async function submitUser(prevState, formData) {
   const supabase = await createClient();
   const user = await getCurrentUser(supabase);
 
-  await setUserPasswordAndRole(supabase, data.password);
+  await setPasswordAndRole(supabase, { password: data.password, role: "user" });
   await markProfileAsSet(supabase, user.id);
   await insertUserRecord(supabase, buildUserRecord(user.id, data));
 
@@ -115,8 +116,8 @@ async function submitMentor(prevState, formData) {
 
   const supabase = await createClient();
   const user = await getCurrentUser(supabase);
-  // await supabase.auth.updateUser({ password: data.password, data: { role: "mentor" } });
 
+  await setPasswordAndRole(supabase, { password: data.password, role: "mentor" });
   await markProfileAsSet(supabase, user.id);
 
   const { error: mentorInsertError } = await insertMentorRecord(

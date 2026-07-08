@@ -19,8 +19,15 @@ function parseBookingForm(formData) {
   };
 }
 
-function isUserRole(user) {
-  return user?.user_metadata.role === "user";
+// roleはmiddleware(proxy.js)と同じくprofilesテーブルを正とする。
+// user_metadata.roleは現行のOTPサインアップフローでは設定されず、nullのままになる。
+async function fetchCallerRole(supabase, userId) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+  return data?.role;
 }
 
 function buildMeetingRecord({ mentorId, userId, form }) {
@@ -89,7 +96,7 @@ export const submitBooking = async (mentorId, prevState, formData) => {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "ログインが必要です" };
-  if (!isUserRole(user)) return { error: "権限がありません" };
+  if ((await fetchCallerRole(supabase, user.id)) !== "user") return { error: "権限がありません" };
 
   const mentor = await fetchMentorById(supabase, mentorId);
   if (!mentor) return { error: "メンターが存在しません" };

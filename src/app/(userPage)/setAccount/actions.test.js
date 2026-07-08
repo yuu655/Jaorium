@@ -122,6 +122,45 @@ describe("submitMentor server action", () => {
     ]);
   });
 
+  // 回帰テスト: この行が長らくコメントアウトされており、メンターのパスワードも
+  // user_metadata.roleも設定されないままオンボーディングが完了してしまっていた
+  it("sets the mentor's password and role=mentor on the auth user", async () => {
+    const updateUser = vi.fn(async () => ({ error: null }));
+    const supabase = createSupabaseMock({
+      auth: { getUser: vi.fn(async () => ({ data: { user: { id: "mentor-1" } } })), updateUser },
+      from: {
+        profiles: () => createChain({ error: null }),
+        mentors: () => createChain({ error: null }),
+        mentor_tags: () => createChain({ error: null }),
+      },
+    });
+    createClient.mockResolvedValue(supabase);
+
+    await expect(submitMentor(null, formData(mentorFields))).rejects.toThrow(
+      "REDIRECT:/setAccount/mentor/icon",
+    );
+
+    expect(updateUser).toHaveBeenCalledWith({ password: "secret1", data: { role: "mentor" } });
+  });
+
+  it("throws and stops before marking the profile set when updateUser fails", async () => {
+    const profilesChain = createChain({ error: null });
+    const supabase = createSupabaseMock({
+      auth: {
+        getUser: vi.fn(async () => ({ data: { user: { id: "mentor-1" } } })),
+        updateUser: vi.fn(async () => ({ error: { message: "updateUser failed" } })),
+      },
+      from: { profiles: () => profilesChain },
+    });
+    createClient.mockResolvedValue(supabase);
+
+    await expect(submitMentor(null, formData(mentorFields))).rejects.toMatchObject({
+      message: "updateUser failed",
+    });
+
+    expect(profilesChain.update).not.toHaveBeenCalled();
+  });
+
   it("throws the mentors-insert error", async () => {
     const supabase = createSupabaseMock({
       auth: { getUser: vi.fn(async () => ({ data: { user: { id: "mentor-1" } } })) },
