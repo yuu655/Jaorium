@@ -12,34 +12,43 @@ const contactSchema = z.object({
   message: z.string().min(10, '10文字以上入力してください').max(1000),
 });
 
-export async function sendContactEmail(prevState, formData) {
-  const parsed = contactSchema.safeParse({
+function parseContactForm(formData) {
+  return contactSchema.safeParse({
     name: formData.get('name'),
     email: formData.get('email'),
     email_re: formData.get('email_re'),
     message: formData.get('message'),
   });
+}
+
+async function sendContactNotificationEmail({ name, email, message }) {
+  return resend.emails.send({
+    from: 'jaorium_contact@jaorium.com',
+    to: 'kazuto335.yama@gmail.com',
+    replyTo: email,
+    subject: `お問い合わせ: ${name}`,
+    html: `
+      <p><strong>名前:</strong> ${name}</p>
+      <p><strong>メール:</strong> ${email}</p>
+      <p><strong>内容:</strong> ${message}</p>
+    `,
+  });
+}
+
+export async function sendContactEmail(prevState, formData) {
+  const parsed = parseContactForm(formData);
 
   if (!parsed.success) {
     return { errors: parsed.error.flatten().fieldErrors };
   }
 
-  const { name, email, email_re, message } = parsed.data;
-  if (email !== email_re) {
+  const { name, email, email_re: emailConfirmation, message } = parsed.data;
+  if (email !== emailConfirmation) {
     return { errors: { email_re: ['メールアドレスが一致しません。'] } };
   }
+
   try {
-    await resend.emails.send({
-      from: 'jaorium_contact@jaorium.com',
-      to: 'kazuto335.yama@gmail.com',
-      replyTo: email,
-      subject: `お問い合わせ: ${name}`,
-      html: `
-        <p><strong>名前:</strong> ${name}</p>
-        <p><strong>メール:</strong> ${email}</p>
-        <p><strong>内容:</strong> ${message}</p>
-      `,
-    });
+    await sendContactNotificationEmail({ name, email, message });
     return { success: true };
   } catch (error) {
     return { errors: { _form: ['メール送信に失敗しました。しばらく経ってから再度お試しください。'] } };

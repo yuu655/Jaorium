@@ -1,14 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
+import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 
-export async function POST(request) {
-    const { searchParams } = new URL(request.url);
-  const mentor_id = searchParams.get('id');
-  const cookieStore = await cookies()
-
-  const supabase = createServerClient(
+async function createSessionClient(cookieStore) {
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
@@ -22,30 +18,43 @@ export async function POST(request) {
       },
     }
   )
+}
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-//   console.log('user:', user?.id)
-//   console.log('userError:', userError)
+async function isCallerAdmin(supabase, userId) {
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single()
 
-  if (user?.app_metadata?.role !== 'admin') {
+  return !error && profile?.role === 'admin'
+}
+
+async function approveMentor(mentorId) {
+  const adminClient = createAdminSupabaseClient()
+  return adminClient.from('mentors').update({ is_allowed: true }).eq('id', mentorId)
+}
+
+export async function POST(request) {
+  const { searchParams } = new URL(request.url)
+  const mentorId = searchParams.get('id')
+  const cookieStore = await cookies()
+  const supabase = await createSessionClient(cookieStore)
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const adminClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_SECRET_KEY
-  )
+  if (!(await isCallerAdmin(supabase, user.id))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-  const { error: error_update } = await adminClient
-    .from("mentors")
-    .update({
-      is_allowed: true,
-    })
-    .eq("id", mentor_id);
-//   console.log('deleteError:', JSON.stringify(error, null, 2)) // ← ここが重要
+  const { error } = await approveMentor(mentorId)
 
-  if (error_update) {
-    return NextResponse.json({ error: error_update.message }, { status: 500 })
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   return NextResponse.json({ success: true })

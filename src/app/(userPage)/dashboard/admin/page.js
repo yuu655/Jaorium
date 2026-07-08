@@ -1,4 +1,4 @@
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AdminDashboard from "@/components/dashboard/admin/AdminDashboard";
@@ -17,10 +17,7 @@ export default async function UserPage() {
   if(profile.role !== "admin"){
     redirect("/dashboard")
   }
-  const masterSupabase = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_SECRET_KEY,
-  );
+  const masterSupabase = createAdminSupabaseClient();
 
   const { data: MeetingConfirmations } = await masterSupabase
     .from("meeting_confirmations")

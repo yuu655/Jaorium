@@ -1,12 +1,13 @@
+async function fetchArticles(apiUrl, apiKey) {
+  const res = await fetch(`${apiUrl}blogs`, {
+    headers: {
+      "X-MICROCMS-API-KEY": apiKey,
+    },
+  });
+  return res.json();
+}
+
 export async function GET() {
-    const API_KEY = process.env.API_KEY;
-    const API_URL = process.env.API_URL;
-
-    const res = await fetch(`${API_URL}blogs`, {
-        headers: {
-            "X-MICROCMS-API-KEY": API_KEY
-        },
-    });
-
-    return Response.json(await res.json());
+  const articles = await fetchArticles(process.env.API_URL, process.env.API_KEY);
+  return Response.json(articles);
 }

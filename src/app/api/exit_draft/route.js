@@ -9,7 +9,5 @@ export async function GET(request) {
   const dm = await draftMode();
   dm.disable();
 
-  console.log(redirectTo);
-
   redirect(redirectTo);
 }

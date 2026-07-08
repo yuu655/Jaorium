@@ -393,16 +393,25 @@ const formatDate = (date) => {
 // ── エントリポイント ─────────────────────────────────────
 export default function Interview({ roomName, userName, userRole, dateTime }) {
   const [token, setToken] = useState("");
+  const [tokenError, setTokenError] = useState("");
   const [joined, setJoined] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState("idle");
   const [permissionError, setPermissionError] = useState("");
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    fetch(`/api/livekit-token?roomName=${roomName}&userName=${userName}`)
-      .then((r) => r.json())
-      .then((data) => setToken(data.token));
-  }, [roomName, userName]);
+    // identityはサーバー側で認証済みユーザーIDから決まる（userNameは送らない）
+    fetch(`/api/livekit-token?roomName=${roomName}`)
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok) {
+          setTokenError(data.error ?? "トークンの取得に失敗しました");
+          return;
+        }
+        setToken(data.token);
+      })
+      .catch(() => setTokenError("トークンの取得に失敗しました"));
+  }, [roomName]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -444,6 +453,14 @@ export default function Interview({ roomName, userName, userRole, dateTime }) {
         <p className="text-gray-400 animate-pulse">開始時間までお待ちください</p>
       </div>
     )
+  }
+
+  if (tokenError) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-950">
+        <p className="text-red-400">{tokenError}</p>
+      </div>
+    );
   }
 
   if (!token) {

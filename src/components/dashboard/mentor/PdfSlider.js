@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Keyboard } from "swiper/modules";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 
 import "swiper/css";
 import "swiper/css/navigation";

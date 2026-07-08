@@ -1,6 +1,6 @@
 "use server";
 
-import ReviewForm from "../component/reviewForm";
+import ReviewForm from "@/components/dashboard/review/reviewForm";
 import { submitReview } from "../actions";
 import Link from "next/link";
 

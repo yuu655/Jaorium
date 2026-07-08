@@ -1,8 +1,13 @@
-// import { type EmailOtpType } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import getUrls from "@/utils/getUrls";
-// Creating a handler to a GET request to route /auth/confirm
+
+async function exchangeCodeForSession(code) {
+  const supabase = await createClient()
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+  return { ok: !error }
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
 
@@ -11,12 +16,8 @@ export async function GET(request) {
   const next = searchParams.get('next') ?? '/'
 
   if (code) {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-
-    console.log('error:', error)
-
-    if (!error) {
+    const { ok } = await exchangeCodeForSession(code)
+    if (ok) {
       // 認証成功 → next で指定されたページへリダイレクト
       return NextResponse.redirect(`${getUrls()}${next}`)
     }
@@ -25,6 +26,3 @@ export async function GET(request) {
   // 認証失敗 → エラーページへリダイレクト
   return NextResponse.redirect(`${getUrls()}/error`)
 }
-
-
-

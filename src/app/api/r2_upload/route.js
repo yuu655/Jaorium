@@ -3,26 +3,59 @@ import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { createClient } from "@/lib/supabase/server";
 
-const getContentType = (filename) => {
+const CONTENT_TYPES = {
+  // 画像
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif',
+  svg: 'image/svg+xml',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  pdf: 'application/pdf',
+}
+
+function getContentType(filename) {
   const ext = filename.split('.').pop()?.toLowerCase()
-  const types = {
-    // 画像
-    'png'  : 'image/png',
-    'jpg'  : 'image/jpeg',
-    'jpeg' : 'image/jpeg',
-    'webp' : 'image/webp',
-    'gif'  : 'image/gif',
-    'svg'  : 'image/svg+xml',
-    'pptx' : 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    'pdf'  : 'application/pdf',
-  }
-  return types[ext ?? ''] ?? 'application/octet-stream'
+  return CONTENT_TYPES[ext ?? ''] ?? 'application/octet-stream'
+}
+
+// パストラバーサル防止: パス区切りや".."を含む値をS3キーに使わせない
+function isSafePathSegment(value) {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    !value.includes("/") &&
+    !value.includes("\\") &&
+    !value.includes("..")
+  )
+}
+
+function buildUploadKey({ role, userId, kinds, filename }) {
+  return `${role}/${userId}/${kinds}/${filename}`
+}
+
+async function createUploadUrl({ key, contentType }) {
+  return getSignedUrl(
+    r2,
+    new PutObjectCommand({
+      Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
+      Key: key,
+      ContentType: contentType,
+    }),
+    { expiresIn: 600 }
+  )
 }
 
 export async function POST(req) {
   const searchParams = req.nextUrl.searchParams;
   const filename = searchParams.get("filename");
   const kinds = searchParams.get("kinds");
+
+  if (!isSafePathSegment(filename) || !isSafePathSegment(kinds)) {
+    return new Response("Invalid filename or kinds", { status: 400 });
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -31,15 +64,8 @@ export async function POST(req) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const url = await getSignedUrl(
-    r2,
-    new PutObjectCommand({
-      Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME,
-      Key: `${user.user_metadata.role}/${user.id}/${kinds}/${filename}`,
-      ContentType: getContentType(filename),
-    }),
-    { expiresIn: 600 }
-  )
+  const key = buildUploadKey({ role: user.user_metadata.role, userId: user.id, kinds, filename });
+  const url = await createUploadUrl({ key, contentType: getContentType(filename) });
 
   return Response.json(url);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { login, signup_mentor, handleVerifyOtp } from "./actions";
+import { login, signupMentor, handleVerifyOtp } from "./actions";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { useState, useActionState, use } from "react";
@@ -21,7 +21,7 @@ export default function LoginPage() {
   // const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async (prevState, formData) => {
-    const result = await signup_mentor(prevState, formData);
+    const result = await signupMentor(prevState, formData);
     if (result?.error) {
       toast.error(result.error);
     } else if (result?.success) {

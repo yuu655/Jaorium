@@ -1,7 +1,7 @@
 "use client"
 import dynamic from 'next/dynamic';
 
-const PdfSlider = dynamic(() => import('@/components/PdfSlider'), {
+const PdfSlider = dynamic(() => import('./PdfSlider'), {
   ssr: false,
   loading: () => <p>Loading...</p>,
 });

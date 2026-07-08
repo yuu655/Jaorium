@@ -1,12 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 
-export async function DELETE() {
-  const cookieStore = await cookies()
-
-  const supabase = createServerClient(
+async function createSessionClient(cookieStore) {
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
@@ -20,22 +18,21 @@ export async function DELETE() {
       },
     }
   )
+}
 
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-//   console.log('user:', user?.id)
-//   console.log('userError:', userError)
+export async function DELETE() {
+  const cookieStore = await cookies()
+  const supabase = await createSessionClient(cookieStore)
+
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const adminClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_SECRET_KEY
-  )
+  const adminClient = createAdminSupabaseClient()
 
   const { error } = await adminClient.auth.admin.deleteUser(user.id)
-//   console.log('deleteError:', JSON.stringify(error, null, 2)) // ← ここが重要
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

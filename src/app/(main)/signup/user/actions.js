@@ -2,47 +2,51 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import getUrls from "@/utils/getUrls";
+
+function translateLoginError(error) {
+  if (error.message === "Invalid login credentials") {
+    return "メールアドレスまたはパスワードが間違っています。アカウントをお持ちでない場合は新規登録してください。";
+  }
+  return "ログインに失敗しました";
+}
 
 export async function login(prevState, formData) {
   const supabase = await createClient();
-  const data = {
-    email: formData.get("email"),
-    password: formData.get("password"),
-  };
+  const email = formData.get("email");
+  const password = formData.get("password");
 
-  const { error } = await supabase.auth.signInWithPassword(data);
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    if (error.message === "Invalid login credentials") {
-      return {
-        error:
-          "メールアドレスまたはパスワードが間違っています。アカウントをお持ちでない場合は新規登録してください。",
-      };
-    }
-    return { error: "ログインに失敗しました" };
+    return { error: translateLoginError(error) };
   }
 
   revalidatePath("/", "layout");
   redirect("/dashboard"); // 成功時はリダイレクト
 }
 
-export async function signup_user(prevState, formData) {
-  const supabase = await createClient();
-  const masterSupabase = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_SECRET_KEY,
-  );
-  const data = {
-    email: formData.get("email"),
-  };
-  const { data: exists, error: rpcError } = await masterSupabase.rpc(
-    "email_exists",
-    {
-      check_email: data.email,
+async function checkEmailExists(email) {
+  const masterSupabase = createAdminSupabaseClient();
+  return masterSupabase.rpc("email_exists", { check_email: email });
+}
+
+async function sendUserSignupOtp(supabase, email) {
+  return supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: `${getUrls()}/api/auth/confirm?next=/setAccount/user`,
     },
-  );
+  });
+}
+
+export async function signupUser(prevState, formData) {
+  const supabase = await createClient();
+  const email = formData.get("email");
+
+  const { data: exists, error: rpcError } = await checkEmailExists(email);
 
   if (rpcError) {
     console.error("email_exists error:", rpcError.message);
@@ -50,29 +54,10 @@ export async function signup_user(prevState, formData) {
   }
 
   if (exists) {
-    return {
-      success: false,
-      error: "このメールアドレスは既に登録されています。",
-    };
+    return { success: false, error: "このメールアドレスは既に登録されています。" };
   }
-  // if(data.password !== data.confirm_password){
-  //   return {error: "再入力のパスワードと一致しません"}
-  // }
 
-  // const { error } = await supabase.auth.signUp({
-  //   email: data.email,
-  //   password: data.password,
-  //   options: {
-  //     emailRedirectTo: "https://www.jaorium.com/api/auth/confirm?next=/setAccount/user"
-  //   }
-  // });
-  const { error } = await supabase.auth.signInWithOtp({
-    email: data.email,
-    options: {
-      shouldCreateUser: true,
-      emailRedirectTo: `${getUrls()}/api/auth/confirm?next=/setAccount/user`,
-    },
-  });
+  const { error } = await sendUserSignupOtp(supabase, email);
 
   if (error) {
     return { error: "サインアップに失敗しました: " + error.message };
@@ -82,23 +67,31 @@ export async function signup_user(prevState, formData) {
   return { success: true };
 }
 
-export async function signup_mentor(prevState, formData) {
-  const supabase = await createClient();
-  const data = {
-    email: formData.get("email"),
-    password: formData.get("password"),
-    confirm_password: formData.get("password_check"),
-  };
-  if (data.password !== data.password) {
+function passwordsMatch(password, confirmPassword) {
+  return password === confirmPassword;
+}
+
+async function signUpWithPassword(supabase, { email, password, emailRedirectTo }) {
+  return supabase.auth.signUp({ email, password, options: { emailRedirectTo } });
+}
+
+// 注: このページ (signup/user) からは呼ばれておらず、現状どこからもimportされていない。
+// パスワード方式の旧サインアップ実装の残骸と見られる。挙動保存のためロジックはそのまま
+// (role: "user" を設定してしまう既知のバグも含め、意図的に手を加えていない)。
+export async function signupMentor(prevState, formData) {
+  const email = formData.get("email");
+  const password = formData.get("password");
+  const confirmPassword = formData.get("password_check");
+
+  if (!passwordsMatch(password, confirmPassword)) {
     return { error: "再入力のパスワードと一致しません" };
   }
 
-  const { error } = await supabase.auth.signUp({
-    email: data.email,
-    password: data.password,
-    options: {
-      emailRedirectTo: `${getUrls()}/api/auth/confirm?next=/setAccount/mentor`,
-    },
+  const supabase = await createClient();
+  const { error } = await signUpWithPassword(supabase, {
+    email,
+    password,
+    emailRedirectTo: `${getUrls()}/api/auth/confirm?next=/setAccount/mentor`,
   });
 
   await supabase.auth.updateUser({ data: { role: "user" } });
@@ -111,34 +104,33 @@ export async function signup_mentor(prevState, formData) {
   return { success: true };
 }
 
+function translateVerifyOtpError(error) {
+  if (error.message.includes("expired")) {
+    return "コードの有効期限が切れています。再送信してください。";
+  }
+  if (error.message.includes("invalid")) {
+    return "コードが正しくありません。";
+  }
+  return "認証に失敗しました。もう一度お試しください。";
+}
+
+async function verifyEmailOtp(supabase, { email, token }) {
+  return supabase.auth.verifyOtp({ email, token, type: "email" });
+}
+
 export async function handleVerifyOtp(prevState, formData) {
-  const supabase = await createClient();
   const token = formData.get("token");
   const email = formData.get("email");
   if (!token || !email) {
     return { success: false, error: "コードを入力してください。" };
   }
 
-  const { data, error } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: "email", // signup後の検証なら 'signup' または 'email'
-  });
-//   console.log("data:", data);
-// console.log("error:", error);
+  const supabase = await createClient();
+  const { error } = await verifyEmailOtp(supabase, { email, token });
 
   if (error) {
     console.error("verifyOtp error:", error.message); // サーバーログ用
-
-    // ユーザー向けには分かりやすいメッセージに変換
-    let userMessage = "認証に失敗しました。もう一度お試しください。";
-    if (error.message.includes("expired")) {
-      userMessage = "コードの有効期限が切れています。再送信してください。";
-    } else if (error.message.includes("invalid")) {
-      userMessage = "コードが正しくありません。";
-    }
-
-    return { success: false, error: userMessage };
+    return { success: false, error: translateVerifyOtpError(error) };
   }
 
   redirect("/setAccount/user");

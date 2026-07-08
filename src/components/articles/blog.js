@@ -1,5 +1,5 @@
 import Image from "next/image";
-import ExitButton from "../components/button";
+import ExitButton from "./button";
 import { Calendar } from "lucide-react";
 
 const styles = `

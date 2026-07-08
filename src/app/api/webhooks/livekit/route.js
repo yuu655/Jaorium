@@ -12,32 +12,35 @@ const egressClient = new EgressClient(
   process.env.LIVEKIT_API_SECRET
 );
 
+function buildRecordingDestination(roomName) {
+  return {
+    file: {
+      fileType: EncodedFileType.MP4,
+      filepath: `recordings/${roomName}/{time}.mp4`,
+      s3: {
+        accessKey: process.env.CLOUDFLARE_ACCESS_KEY_ID,
+        secret: process.env.CLOUDFLARE_SECRET_ACCESS_KEY,
+        bucket: process.env.CLOUDFLARE_BUCKET_NAME,
+        region: "auto",
+        // ここだけS3と違う：R2のエンドポイントを明示
+        endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        forcePathStyle: true, // R2では必須
+      },
+    },
+  };
+}
+
+async function startRoomRecording(roomName) {
+  await egressClient.startRoomCompositeEgress(roomName, buildRecordingDestination(roomName));
+}
+
 export async function POST(request) {
   const body = await request.text();
   const event = receiver.receive(body, request.headers.get("Authorization"));
 
-  console.log("aa");
-
   switch (event.event) {
     case "room_started":
-      await egressClient.startRoomCompositeEgress(
-        event.room.name,
-        {
-          file: {
-            fileType: EncodedFileType.MP4,
-            filepath: `recordings/${event.room.name}/{time}.mp4`,
-            s3: {
-              accessKey: process.env.CLOUDFLARE_ACCESS_KEY_ID,
-              secret: process.env.CLOUDFLARE_SECRET_ACCESS_KEY,
-              bucket: process.env.CLOUDFLARE_BUCKET_NAME,
-              region: "auto",
-              // ここだけS3と違う：R2のエンドポイントを明示
-              endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-              forcePathStyle: true, // R2では必須
-            },
-          },
-        }
-      );
+      await startRoomRecording(event.room.name);
       console.log(`録画開始: ${event.room.name}`);
       break;
 

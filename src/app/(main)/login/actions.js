@@ -3,29 +3,26 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+function translateLoginError(error) {
+  if (error.message === "Invalid login credentials") {
+    return "メールアドレスまたはパスワードが間違っています。アカウントをお持ちでない場合は新規登録してください。";
+  }
+  return "ログインに失敗しました";
+}
+
+async function signInWithPassword(supabase, { email, password }) {
+  return supabase.auth.signInWithPassword({ email, password });
+}
+
 export async function login(prevState, formData) {
   const supabase = await createClient();
-  const data = {
-    email: formData.get("email"),
-    password: formData.get("password"),
-  };
+  const email = formData.get("email");
+  const password = formData.get("password");
 
-  const { data: { user }, error } = await supabase.auth.signInWithPassword(data);
-  // ログイン成功後のユーザーデータを確認
-  // if (user.user_metadata.role !== undefined) {
-  //   return( {error: "アカウント登録が途中で終了しています。もう一度サインアップしてください。"} )
-  // }
-
-  console.log(user)
+  const { error } = await signInWithPassword(supabase, { email, password });
 
   if (error) {
-    if (error.message === "Invalid login credentials") {
-      return {
-        error:
-          "メールアドレスまたはパスワードが間違っています。アカウントをお持ちでない場合は新規登録してください。",
-      };
-    }
-    return { error: "ログインに失敗しました" };
+    return { error: translateLoginError(error) };
   }
 
   revalidatePath("/", "layout");
@@ -34,12 +31,10 @@ export async function login(prevState, formData) {
 
 export async function signup(prevState, formData) {
   const supabase = await createClient();
-  const data = {
-    email: formData.get("email"),
-    password: formData.get("password"),
-  };
+  const email = formData.get("email");
+  const password = formData.get("password");
 
-  const { error } = await supabase.auth.signUp(data);
+  const { error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
     return { error: "サインアップに失敗しました: " + error.message };

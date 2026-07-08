@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { draftMode } from "next/headers";
 
-import Blog from "../../components/blog";
-import ExitButton from "../../components/button";
+import Blog from "@/components/articles/blog";
+import ExitButton from "@/components/articles/button";
 const API_URL = process.env.API_URL;
 const API_KEY = process.env.API_KEY;
 

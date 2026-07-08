@@ -1,28 +1,31 @@
 "use server";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import getUrls from "@/utils/getUrls";
 
+function translateResetPasswordError(error) {
+  if (error.message.includes("rate limit") || error.status === 429) {
+    // ユーザーに待つよう伝える
+    return "しばらく時間をおいてから再度お試しください";
+  }
+  return `${error.message}メールの送信に失敗しました`;
+}
+
+async function sendResetPasswordEmail(supabase, email) {
+  return supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getUrls()}/api/auth/resetpass`,
+  });
+}
+
 export async function resetPassword(prevState, formData) {
-    const supabase = await createClient();
-    console.log(formData.get("email"))
+  const supabase = await createClient();
+  const email = formData.get("email");
 
-    // メール/パスワードユーザーのみリセットメール送信
-    const { error } = await supabase.auth.resetPasswordForEmail(formData.get("email"), {
-        redirectTo: `${getUrls()}/api/auth/resetpass`
-    })
+  // メール/パスワードユーザーのみリセットメール送信
+  const { error } = await sendResetPasswordEmail(supabase, email);
 
-    // const { error } = await supabase.auth.signInWithPassword(data);
+  if (error) {
+    return { error: translateResetPasswordError(error) };
+  }
 
-    if (error) {
-        if (error.message.includes('rate limit') || error.status === 429) {
-            // ユーザーに待つよう伝える
-            return { error: 'しばらく時間をおいてから再度お試しください' };
-        } else {
-            return { error: `${error.message}メールの送信に失敗しました` };
-        }
-    }
-
-    return { success: true };
+  return { success: true };
 }

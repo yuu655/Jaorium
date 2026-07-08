@@ -1,7 +1,24 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'  // ← importが必要
+import { createServerClient } from '@supabase/ssr'
 import getUrls from "@/utils/getUrls";
+
+async function createSessionClient(cookieStore) {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+}
 
 export async function GET(request) {
   const requestUrl = new URL(request.url)
@@ -9,22 +26,8 @@ export async function GET(request) {
 
   if (code) {
     const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-      {
-        cookies: {
-          getAll() { return cookieStore.getAll() },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          },
-        },
-      }
-    )
+    const supabase = await createSessionClient(cookieStore)
 
-    // ✅ 戻り値からerrorを受け取る
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
@@ -33,6 +36,6 @@ export async function GET(request) {
     }
   }
 
-  // ✅ セッション交換成功後にパスワード変更ページへ
+  // セッション交換成功後にパスワード変更ページへ
   return NextResponse.redirect(`${getUrls()}/resetPass`)
 }

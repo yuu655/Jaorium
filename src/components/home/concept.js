@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import FadeIn from "./common/FadeIn";
+import FadeIn from "../common/FadeIn";
 
 
 /* ── 吹き出し ── */

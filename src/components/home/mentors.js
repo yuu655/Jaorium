@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
-import Mentor from "./mentor";
+import Mentor from "@/components/mentor";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import MentorSearch from "./common/mentorSearch";
+import MentorSearch from "@/components/common/mentorSearch";
 import MentorSearchInner from "./mentorSearch";
 const fetchMentorTags = async (mentorId, supabase) => {
   const { data } = await supabase

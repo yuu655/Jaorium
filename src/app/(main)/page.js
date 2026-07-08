@@ -1,14 +1,14 @@
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import Hero from "@/components/hero";
-import Concept from "@/components/concept";
-import AdContact from "@/components/adContact";
-import Mentors from "@/components/mentors";
-import Articles from "@/components/articles";
-import TimeLine from "@/components/timeLine";
-import HowWork from "@/components/howWork";
-import ForCompany from "@/components/forCompany";
-import Features from "@/components/features";
+import Hero from "@/components/home/hero";
+import Concept from "@/components/home/concept";
+import AdContact from "@/components/home/adContact";
+import Mentors from "@/components/home/mentors";
+import Articles from "@/components/home/articles";
+import TimeLine from "@/components/home/timeLine";
+import HowWork from "@/components/home/howWork";
+import ForCompany from "@/components/home/forCompany";
+import Features from "@/components/home/features";
 
 export default async function Home() {
   return (

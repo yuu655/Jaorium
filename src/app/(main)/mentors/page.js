@@ -1,5 +1,5 @@
 
-import Mentor from "./components/mentors";
+import Mentor from "@/components/mentors/mentorsListing";
 import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import MentorSearch from "@/components/common/mentorSearch";

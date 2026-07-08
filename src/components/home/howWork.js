@@ -2,7 +2,7 @@
 
 import { ChevronRight, Search, User, Star, ArrowLeft, Calendar, Send, MessageCircle, Video } from 'lucide-react';
 import Link from 'next/link';
-import FadeIn from './common/FadeIn';
+import FadeIn from '../common/FadeIn';
 
 export default function HowWork() {
   const textShadow = {

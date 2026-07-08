@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import {ShieldCheck, Gift, MonitorPlay, Presentation, Lightbulb, CheckSquare, BookOpen, Award, Globe, CheckCircle2, Play, Check} from "lucide-react";
-import FadeIn from "./common/FadeIn";
+import FadeIn from "../common/FadeIn";
 
 
 export default function Features() {

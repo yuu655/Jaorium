@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import Article from "./article";
+import Article from "@/components/articles/article";
 import Link from "next/link";
 const API_URL = process.env.API_URL;
 const API_KEY = process.env.API_KEY;
