@@ -19,27 +19,28 @@ export default async function UserPage() {
   }
   const masterSupabase = createAdminSupabaseClient();
 
-  const { data: MeetingConfirmations } = await masterSupabase
-    .from("meeting_confirmations")
-    .select("*")
-    .not("meeting_id", "is", null);;
-
+  // 支払い有無に関わらず、全ミーティングを対象にする
   const { data: Meetings } = await masterSupabase
     .from("meetings")
     .select("*")
-    .in(
-      "id",
-      MeetingConfirmations.map((item) => item.meeting_id),
-    )
     .order("created_at", { ascending: false });
+
+  const meetingIds = Meetings.map((item) => item.id);
 
   const { data: meeting_sc } = await masterSupabase
     .from("meeting_schedules")
     .select("*")
-    .in(
-      "meeting_id",
-      Meetings.map((item) => item?.id),
-    );
+    .in("meeting_id", meetingIds);
+
+  // 支払い済み（クレジット消費済み）かどうかの判定用
+  const { data: MeetingConfirmations } = await masterSupabase
+    .from("meeting_confirmations")
+    .select("meeting_id")
+    .in("meeting_id", meetingIds);
+
+  const paidMeetingIds = new Set(
+    MeetingConfirmations.map((item) => item.meeting_id),
+  );
 
   const normalized_meeting_sc = meeting_sc.map((item) => ({
     id: item?.meeting_id,
@@ -63,23 +64,23 @@ export default async function UserPage() {
   // 結果を配列に戻す
   const merged_meetings = Array.from(map.values());
 
-  for (let i = 0; i < merged_meetings.length; i++) {
-    const {data:user} = await masterSupabase
-      .from("users")
-      .select("*")
-      .eq("id", merged_meetings[i].user)
-      .single();
-    const {data:mentor} = await masterSupabase
-      .from("mentors")
-      .select("*")
-      .eq("id", merged_meetings[i].mentor)
-      .single();
-    merged_meetings[i].user = user;
-    merged_meetings[i].mentor = mentor;
-  }
-  // const doubledNumbers = merged_meetings.map(meeting => {
-  //   const user = await masterSupabase.from("users").select("*").eq("id", meeting.user).single()
-  // });
+  // user/mentorをまとめて取得してマージ（1件ずつのN+1を避ける）
+  const userIds = [...new Set(merged_meetings.map((m) => m.user).filter(Boolean))];
+  const mentorIds = [...new Set(merged_meetings.map((m) => m.mentor).filter(Boolean))];
+
+  const [{ data: users }, { data: mentors }] = await Promise.all([
+    masterSupabase.from("users").select("*").in("id", userIds),
+    masterSupabase.from("mentors").select("*").in("id", mentorIds),
+  ]);
+
+  const userMap = new Map((users ?? []).map((u) => [u.id, u]));
+  const mentorMap = new Map((mentors ?? []).map((m) => [m.id, m]));
+
+  merged_meetings.forEach((meeting) => {
+    meeting.user = userMap.get(meeting.user) ?? null;
+    meeting.mentor = mentorMap.get(meeting.mentor) ?? null;
+    meeting.is_paid = paidMeetingIds.has(meeting.id);
+  });
 
   const nextMeetings = merged_meetings.filter((item) => !item.is_finished);
   const pastMeetings = merged_meetings.filter((item) => item.is_finished);
