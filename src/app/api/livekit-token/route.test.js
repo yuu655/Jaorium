@@ -24,7 +24,14 @@ function makeRequest(params) {
 
 const meeting = { id: "meeting-1", user: "user-1", mentor: "mentor-1" };
 
-function mockSession({ user = null, role = null, meetingRow = meeting, confirmation = null } = {}) {
+function mockSession({
+  user = null,
+  role = null,
+  meetingRow = meeting,
+  confirmation = null,
+  userName = null,
+  mentorName = null,
+} = {}) {
   createClient.mockResolvedValue(
     createSupabaseMock({
       auth: { getUser: vi.fn(async () => ({ data: { user } })) },
@@ -32,6 +39,8 @@ function mockSession({ user = null, role = null, meetingRow = meeting, confirmat
         profiles: () => createChain({ data: role ? { role } : null, error: null }),
         meetings: () => createChain({ data: meetingRow, error: null }),
         meeting_confirmations: () => createChain({ data: confirmation, error: null }),
+        users: () => createChain({ data: userName ? { name: userName } : null, error: null }),
+        mentors: () => createChain({ data: mentorName ? { name: mentorName } : null, error: null }),
       },
     }),
   );
@@ -88,7 +97,12 @@ describe("GET /api/livekit-token", () => {
   });
 
   it("mints a token for a paid participant, using the authenticated user id as identity", async () => {
-    mockSession({ user: { id: "mentor-1" }, role: "mentor", confirmation: { id: "c1" } });
+    mockSession({
+      user: { id: "mentor-1" },
+      role: "mentor",
+      confirmation: { id: "c1" },
+      mentorName: "山田先輩",
+    });
 
     const res = await GET(
       // userNameを渡しても無視され、identityは認証済みIDになる（なりすまし防止）
@@ -96,7 +110,10 @@ describe("GET /api/livekit-token", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(AccessToken).toHaveBeenCalledWith("lk-key", "lk-secret", { identity: "mentor-1" });
+    expect(AccessToken).toHaveBeenCalledWith("lk-key", "lk-secret", {
+      identity: "mentor-1",
+      name: "山田先輩",
+    });
     expect(addGrantMock).toHaveBeenCalledWith({
       roomJoin: true,
       room: "meeting-1",
@@ -106,12 +123,45 @@ describe("GET /api/livekit-token", () => {
     expect(await res.json()).toEqual({ token: "signed.jwt.token" });
   });
 
+  it("sets the display name from the users table for a user participant", async () => {
+    mockSession({
+      user: { id: "user-1" },
+      role: "user",
+      confirmation: { id: "c1" },
+      userName: "田中太郎",
+    });
+
+    const res = await GET(makeRequest({ roomName: "meeting-1" }));
+
+    expect(res.status).toBe(200);
+    expect(AccessToken).toHaveBeenCalledWith("lk-key", "lk-secret", {
+      identity: "user-1",
+      name: "田中太郎",
+    });
+  });
+
+  it("falls back to a generic display name when no name row exists", async () => {
+    // users/mentors/profilesいずれからも名前が取れない場合は「参加者」
+    mockSession({ user: { id: "user-1" }, role: "user", confirmation: { id: "c1" } });
+
+    const res = await GET(makeRequest({ roomName: "meeting-1" }));
+
+    expect(res.status).toBe(200);
+    expect(AccessToken).toHaveBeenCalledWith("lk-key", "lk-secret", {
+      identity: "user-1",
+      name: "参加者",
+    });
+  });
+
   it("mints a token for an admin without participant/payment checks", async () => {
     mockSession({ user: { id: "admin-1" }, role: "admin", meetingRow: null, confirmation: null });
 
     const res = await GET(makeRequest({ roomName: "meeting-1" }));
 
     expect(res.status).toBe(200);
-    expect(AccessToken).toHaveBeenCalledWith("lk-key", "lk-secret", { identity: "admin-1" });
+    expect(AccessToken).toHaveBeenCalledWith("lk-key", "lk-secret", {
+      identity: "admin-1",
+      name: "運営",
+    });
   });
 });

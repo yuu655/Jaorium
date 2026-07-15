@@ -23,6 +23,25 @@ async function createSessionClient(cookieStore) {
 export async function GET(request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  const token_hash = requestUrl.searchParams.get('token_hash')
+  const type = requestUrl.searchParams.get('type')
+
+  // token_hash方式（メールテンプレートからの直接リンク）。
+  // code方式（PKCE）はリセットを申請したブラウザでしか成功しないため、
+  // 別端末・メールアプリ内ブラウザで開くケースはこちらで処理する。
+  if (token_hash && type) {
+    const cookieStore = await cookies()
+    const supabase = await createSessionClient(cookieStore)
+
+    const { error } = await supabase.auth.verifyOtp({ token_hash, type })
+
+    if (error) {
+      console.error(error)
+      return NextResponse.redirect(`${getUrls()}/error`)
+    }
+
+    return NextResponse.redirect(`${getUrls()}/resetPass`)
+  }
 
   if (code) {
     const cookieStore = await cookies()

@@ -51,4 +51,28 @@ describe("GET /api/auth/confirm", () => {
 
     expect(res.headers.get("location")).toBe("https://www.jaorium.com/");
   });
+
+  // token_hash方式: PKCEのcode_verifierクッキーが不要なため、
+  // 登録時と別の端末・ブラウザでメールのリンクを開いても認証できる
+  it("verifies a token_hash and redirects to next on success", async () => {
+    const verifyOtp = vi.fn(async () => ({ error: null }));
+    createClient.mockResolvedValue({ auth: { verifyOtp } });
+
+    const res = await GET(
+      makeRequest("?token_hash=hash123&type=email&next=/setAccount/user"),
+    );
+
+    expect(verifyOtp).toHaveBeenCalledWith({ token_hash: "hash123", type: "email" });
+    expect(res.headers.get("location")).toBe("https://www.jaorium.com/setAccount/user");
+  });
+
+  it("redirects to /error when token_hash verification fails", async () => {
+    createClient.mockResolvedValue({
+      auth: { verifyOtp: vi.fn(async () => ({ error: { message: "expired" } })) },
+    });
+
+    const res = await GET(makeRequest("?token_hash=used&type=email&next=/setAccount/user"));
+
+    expect(res.headers.get("location")).toBe("https://www.jaorium.com/error");
+  });
 });

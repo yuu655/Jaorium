@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createSupabaseMock, createChain } from "@/test/supabaseMock";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -9,7 +9,6 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { submitUser, submitMentor } from "./actions";
 
 function formData(fields) {
@@ -26,37 +25,59 @@ const userFields = {
   password_check: "secret1",
 };
 
+beforeEach(() => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+});
+
 describe("submitUser server action", () => {
-  it("throws when password and password_check don't match, before touching Supabase", async () => {
+  it("returns a form error (not a throw) when passwords don't match, before touching Supabase", async () => {
     createClient.mockResolvedValue({ auth: {}, from: vi.fn() });
 
-    await expect(
-      submitUser(null, formData({ ...userFields, password_check: "different" })),
-    ).rejects.toThrow("パスワードが一致しません");
+    const result = await submitUser(
+      null,
+      formData({ ...userFields, password_check: "different" }),
+    );
+
+    expect(result).toEqual({ error: "再入力のパスワードと一致しません。" });
   });
 
-  it("throws the underlying error when the profiles update fails", async () => {
+  it("returns a form error when the password is shorter than 6 characters", async () => {
+    createClient.mockResolvedValue({ auth: {}, from: vi.fn() });
+
+    const result = await submitUser(
+      null,
+      formData({ ...userFields, password: "abc", password_check: "abc" }),
+    );
+
+    expect(result).toEqual({ error: "パスワードは6文字以上で入力してください。" });
+  });
+
+  it("returns a form error when the profiles update fails", async () => {
     const supabase = createSupabaseMock({
       auth: {
         getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })),
         updateUser: vi.fn(async () => ({ error: null })),
       },
-      from: { profiles: () => createChain({ error: { message: "profiles update failed" } }) },
+      from: {
+        users: () => createChain({ error: null }),
+        profiles: () => createChain({ error: { message: "profiles update failed" } }),
+      },
     });
     createClient.mockResolvedValue(supabase);
 
-    await expect(submitUser(null, formData(userFields))).rejects.toMatchObject({
-      message: "profiles update failed",
-    });
+    const result = await submitUser(null, formData(userFields));
+
+    expect(result).toEqual({ error: "登録に失敗しました。もう一度お試しください。" });
   });
 
-  it("marks the profile as set, sets role=user, inserts the user row, and redirects to the icon step", async () => {
+  it("sets password+role, upserts the user row, marks the profile set last, and redirects", async () => {
     const updateUser = vi.fn(async () => ({ error: null }));
     const usersChain = createChain({ error: null });
+    const profilesChain = createChain({ error: null });
     const supabase = createSupabaseMock({
       auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })), updateUser },
       from: {
-        profiles: () => createChain({ error: null }),
+        profiles: () => profilesChain,
         users: () => usersChain,
       },
     });
@@ -69,9 +90,75 @@ describe("submitUser server action", () => {
     expect(updateUser).toHaveBeenCalledWith(
       expect.objectContaining({ password: "secret1", data: { role: "user" } }),
     );
-    expect(usersChain.insert).toHaveBeenCalledWith([
+    expect(usersChain.upsert).toHaveBeenCalledWith([
       expect.objectContaining({ id: "user-1", name: "受験生太郎", grade: "高3", desire: "東京大学" }),
     ]);
+    expect(profilesChain.update).toHaveBeenCalledWith({ set: true });
+  });
+
+  // 2026-07-15の登録失敗の一因: パスワードリセット直後に同じパスワードで
+  // setAccountを送信すると "same password" エラーで詰まっていた
+  it("continues (updating only the role) when the password is the same as the current one", async () => {
+    const updateUser = vi
+      .fn()
+      .mockResolvedValueOnce({
+        error: { message: "New password should be different from the old password." },
+      })
+      .mockResolvedValueOnce({ error: null });
+    const supabase = createSupabaseMock({
+      auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })), updateUser },
+      from: {
+        profiles: () => createChain({ error: null }),
+        users: () => createChain({ error: null }),
+      },
+    });
+    createClient.mockResolvedValue(supabase);
+
+    await expect(submitUser(null, formData(userFields))).rejects.toThrow(
+      "REDIRECT:/setAccount/user/icon",
+    );
+
+    expect(updateUser).toHaveBeenNthCalledWith(1, {
+      password: "secret1",
+      data: { role: "user" },
+    });
+    expect(updateUser).toHaveBeenNthCalledWith(2, { data: { role: "user" } });
+  });
+
+  it("returns a friendly error when the password update fails for another reason", async () => {
+    const supabase = createSupabaseMock({
+      auth: {
+        getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })),
+        updateUser: vi.fn(async () => ({ error: { message: "Password should be at least 6 characters." } })),
+      },
+    });
+    createClient.mockResolvedValue(supabase);
+
+    const result = await submitUser(null, formData(userFields));
+
+    expect(result).toEqual({
+      error: "パスワードの設定に失敗しました。別のパスワードでお試しください。",
+    });
+  });
+
+  // Googleログイン等ではパスワード欄がフォームに存在しない（nullで届く）
+  it("skips the password entirely and only sets the role when no password fields are posted", async () => {
+    const updateUser = vi.fn(async () => ({ error: null }));
+    const supabase = createSupabaseMock({
+      auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })), updateUser },
+      from: {
+        profiles: () => createChain({ error: null }),
+        users: () => createChain({ error: null }),
+      },
+    });
+    createClient.mockResolvedValue(supabase);
+
+    await expect(
+      submitUser(null, formData({ name: "受験生太郎", grade: "高3", desire: "" })),
+    ).rejects.toThrow("REDIRECT:/setAccount/user/icon");
+
+    expect(updateUser).toHaveBeenCalledTimes(1);
+    expect(updateUser).toHaveBeenCalledWith({ data: { role: "user" } });
   });
 });
 
@@ -88,21 +175,28 @@ const mentorFields = {
 };
 
 describe("submitMentor server action", () => {
-  it("throws when password and password_check don't match", async () => {
+  it("returns a form error when passwords don't match", async () => {
     createClient.mockResolvedValue({ auth: {}, from: vi.fn() });
 
-    await expect(
-      submitMentor(null, formData({ ...mentorFields, password_check: "different" })),
-    ).rejects.toThrow("パスワードが一致しません");
+    const result = await submitMentor(
+      null,
+      formData({ ...mentorFields, password_check: "different" }),
+    );
+
+    expect(result).toEqual({ error: "再入力のパスワードと一致しません。" });
   });
 
-  it("inserts mentor + mentor_tags and redirects to the icon step on success", async () => {
+  it("upserts mentor + mentor_tags, marks the profile set last, and redirects on success", async () => {
     const mentorsChain = createChain({ error: null });
     const mentorTagsChain = createChain({ error: null });
+    const profilesChain = createChain({ error: null });
     const supabase = createSupabaseMock({
-      auth: { getUser: vi.fn(async () => ({ data: { user: { id: "mentor-1" } } })) },
+      auth: {
+        getUser: vi.fn(async () => ({ data: { user: { id: "mentor-1" } } })),
+        updateUser: vi.fn(async () => ({ error: null })),
+      },
       from: {
-        profiles: () => createChain({ error: null }),
+        profiles: () => profilesChain,
         mentors: () => mentorsChain,
         mentor_tags: () => mentorTagsChain,
       },
@@ -113,13 +207,17 @@ describe("submitMentor server action", () => {
       "REDIRECT:/setAccount/mentor/icon",
     );
 
-    expect(mentorsChain.insert).toHaveBeenCalledWith([
+    expect(mentorsChain.upsert).toHaveBeenCalledWith([
       expect.objectContaining({ id: "mentor-1", name: "先輩花子", university: "京都大学" }),
     ]);
-    expect(mentorTagsChain.insert).toHaveBeenCalledWith([
-      { mentor_id: "mentor-1", tag_id: "tag-1" },
-      { mentor_id: "mentor-1", tag_id: "tag-2" },
-    ]);
+    expect(mentorTagsChain.upsert).toHaveBeenCalledWith(
+      [
+        { mentor_id: "mentor-1", tag_id: "tag-1" },
+        { mentor_id: "mentor-1", tag_id: "tag-2" },
+      ],
+      { ignoreDuplicates: true },
+    );
+    expect(profilesChain.update).toHaveBeenCalledWith({ set: true });
   });
 
   // 回帰テスト: この行が長らくコメントアウトされており、メンターのパスワードも
@@ -143,57 +241,47 @@ describe("submitMentor server action", () => {
     expect(updateUser).toHaveBeenCalledWith({ password: "secret1", data: { role: "mentor" } });
   });
 
-  it("throws and stops before marking the profile set when updateUser fails", async () => {
+  it("returns a friendly error and stops before any insert when updateUser fails", async () => {
     const profilesChain = createChain({ error: null });
+    const mentorsChain = createChain({ error: null });
     const supabase = createSupabaseMock({
       auth: {
         getUser: vi.fn(async () => ({ data: { user: { id: "mentor-1" } } })),
         updateUser: vi.fn(async () => ({ error: { message: "updateUser failed" } })),
       },
-      from: { profiles: () => profilesChain },
+      from: { profiles: () => profilesChain, mentors: () => mentorsChain },
     });
     createClient.mockResolvedValue(supabase);
 
-    await expect(submitMentor(null, formData(mentorFields))).rejects.toMatchObject({
-      message: "updateUser failed",
-    });
+    const result = await submitMentor(null, formData(mentorFields));
 
+    expect(result).toEqual({
+      error: "パスワードの設定に失敗しました。別のパスワードでお試しください。",
+    });
+    expect(mentorsChain.upsert).not.toHaveBeenCalled();
     expect(profilesChain.update).not.toHaveBeenCalled();
   });
 
-  it("throws the mentors-insert error", async () => {
-    const supabase = createSupabaseMock({
-      auth: { getUser: vi.fn(async () => ({ data: { user: { id: "mentor-1" } } })) },
-      from: {
-        profiles: () => createChain({ error: null }),
-        mentors: () => createChain({ error: { message: "mentors insert failed" } }),
-        mentor_tags: () => createChain({ error: null }),
-      },
-    });
-    createClient.mockResolvedValue(supabase);
-
-    await expect(submitMentor(null, formData(mentorFields))).rejects.toMatchObject({
-      message: "mentors insert failed",
-    });
-  });
-
-  // Current behavior (not one of the three approved fixes): the code inserts into
-  // mentor_tags unconditionally, even when the preceding mentors insert already failed -
-  // there's no early return between the two calls. This test just documents that.
-  it("still attempts the mentor_tags insert even when the mentors insert already failed", async () => {
+  it("returns a friendly error and skips mentor_tags + profiles when the mentors upsert fails", async () => {
     const mentorTagsChain = createChain({ error: null });
+    const profilesChain = createChain({ error: null });
     const supabase = createSupabaseMock({
-      auth: { getUser: vi.fn(async () => ({ data: { user: { id: "mentor-1" } } })) },
+      auth: {
+        getUser: vi.fn(async () => ({ data: { user: { id: "mentor-1" } } })),
+        updateUser: vi.fn(async () => ({ error: null })),
+      },
       from: {
-        profiles: () => createChain({ error: null }),
-        mentors: () => createChain({ error: { message: "mentors insert failed" } }),
+        profiles: () => profilesChain,
+        mentors: () => createChain({ error: { message: "mentors upsert failed" } }),
         mentor_tags: () => mentorTagsChain,
       },
     });
     createClient.mockResolvedValue(supabase);
 
-    await expect(submitMentor(null, formData(mentorFields))).rejects.toBeTruthy();
+    const result = await submitMentor(null, formData(mentorFields));
 
-    expect(mentorTagsChain.insert).toHaveBeenCalled();
+    expect(result).toEqual({ error: "登録に失敗しました。もう一度お試しください。" });
+    expect(mentorTagsChain.upsert).not.toHaveBeenCalled();
+    expect(profilesChain.update).not.toHaveBeenCalled();
   });
 });

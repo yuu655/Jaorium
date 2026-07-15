@@ -1,5 +1,6 @@
 "use server";
 import { createClient } from "@/lib/supabase/server";
+import { isValidEmail } from "@/lib/validateEmail";
 import getUrls from "@/utils/getUrls";
 
 function translateResetPasswordError(error) {
@@ -19,6 +20,13 @@ async function sendResetPasswordEmail(supabase, email) {
 export async function resetPassword(prevState, formData) {
   const supabase = await createClient();
   const email = formData.get("email");
+
+  // 不正な形式のアドレスはSMTP送信段階で500になるため、送信前に弾く
+  if (!isValidEmail(email)) {
+    return {
+      error: "メールアドレスの形式が正しくありません。入力内容をご確認ください。",
+    };
+  }
 
   // メール/パスワードユーザーのみリセットメール送信
   const { error } = await sendResetPasswordEmail(supabase, email);

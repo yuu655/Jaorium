@@ -105,6 +105,42 @@ describe("signupMentor server action (OTP-based signup)", () => {
       },
     });
   });
+
+  it("rejects a malformed email before any Supabase call (2026-07-15 incident pattern)", async () => {
+    // GoTrueは "xxx.@gmail.com" を通してしまいSMTP送信で500になるため、事前に弾く
+    const rpc = vi.fn();
+    const signInWithOtp = vi.fn();
+    createSupabaseClient.mockReturnValue({ rpc });
+    createClient.mockResolvedValue({ auth: { signInWithOtp } });
+
+    const result = await signupMentor(
+      null,
+      formData({ email: "yukidaruma.mkzk.@gmail.com" }),
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: "メールアドレスの形式が正しくありません。入力内容をご確認ください。",
+    });
+    expect(rpc).not.toHaveBeenCalled();
+    expect(signInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it("returns a friendly message (without the raw error) when the OTP email fails to send", async () => {
+    createSupabaseClient.mockReturnValue({ rpc: vi.fn(async () => ({ data: false, error: null })) });
+    createClient.mockResolvedValue({
+      auth: {
+        signInWithOtp: vi.fn(async () => ({ error: { message: "Error sending magic link email" } })),
+      },
+    });
+
+    const result = await signupMentor(null, formData({ email: "new@example.com" }));
+
+    expect(result).toEqual({
+      error:
+        "確認メールを送信できませんでした。メールアドレスに誤りがないかご確認のうえ、もう一度お試しください。",
+    });
+  });
 });
 
 describe("handleVerifyOtp server action", () => {

@@ -421,7 +421,11 @@ export default function Interview({ roomName, userName, userRole, dateTime }) {
     return () => clearInterval(id);
   }, []);
 
-  const isAfter = dateTime ? now > dateTime : false;
+  // 開始時刻の5分前から入室できる
+  const JOINABLE_BEFORE_MS = 5 * 60 * 1000;
+  const isAfter = dateTime
+    ? now.getTime() > dateTime.getTime() - JOINABLE_BEFORE_MS
+    : false;
   // console.log(isAfter, now, dateTime)
 
 

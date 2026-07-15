@@ -16,6 +16,18 @@ describe("resetPassword server action", () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
   });
 
+  it("rejects a malformed email before calling Supabase", async () => {
+    const resetPasswordForEmail = vi.fn();
+    createClient.mockResolvedValue({ auth: { resetPasswordForEmail } });
+
+    const result = await resetPassword(null, formData({ email: "broken.@gmail.com" }));
+
+    expect(result).toEqual({
+      error: "メールアドレスの形式が正しくありません。入力内容をご確認ください。",
+    });
+    expect(resetPasswordForEmail).not.toHaveBeenCalled();
+  });
+
   it("returns success once the reset email has been sent", async () => {
     const resetPasswordForEmail = vi.fn(async () => ({ error: null }));
     createClient.mockResolvedValue({ auth: { resetPasswordForEmail } });

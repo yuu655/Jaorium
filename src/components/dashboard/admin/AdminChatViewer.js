@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -7,6 +8,8 @@ import {
   CalendarClock,
   CheckCircle,
   Eye,
+  Info,
+  X,
 } from "lucide-react";
 
 // profile/icon.js は mx-auto mb-3 付きでチャット行内では位置がずれるため、
@@ -38,6 +41,8 @@ export default function AdminChatViewer({
   mentor,
   messages,
 }) {
+  const [showMeetingInfo, setShowMeetingInfo] = useState(false);
+
   const formatTime = (dateStr) =>
     new Date(dateStr).toLocaleTimeString("ja-JP", {
       hour: "2-digit",
@@ -116,6 +121,15 @@ export default function AdminChatViewer({
             <span className="text-xs text-gray-400">日時未定</span>
           )}
         </div>
+
+        <button
+          onClick={() => setShowMeetingInfo(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shrink-0"
+          title="ミーティング情報を見る"
+        >
+          <Info size={14} />
+          <span className="hidden sm:inline">詳細</span>
+        </button>
       </div>
 
       {/* 閲覧専用バナー */}
@@ -223,6 +237,103 @@ export default function AdminChatViewer({
           </div>
         )}
       </div>
+
+      {/* ミーティング情報ドロワー */}
+      {showMeetingInfo && (
+        <>
+          {/* オーバーレイ */}
+          <div
+            className="fixed inset-0 bg-black/30 z-40"
+            onClick={() => setShowMeetingInfo(false)}
+          />
+          {/* ドロワー */}
+          <div className="fixed right-0 top-0 h-full w-80 max-w-full bg-white shadow-xl z-50 flex flex-col animate-in slide-in-from-right duration-200">
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <h2 className="font-bold text-sm text-gray-800 flex items-center gap-2">
+                <Info size={15} className="text-blue-500" />
+                ミーティング情報
+              </h2>
+              <button
+                onClick={() => setShowMeetingInfo(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                  タイトル
+                </p>
+                <p className="text-sm text-gray-800 font-medium leading-relaxed">
+                  {meeting.title || "未設定"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                  内容・説明
+                </p>
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {meeting.description || "説明はありません"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                  日時
+                </p>
+                {meetingSchedule?.is_commit ? (
+                  <p className="text-sm text-green-600 font-medium flex items-center gap-1">
+                    <CheckCircle size={13} />
+                    {formatProposalDate(meetingSchedule.date)}{" "}
+                    {meetingSchedule.time}
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-400">未定</p>
+                )}
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                  最近、進路や受験勉強のことで一番「困った」「悩んだ」具体的なエピソード
+                </p>
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {meeting.trouble_episode || "説明はありません"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                  その悩みや疑問を解決するために、これまでに試したこと
+                </p>
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {meeting.actions_taken || "説明はありません"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                  上記の行動をとってみて、「解決しなかったこと」や「まだ足りない」と感じたこと
+                </p>
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {meeting.unresolved_issues || "説明はありません"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">
+                  今回のオンライン面談（約40分）が終わった時、一番得たい情報
+                </p>
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {meeting.desired_outcome || "説明はありません"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

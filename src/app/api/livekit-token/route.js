@@ -30,11 +30,34 @@ async function isMeetingPaid(supabase, meetingId) {
   return Boolean(data);
 }
 
-async function createRoomAccessToken({ roomName, identity }) {
+// LiveKitの参加者表示名。ロールに応じてusers/mentorsから取得し、
+// 取れない場合はprofiles.name、最終的に「参加者」へフォールバック。
+async function fetchDisplayName(supabase, userId, role) {
+  if (role === "admin") return "運営";
+
+  const table = role === "mentor" ? "mentors" : role === "user" ? "users" : null;
+  if (table) {
+    const { data } = await supabase
+      .from(table)
+      .select("name")
+      .eq("id", userId)
+      .maybeSingle();
+    if (data?.name) return data.name;
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("name")
+    .eq("id", userId)
+    .maybeSingle();
+  return profile?.name || "参加者";
+}
+
+async function createRoomAccessToken({ roomName, identity, name }) {
   const token = new AccessToken(
     process.env.LIVEKIT_API_KEY,
     process.env.LIVEKIT_API_SECRET,
-    { identity }
+    { identity, name }
   );
 
   token.addGrant({
@@ -88,7 +111,8 @@ export async function GET(req) {
     }
   }
 
-  const jwt = await createRoomAccessToken({ roomName, identity: user.id });
+  const name = await fetchDisplayName(supabase, user.id, role);
+  const jwt = await createRoomAccessToken({ roomName, identity: user.id, name });
 
   return Response.json({ token: jwt });
 }

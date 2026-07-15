@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { isValidEmail } from "@/lib/validateEmail";
 import getUrls from "@/utils/getUrls";
 
 function translateLoginError(error) {
@@ -80,6 +81,15 @@ export async function signupMentor(prevState, formData) {
   const supabase = await createClient();
   const email = formData.get("email");
 
+  // GoTrueの形式チェックは緩く、不正なアドレスはSMTP送信段階で500になるため
+  // ここで弾く（例: ローカル部末尾ドットの "xxx.@gmail.com"）
+  if (!isValidEmail(email)) {
+    return {
+      success: false,
+      error: "メールアドレスの形式が正しくありません。入力内容をご確認ください。",
+    };
+  }
+
   const { data: exists, error: rpcError } = await checkEmailExists(email);
 
   if (rpcError) {
@@ -94,7 +104,11 @@ export async function signupMentor(prevState, formData) {
   const { error } = await sendMentorSignupOtp(supabase, email);
 
   if (error) {
-    return { error: "サインアップに失敗しました: " + error.message };
+    console.error("signup OTP error:", error.message); // サーバーログ用
+    return {
+      error:
+        "確認メールを送信できませんでした。メールアドレスに誤りがないかご確認のうえ、もう一度お試しください。",
+    };
   }
 
   // サインアップ成功時は、メール確認が必要なためリダイレクトせずにメッセージを期待する

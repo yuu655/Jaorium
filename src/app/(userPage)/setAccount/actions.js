@@ -30,10 +30,16 @@ function parseMentorFormData(formData) {
 
 // ---- バリデーション／レコード組み立て（純粋関数） ----
 
-function assertPasswordsMatch(password, passwordCheck) {
-  if (password !== passwordCheck) {
-    throw new Error("パスワードが一致しません");
+// throwするとNext.jsの汎用エラー画面に落ちて理由が伝わらないため、
+// エラーは文字列で返してフォーム上に表示する
+function validatePassword(password, passwordCheck) {
+  if (!password || password.length < 6) {
+    return "パスワードは6文字以上で入力してください。";
   }
+  if (password !== passwordCheck) {
+    return "再入力のパスワードと一致しません。";
+  }
+  return null;
 }
 
 function buildUserRecord(userId, data) {
@@ -66,78 +72,143 @@ async function getCurrentUser(supabase) {
 }
 
 async function markProfileAsSet(supabase, userId) {
-  const { error } = await supabase.from("profiles").update({ set: true }).eq("id", userId);
-  if (error) throw error;
-}
-
-async function setPasswordAndRole(supabase, { password, role }) {
-  const { error } = await supabase.auth.updateUser({ password, data: { role } });
-  if (error) throw error;
-}
-
-async function insertUserRecord(supabase, record) {
-  const { error } = await supabase.from("users").insert([record]);
-  if (error) throw error;
-}
-
-// mentors/mentor_tagsの2件は、元の実装同様どちらか一方が失敗しても両方実行されてから
-// まとめてエラー判定される（早期returnなし）。そのため他のI/O関数と異なりthrowせず
-// { error } をそのまま返し、呼び出し側（submitMentor）で順序どおりに判定する。
-async function insertMentorRecord(supabase, record) {
-  const { error } = await supabase.from("mentors").insert([record]);
+  const { error } = await supabase
+    .from("profiles")
+    .update({ set: true })
+    .eq("id", userId);
   return { error };
 }
 
-async function insertMentorTags(supabase, records) {
-  const { error } = await supabase.from("mentor_tags").insert(records);
+// パスワード未入力（Googleログイン等でフォームに欄が出ないケース）はroleのみ更新。
+// 「新しいパスワードが現在と同じ」エラーは、望むパスワードが既に設定済みという
+// ことなので、roleだけ更新して続行する（パスワードリセット直後に同じパスワードで
+// setAccountを送信して詰まるケースの救済。2026-07-15の登録失敗の一因）。
+async function setPasswordAndRole(supabase, { password, role }) {
+  if (password == null) {
+    return supabase.auth.updateUser({ data: { role } });
+  }
+
+  const { error } = await supabase.auth.updateUser({ password, data: { role } });
+  if (error?.message?.includes("different from the old password")) {
+    return supabase.auth.updateUser({ data: { role } });
+  }
+  return { error };
+}
+
+// upsertにより、途中失敗後の再送信でも主キー重複で詰まらない
+async function upsertUserRecord(supabase, record) {
+  const { error } = await supabase.from("users").upsert([record]);
+  return { error };
+}
+
+async function upsertMentorRecord(supabase, record) {
+  const { error } = await supabase.from("mentors").upsert([record]);
+  return { error };
+}
+
+async function upsertMentorTags(supabase, records) {
+  if (records.length === 0) return { error: null };
+  const { error } = await supabase
+    .from("mentor_tags")
+    .upsert(records, { ignoreDuplicates: true });
   return { error };
 }
 
 // ---- Server Actions（オーケストレーション） ----
+// 各ステップは失敗したら { error } を返して打ち切る。profiles.set = true は
+// 「オンボーディング完了」の印なので、他の全ステップが成功した後に最後に立てる。
 
 async function submitUser(prevState, formData) {
   const data = parseUserFormData(formData);
-  assertPasswordsMatch(data.password, data.passwordCheck);
+
+  const hasPasswordInput = data.password != null || data.passwordCheck != null;
+  if (hasPasswordInput) {
+    const passwordError = validatePassword(data.password, data.passwordCheck);
+    if (passwordError) return { error: passwordError };
+  }
 
   const supabase = await createClient();
   const user = await getCurrentUser(supabase);
+  if (!user) redirect("/login");
 
-  await setPasswordAndRole(supabase, { password: data.password, role: "user" });
-  await markProfileAsSet(supabase, user.id);
-  await insertUserRecord(supabase, buildUserRecord(user.id, data));
+  const { error: authError } = await setPasswordAndRole(supabase, {
+    password: hasPasswordInput ? data.password : null,
+    role: "user",
+  });
+  if (authError) {
+    console.error("setAccount updateUser error:", authError.message);
+    return {
+      error: "パスワードの設定に失敗しました。別のパスワードでお試しください。",
+    };
+  }
+
+  const { error: userError } = await upsertUserRecord(
+    supabase,
+    buildUserRecord(user.id, data),
+  );
+  if (userError) {
+    console.error("setAccount users upsert error:", userError.message);
+    return { error: "登録に失敗しました。もう一度お試しください。" };
+  }
+
+  const { error: profileError } = await markProfileAsSet(supabase, user.id);
+  if (profileError) {
+    console.error("setAccount profiles update error:", profileError.message);
+    return { error: "登録に失敗しました。もう一度お試しください。" };
+  }
 
   redirect("/setAccount/user/icon");
-  return { success: true };
 }
 
 async function submitMentor(prevState, formData) {
   const data = parseMentorFormData(formData);
-  assertPasswordsMatch(data.password, data.passwordCheck);
+
+  const hasPasswordInput = data.password != null || data.passwordCheck != null;
+  if (hasPasswordInput) {
+    const passwordError = validatePassword(data.password, data.passwordCheck);
+    if (passwordError) return { error: passwordError };
+  }
 
   const supabase = await createClient();
   const user = await getCurrentUser(supabase);
+  if (!user) redirect("/login");
 
-  await setPasswordAndRole(supabase, { password: data.password, role: "mentor" });
-  await markProfileAsSet(supabase, user.id);
+  const { error: authError } = await setPasswordAndRole(supabase, {
+    password: hasPasswordInput ? data.password : null,
+    role: "mentor",
+  });
+  if (authError) {
+    console.error("setAccount updateUser error:", authError.message);
+    return {
+      error: "パスワードの設定に失敗しました。別のパスワードでお試しください。",
+    };
+  }
 
-  const { error: mentorInsertError } = await insertMentorRecord(
+  const { error: mentorError } = await upsertMentorRecord(
     supabase,
     buildMentorRecord(user.id, data),
   );
-  const { error: mentorTagsInsertError } = await insertMentorTags(
+  if (mentorError) {
+    console.error("setAccount mentors upsert error:", mentorError.message);
+    return { error: "登録に失敗しました。もう一度お試しください。" };
+  }
+
+  const { error: mentorTagsError } = await upsertMentorTags(
     supabase,
     buildMentorTagRecords(user.id, data.tagIds),
   );
-
-  if (mentorInsertError) {
-    throw mentorInsertError;
+  if (mentorTagsError) {
+    console.error("setAccount mentor_tags upsert error:", mentorTagsError.message);
+    return { error: "登録に失敗しました。もう一度お試しください。" };
   }
-  if (mentorTagsInsertError) {
-    throw mentorTagsInsertError;
+
+  const { error: profileError } = await markProfileAsSet(supabase, user.id);
+  if (profileError) {
+    console.error("setAccount profiles update error:", profileError.message);
+    return { error: "登録に失敗しました。もう一度お試しください。" };
   }
 
   redirect("/setAccount/mentor/icon");
-  return { success: true };
 }
 
 export { submitMentor, submitUser };

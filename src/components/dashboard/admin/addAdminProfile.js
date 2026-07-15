@@ -1,5 +1,5 @@
 "use client";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { Eye, Lock, EyeOff } from "lucide-react";
 
 export default function AddAdminProfile({
@@ -11,13 +11,6 @@ export default function AddAdminProfile({
   const [state, action, isPending] = useActionState(onUpload, null);
   const [showPassword, setShowPassword] = useState(false);
   const [showPassword_check, setShowPassword_check] = useState(false);
-
-  useEffect(() => {
-    // console.log(setIsIcon, state);
-    if (state?.success && setIsIcon) {
-      setIsIcon(true);
-    }
-  }, [state]);
 
   return (
     <>
