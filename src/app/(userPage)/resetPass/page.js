@@ -4,13 +4,8 @@ import { useState, useActionState } from "react";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 export default function LoginPage() {
-    const handleResetPass = async (prevState, formData) => {
-        const result = await resetPass(prevState, formData);
-        if (result?.error) {
-            toast.error(result.error);
-        }
-    };
-    const [state, action, isPending] = useActionState(handleResetPass, null);
+    // resetPassが返す { error } はそのままstateに入り、フォーム上部に表示される
+    const [state, action, isPending] = useActionState(resetPass, null);
     const [showPassword, setShowPassword] = useState(false);
     const [showPassword_check, setShowPassword_check] = useState(false);
 

@@ -32,9 +32,23 @@ describe("resetPass server action", () => {
     expect(redirect).not.toHaveBeenCalled();
   });
 
-  it("surfaces an error when updateUser fails", async () => {
+  it("rejects a password shorter than 6 characters without calling updateUser", async () => {
+    const updateUser = vi.fn();
+    createClient.mockResolvedValue({ auth: { updateUser } });
+
+    const result = await resetPass(
+      null,
+      formData({ password: "abc", password_check: "abc" }),
+    );
+
+    expect(result).toEqual({ error: "パスワードは6文字以上で入力してください。" });
+    expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  it("returns a session-specific message when the recovery session is missing", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     createClient.mockResolvedValue({
-      auth: { updateUser: vi.fn(async () => ({ error: { message: "expired session" } })) },
+      auth: { updateUser: vi.fn(async () => ({ error: { message: "Auth session missing!" } })) },
     });
 
     const result = await resetPass(
@@ -42,7 +56,40 @@ describe("resetPass server action", () => {
       formData({ password: "newpass1", password_check: "newpass1" }),
     );
 
-    expect(result).toEqual({ error: "ログインに失敗しました" });
+    expect(result).toEqual({
+      error: "セッションの有効期限が切れています。もう一度パスワードリセットをやり直してください。",
+    });
+  });
+
+  it("returns a friendly generic message for other updateUser failures", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    createClient.mockResolvedValue({
+      auth: { updateUser: vi.fn(async () => ({ error: { message: "boom" } })) },
+    });
+
+    const result = await resetPass(
+      null,
+      formData({ password: "newpass1", password_check: "newpass1" }),
+    );
+
+    expect(result).toEqual({
+      error: "パスワードの再設定に失敗しました。もう一度お試しください。",
+    });
+  });
+
+  // 「現在のパスワードと同じ」は望む状態が既に成立しているので成功扱いにする
+  it("treats a same-as-current password as success and redirects", async () => {
+    createClient.mockResolvedValue({
+      auth: {
+        updateUser: vi.fn(async () => ({
+          error: { message: "New password should be different from the old password." },
+        })),
+      },
+    });
+
+    await expect(
+      resetPass(null, formData({ password: "newpass1", password_check: "newpass1" })),
+    ).rejects.toThrow("REDIRECT:/setAccount");
   });
 
   it("updates the password and redirects to /setAccount on success", async () => {
