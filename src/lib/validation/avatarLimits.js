@@ -25,6 +25,13 @@ export function isAllowedAvatarFile(filename) {
   return getAvatarContentType(filename) !== null;
 }
 
+// iPhoneのカメラは既定でHEIC/HEIFで撮影されるため、この拡張子だけは
+// アップロード前にクライアント側でJPEGへ変換してから許可リストに乗せる
+// （HEICのままだとSafari以外のブラウザで表示できないため）
+export function isHeicFile(filename) {
+  return extensionOf(filename) === "heic" || extensionOf(filename) === "heif";
+}
+
 export function isAllowedAvatarSize(sizeBytes) {
   return typeof sizeBytes === "number" && sizeBytes > 0 && sizeBytes <= AVATAR_MAX_SIZE_BYTES;
 }

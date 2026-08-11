@@ -7,19 +7,44 @@ import {
   AVATAR_ALLOWED_LABEL,
   isAllowedAvatarFile,
   isAllowedAvatarSize,
+  isHeicFile,
 } from "@/lib/validation/avatarLimits";
 
+// 元ファイル名の拡張子をjpgに差し替えたFileを作る（HEIC変換後の命名用）
+function toJpegFile(originalName, blob) {
+  const baseName = originalName.replace(/\.[^.]+$/, "");
+  return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
+}
 
 export default function AddIcon() {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
+  const [converting, setConverting] = useState(false);
   const [inputFiles, setInputFiles] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null); // 画像プレビュー用URL(R2に変更)
   const fileInputRef = useRef(null);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
+  const handleFileChange = async (e) => {
+    let file = e.target.files?.[0];
     if (!file) return;
+
+    // iPhoneのカメラ写真(HEIC/HEIF)はそのままだと他ブラウザで表示できないため、
+    // 選択直後にJPEGへ変換してから以降の検証・アップロードに乗せる
+    if (isHeicFile(file.name)) {
+      setConverting(true);
+      try {
+        const heic2any = (await import("heic2any")).default;
+        const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+        file = toJpegFile(file.name, Array.isArray(converted) ? converted[0] : converted);
+      } catch (error) {
+        console.error("HEIC変換エラー:", error);
+        alert("この画像は変換できませんでした。別の画像をお試しください。");
+        setConverting(false);
+        e.target.value = "";
+        return;
+      }
+      setConverting(false);
+    }
 
     if (!isAllowedAvatarFile(file.name)) {
       alert(`対応していないファイル形式です（${AVATAR_ALLOWED_LABEL}のみ）`);
@@ -44,7 +69,7 @@ export default function AddIcon() {
         <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm flex flex-col items-center gap-8">
           <div
             className="relative w-32 h-32 cursor-pointer group"
-            onClick={() => !uploading && fileInputRef.current?.click()}
+            onClick={() => !uploading && !converting && fileInputRef.current?.click()}
           >
             {previewUrl ? (
               <img
@@ -98,21 +123,21 @@ export default function AddIcon() {
             id="icon"
             accept="image/*"
             onChange={handleFileChange}
-            disabled={uploading}
+            disabled={uploading || converting}
             className="hidden"
           />
 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            disabled={uploading || converting}
             className="w-full max-w-xs px-6 py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            画像ファイルを選択
+            {converting ? "画像を変換中..." : "画像ファイルを選択"}
           </button>
 
           <p className="text-sm text-gray-400 text-center -mt-4">
-            {AVATAR_ALLOWED_LABEL} に対応　／　最大{AVATAR_MAX_SIZE_LABEL}　／　推奨サイズ：400 × 400px 以上
+            {AVATAR_ALLOWED_LABEL}・iPhoneのHEIC写真 に対応　／　最大{AVATAR_MAX_SIZE_LABEL}　／　推奨サイズ：400 × 400px 以上
           </p>
 
           <button
@@ -134,7 +159,7 @@ export default function AddIcon() {
                 setUploading(false);
               }
             }}
-            disabled={uploading || !previewUrl}
+            disabled={uploading || converting || !previewUrl}
             className="w-full max-w-xs px-6 py-3 bg-black text-white font-bold rounded-xl hover:bg-gray-800 active:scale-95 transition-all disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             {uploading ? (
