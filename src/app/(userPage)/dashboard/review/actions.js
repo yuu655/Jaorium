@@ -46,6 +46,11 @@ export const submitReview = async (meetingId, prevState, formData) => {
   if (!comments) return { error: "レビュー内容を入力してください" };
   if (!stars) return { error: "評価を入力してください" };
 
+  const starsNumber = Number(stars);
+  if (!Number.isInteger(starsNumber) || starsNumber < 1 || starsNumber > 5) {
+    return { error: "評価は1〜5の範囲で選択してください" };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -68,7 +73,7 @@ export const submitReview = async (meetingId, prevState, formData) => {
     meeting_id: meetingId,
     mentor_id: meeting.mentor,
     user_id: meeting.user,
-    stars,
+    stars: starsNumber,
     comments,
   });
 

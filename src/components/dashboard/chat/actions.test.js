@@ -318,6 +318,88 @@ describe("consumeCredit", () => {
   });
 });
 
+describe("consumeCredit — organization branching", () => {
+  function mockAdminClientWithOrg({
+    organizationId = "org-1",
+    orgBalance = 3,
+    memberLimit = null,
+    rpc = vi.fn(async () => ({ error: null })),
+    meetingRow = { id: "meeting-1", user: "user-1", mentor: "mentor-1" },
+  } = {}) {
+    createSupabaseClient.mockReturnValue(
+      createSupabaseMock({
+        rpc,
+        from: {
+          meetings: () => createChain({ data: meetingRow, error: null }),
+          organization_members: () =>
+            createChain({ data: { organization_id: organizationId }, error: null }),
+          organization_credits: () => createChain({ data: { balance: orgBalance }, error: null }),
+          // 非メンバー用の個人credits取得が誤って呼ばれていないか確認するため、
+          // 呼ばれたら分かるようエラーを返しておく
+          credits: () => createChain({ data: null, error: { message: "should not be queried" } }),
+        },
+      }),
+    );
+    return rpc;
+  }
+
+  it("calls consume_organization_credit (not consume_credit) for an active org member", async () => {
+    const rpc = mockAdminClientWithOrg({ organizationId: "org-1", orgBalance: 5 });
+    createClient.mockResolvedValue({ auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) } });
+
+    const result = await consumeCredit("meeting-1");
+
+    expect(result).toEqual({ success: true });
+    expect(rpc).toHaveBeenCalledWith("consume_organization_credit", {
+      p_organization_id: "org-1",
+      p_user_id: "user-1",
+      p_meeting_id: "meeting-1",
+    });
+  });
+
+  it("blocks consumption when the org balance is 0, without touching personal credits", async () => {
+    const rpc = mockAdminClientWithOrg({ orgBalance: 0 });
+    createClient.mockResolvedValue({ auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) } });
+
+    const result = await consumeCredit("meeting-1");
+
+    expect(result).toEqual({ error: "INSUFFICIENT_CREDITS" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("maps a MEMBER_CREDIT_LIMIT_REACHED RPC error to its own sentinel", async () => {
+    mockAdminClientWithOrg({
+      orgBalance: 5,
+      rpc: vi.fn(async () => ({ error: { message: "MEMBER_CREDIT_LIMIT_REACHED" } })),
+    });
+    createClient.mockResolvedValue({ auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) } });
+
+    const result = await consumeCredit("meeting-1");
+
+    expect(result).toEqual({ error: "MEMBER_CREDIT_LIMIT_REACHED" });
+  });
+
+  it("falls back to the personal credit path unchanged when the caller has no active org membership", async () => {
+    const rpc = vi.fn(async () => ({ error: null }));
+    createSupabaseClient.mockReturnValue(
+      createSupabaseMock({
+        rpc,
+        from: {
+          meetings: () => createChain({ data: { id: "meeting-1", user: "user-1", mentor: "mentor-1" }, error: null }),
+          organization_members: () => createChain({ data: null, error: null }),
+          credits: () => createChain({ data: { balance: 2 }, error: null }),
+        },
+      }),
+    );
+    createClient.mockResolvedValue({ auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) } });
+
+    const result = await consumeCredit("meeting-1");
+
+    expect(result).toEqual({ success: true });
+    expect(rpc).toHaveBeenCalledWith("consume_credit", { p_user_id: "user-1", p_meeting_id: "meeting-1" });
+  });
+});
+
 describe("redirectToCheckout", () => {
   it("creates a Stripe checkout session for the existing Stripe customer and redirects to it", async () => {
     createClient.mockResolvedValue({

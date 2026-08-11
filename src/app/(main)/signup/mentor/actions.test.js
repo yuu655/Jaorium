@@ -12,52 +12,12 @@ vi.mock("next/navigation", () => ({
 
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { signupUser, signupMentor, handleVerifyOtp } from "./actions";
+import { signupMentor, handleVerifyOtp } from "./actions";
 
 function formData(fields) {
   const map = new Map(Object.entries(fields));
   return { get: (key) => map.get(key) ?? null };
 }
-
-describe("signupUser server action (password-based signup)", () => {
-  it("rejects a mismatched password/password_check pair without calling signUp", async () => {
-    const signUp = vi.fn(async () => ({ error: null }));
-    createClient.mockResolvedValue({ auth: { signUp } });
-
-    const result = await signupUser(
-      null,
-      formData({ email: "a@example.com", password: "secret1", password_check: "totally-different" }),
-    );
-
-    expect(signUp).not.toHaveBeenCalled();
-    expect(result).toEqual({ error: "再入力のパスワードと一致しません" });
-  });
-
-  it("proceeds to signUp when password and password_check match", async () => {
-    const signUp = vi.fn(async () => ({ error: null }));
-    createClient.mockResolvedValue({ auth: { signUp } });
-
-    const result = await signupUser(
-      null,
-      formData({ email: "a@example.com", password: "secret1", password_check: "secret1" }),
-    );
-
-    expect(signUp).toHaveBeenCalled();
-    expect(result).toEqual({ success: true });
-  });
-
-  it("surfaces a Supabase signUp error", async () => {
-    const signUp = vi.fn(async () => ({ error: { message: "email taken" } }));
-    createClient.mockResolvedValue({ auth: { signUp } });
-
-    const result = await signupUser(
-      null,
-      formData({ email: "a@example.com", password: "x", password_check: "x" }),
-    );
-
-    expect(result).toEqual({ error: "サインアップに失敗しました: email taken" });
-  });
-});
 
 describe("signupMentor server action (OTP-based signup)", () => {
   beforeEach(() => {

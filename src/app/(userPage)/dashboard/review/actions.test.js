@@ -38,6 +38,11 @@ describe("submitReview server action", () => {
     expect(result).toEqual({ error: "評価を入力してください" });
   });
 
+  it("rejects stars outside the 1-5 range, before touching Supabase", async () => {
+    const result = await submitReview("meeting-1", null, formData({ comments: "great", stars: "9" }));
+    expect(result).toEqual({ error: "評価は1〜5の範囲で選択してください" });
+  });
+
   it("requires authentication", async () => {
     createClient.mockResolvedValue(
       createSupabaseMock({ auth: { getUser: vi.fn(async () => ({ data: { user: null } })) } }),

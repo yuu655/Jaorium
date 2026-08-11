@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useState, useActionState } from "react";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { FormError } from "@/components/ui/form-error";
 
 
 
@@ -124,7 +125,7 @@ export default function LoginPage() {
           </div>
 
           {/* Email/Password Form */}
-          {state?.error && <p className="text-red-500 text-sm">{state.error}</p>}
+          <FormError message={state?.error} />
           <form action={action} className="space-y-4">
             {/* Email */}
             <div>

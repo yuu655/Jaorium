@@ -13,13 +13,16 @@ function makeRequest(query) {
 describe("GET /api/auth/confirm", () => {
   beforeEach(() => {
     vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
-  it("redirects to /error when no code is present", async () => {
+  it("redirects to /error with a message when no code is present", async () => {
     const res = await GET(makeRequest(""));
+    const location = new URL(res.headers.get("location"));
 
     expect(res.status).toBe(307);
-    expect(res.headers.get("location")).toBe("https://www.jaorium.com/error");
+    expect(location.origin + location.pathname).toBe("https://www.jaorium.com/error");
+    expect(location.searchParams.get("message")).toBe("認証パラメータが不足しています");
   });
 
   it("exchanges the code and redirects to the requested next path on success", async () => {
@@ -32,14 +35,16 @@ describe("GET /api/auth/confirm", () => {
     expect(res.headers.get("location")).toBe("https://www.jaorium.com/setAccount/user");
   });
 
-  it("redirects to /error when the code exchange fails", async () => {
+  it("redirects to /error with the Supabase error message when the code exchange fails", async () => {
     createClient.mockResolvedValue({
       auth: { exchangeCodeForSession: vi.fn(async () => ({ error: { message: "bad code" } })) },
     });
 
     const res = await GET(makeRequest("?code=expired&next=/setAccount/user"));
+    const location = new URL(res.headers.get("location"));
 
-    expect(res.headers.get("location")).toBe("https://www.jaorium.com/error");
+    expect(location.origin + location.pathname).toBe("https://www.jaorium.com/error");
+    expect(location.searchParams.get("message")).toBe("bad code");
   });
 
   it("defaults next to / when omitted", async () => {
@@ -66,13 +71,15 @@ describe("GET /api/auth/confirm", () => {
     expect(res.headers.get("location")).toBe("https://www.jaorium.com/setAccount/user");
   });
 
-  it("redirects to /error when token_hash verification fails", async () => {
+  it("redirects to /error with the Supabase error message when token_hash verification fails", async () => {
     createClient.mockResolvedValue({
       auth: { verifyOtp: vi.fn(async () => ({ error: { message: "expired" } })) },
     });
 
     const res = await GET(makeRequest("?token_hash=used&type=email&next=/setAccount/user"));
+    const location = new URL(res.headers.get("location"));
 
-    expect(res.headers.get("location")).toBe("https://www.jaorium.com/error");
+    expect(location.origin + location.pathname).toBe("https://www.jaorium.com/error");
+    expect(location.searchParams.get("message")).toBe("expired");
   });
 });

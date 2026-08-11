@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({
 
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { signupUser, signupMentor, handleVerifyOtp } from "./actions";
+import { signupUser, handleVerifyOtp } from "./actions";
 
 function formData(fields) {
   const map = new Map(Object.entries(fields));
@@ -87,59 +87,6 @@ describe("signupUser server action (OTP-based, on the /signup/user page)", () =>
       error:
         "確認メールを送信できませんでした。メールアドレスに誤りがないかご確認のうえ、もう一度お試しください。",
     });
-  });
-});
-
-describe("signupMentor server action (on the /signup/user page)", () => {
-  // Known bug found during test-writing (separate from the three previously fixed): this
-  // function is meant to sign a *mentor* up, but it unconditionally calls
-  // `auth.updateUser({ data: { role: "user" } })` - it stamps the new account's
-  // user_metadata.role as "user", not "mentor". Left unfixed for now (out of the
-  // originally-approved scope); documented here so it isn't lost.
-  it("[known bug] stamps role=\"user\" on user_metadata even though this signs up a mentor", async () => {
-    const updateUser = vi.fn(async () => ({ error: null }));
-    createClient.mockResolvedValue({
-      auth: { signUp: vi.fn(async () => ({ error: null })), updateUser },
-    });
-
-    await signupMentor(
-      null,
-      formData({ email: "mentor@example.com", password: "secret1", password_check: "secret1" }),
-    );
-
-    expect(updateUser).toHaveBeenCalledWith({ data: { role: "user" } });
-  });
-
-  it("still reports success when signUp succeeds", async () => {
-    createClient.mockResolvedValue({
-      auth: {
-        signUp: vi.fn(async () => ({ error: null })),
-        updateUser: vi.fn(async () => ({ error: null })),
-      },
-    });
-
-    const result = await signupMentor(
-      null,
-      formData({ email: "mentor@example.com", password: "secret1", password_check: "secret1" }),
-    );
-
-    expect(result).toEqual({ success: true });
-  });
-
-  it("surfaces a signUp error", async () => {
-    createClient.mockResolvedValue({
-      auth: {
-        signUp: vi.fn(async () => ({ error: { message: "email taken" } })),
-        updateUser: vi.fn(async () => ({ error: null })),
-      },
-    });
-
-    const result = await signupMentor(
-      null,
-      formData({ email: "mentor@example.com", password: "secret1", password_check: "secret1" }),
-    );
-
-    expect(result).toEqual({ error: "サインアップに失敗しました: email taken" });
   });
 });
 

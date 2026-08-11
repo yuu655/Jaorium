@@ -1,0 +1,240 @@
+JaoRium アカウント作成フロー解析（user / mentor）
+====================================================
+作成日: 2026-08-07
+対象: コード(src/app/(main)/signup, src/app/(userPage)/setAccount, middleware)
+      + Supabase実DB(rmjjlkxqtrpuhemmjlun)のトリガー/関数/RLSポリシー
+
+--------------------------------------------------
+1. 全体像（4ステップ）
+--------------------------------------------------
+  ① /signup/user or /signup/mentor
+     → メールアドレスを送信し、OTP（8桁コード）付きメールを送る
+  ② コード入力・検証
+     → OTP検証に成功した時点でSupabase Authに新規ユーザーが作成される
+        （このタイミングでDBトリガーが発火し、profilesに行が自動作成される）
+  ③ /setAccount/user or /setAccount/mentor
+     → プロフィール本情報の入力。ここで初めて「役割(role)」が確定し、
+        users/mentorsテーブルに本登録される
+  ④ /setAccount/user/icon or /setAccount/mentor/icon
+     → アイコン設定（任意、スキップ可）→ /dashboard/{user|mentor} へ
+
+  ポイント: 「サインアップ」の時点ではメールアドレスと認証情報しか存在せず、
+  「本人の名前・志望校（学生）」「大学・学部（メンター）」等はステップ③で
+  初めて確定する。role（user/mentor/admin）もステップ③まで pending。
+
+
+--------------------------------------------------
+2. ステップ①: OTP送信 (/signup/user, /signup/mentor)
+--------------------------------------------------
+ファイル:
+  src/app/(main)/signup/user/actions.js   → signupUser()
+  src/app/(main)/signup/mentor/actions.js → signupMentor()
+
+処理内容（user/mentorほぼ同一ロジック）:
+  1. isValidEmail() でメール形式を事前チェック
+     （Supabase標準のバリデーションが緩く、不正アドレスだとSMTP送信段階で
+       500エラーになるため、アプリ側で先に弾いている）
+  2. RPC "email_exists" をservice-role権限（createAdminSupabaseClient）で呼び、
+     既に「本登録済み」のメールでないか確認
+     → 重複していれば "このメールアドレスは既に登録されています。" を返す
+  3. supabase.auth.signInWithOtp({ email, shouldCreateUser: true,
+       emailRedirectTo: ".../api/auth/confirm?next=/setAccount/user (or /mentor)" })
+     を呼び、8桁OTPコード付きメールを送信
+     ※ この時点ではまだ auth.users にレコードは作られない（作られるのは
+        OTP検証成功時）
+
+  email_exists のSQL定義（実DBより取得）:
+    select exists (
+      select 1 from auth.users u
+      join public.profiles p on p.id = u.id
+      where u.email = check_email and p.set = true
+    )
+  → 「set = true」（=setAccountでのプロフィール登録完了済み）のユーザーだけを
+    重複扱いにしている。つまりOTP送信だけして本登録を完了していない
+    "仮登録" ユーザーは、同じメールで再度サインアップし直せる。
+
+
+--------------------------------------------------
+3. ステップ②: OTPコード検証 / メール内リンク
+--------------------------------------------------
+ユーザーの入力経路は2通りある:
+
+  (a) 画面上でコードを直接入力するケース
+      → handleVerifyOtp() (actions.js) が
+        supabase.auth.verifyOtp({ email, token, type: "email" }) を実行
+        成功したら redirect("/setAccount/user" または "/setAccount/mentor")
+
+  (b) メール本文中のリンクを開くケース
+      → src/app/api/auth/confirm/route.js (GET)
+        - token_hash + type 方式（Supabaseのメールテンプレート由来）で
+          supabase.auth.verifyOtp({ token_hash, type }) を実行
+          ※ PKCEの code方式は「登録したブラウザ」でしか成立しないため、
+            スマホのメールアプリ内ブラウザ等でも通るようtoken_hash方式を採用
+        - 成功したら signInWithOtp時に指定した next
+          （/setAccount/user or /setAccount/mentor）へリダイレクト
+
+  どちらの経路でも、Supabase Auth側で認証が成立した瞬間に
+  auth.users テーブルに新規行が INSERT される。
+
+  ■ DBトリガー "on_auth_user_created" (auth.usersへのAFTER INSERT)
+    → 関数 handle_new_user() を実行（SECURITY DEFINER）:
+        INSERT INTO public.profiles (id, name)
+        VALUES (NEW.id, NEW.raw_user_meta_data->>'full_name');
+    → これにより auth.users に1行増えると自動的に public.profiles にも
+      1行作られる。role列はデフォルト値 'pending' のまま。
+      （Googleログインの場合はraw_user_meta_dataのfull_nameが初期名として入る）
+
+
+--------------------------------------------------
+4. ステップ③: プロフィール本登録 (/setAccount/user, /setAccount/mentor)
+--------------------------------------------------
+ファイル: src/app/(userPage)/setAccount/actions.js
+  submitUser()   ← /setAccount/user のフォーム送信
+  submitMentor() ← /setAccount/mentor のフォーム送信
+
+共通の流れ:
+  1. フォーム値をパース（名前・学年・志望校 or 大学・学部・自己紹介・地域・
+     タグ等、任意でパスワード）
+  2. パスワード欄に入力があれば妥当性チェック（6文字以上・確認一致）
+     ※ Googleログイン等でパスワード欄が出ないケースはスキップ
+  3. supabase.auth.getUser() でログイン中ユーザーを取得（未ログインなら
+     /login へ）
+  4. setPasswordAndRole():
+       supabase.auth.updateUser({ password, data: { role: "user" or "mentor" } })
+     → auth.usersのuser_metadata.roleに"user"/"mentor"をセット
+       （※「新パスワードが現在と同じ」エラーはロールだけ更新して継続する
+         救済ロジックが入っている。2026-07-15の登録詰まり対応）
+  5. users テーブル（user側）or mentors テーブル（mentor側）へ upsert
+     - upsertを使うことで、途中でエラーになり再送信しても主キー重複で
+       落ちない設計
+     - mentor側はさらに mentor_tags へのタグ紐付けもupsert
+  6. 最後に profiles.set を true に更新（markProfileAsSet）
+     → 全ステップ成功後の最後に立てることで「途中失敗＝オンボーディング
+       未完了のまま」を保証している
+  7. redirect("/setAccount/user/icon" または "/setAccount/mentor/icon")
+
+  ■ DBトリガー "on_profile_role_update_protect" (profiles BEFORE UPDATE)
+    → 関数 protect_role_update():
+       - role='pending' の間だけ pending→user/pending→mentor への変更を許可
+       - 一度確定した role の変更、および pendingからのadmin自己昇格は
+         例外を投げてブロックする
+       - service_role（APIキー経由）やpostgres（管理者操作）はバイパス
+    → 「ユーザーが自分でadminになりすます」ことをDBレベルで防止している
+
+  ■ DBトリガー "on_profile_set_grant_credit" (profiles AFTER UPDATE)
+    → 関数 grant_signup_credit():
+       - role='user' かつ set が false→true に変わった瞬間のみ発火
+       - credit_logs に reason='signup_bonus' で +1クレジットを付与
+         （同じreasonの行が既にあれば二重付与しない）
+       - credit_logs へのINSERTは別トリガー(sync_credit_balance)経由で
+         creditsテーブルの残高に反映される（CLAUDE.mdにある「*_logsに
+         INSERTしてトリガーに残高更新させる」パターンと一致）
+    → つまり「学生ユーザーが登録を完了した瞬間に無料クレジットが1つ
+      自動付与される」仕組み。mentor側にはこの付与ロジックはない。
+
+  ■ DBトリガー "on_mentor_created" (mentors AFTER INSERT)
+    → 関数 create_mentor_secret():
+       INSERT INTO public.mentor_secret (id) VALUES (NEW.id);
+    → mentorsに新規行が入ると、自動的に mentor_secret（stripe_account_id,
+      transfer_rate, admin_allowなど非公開情報を持つテーブル）にも
+      対になる行が作られる。admin_allow はデフォルト false。
+      → README/CLAUDE.mdの「mentorのadmin許可が出たものだけ面談できる」
+        という制約は、このadmin_allowフラグを使っており、管理者が
+        別途trueにするまでは新規メンターは面談できない状態になる
+        （サインアップフロー自体には含まれない、後続の運用フロー）。
+
+  ■ mentors テーブルへのINSERT/UPDATE/DELETE Webhook
+    → Supabase Database Webhook "Mentor" が
+      https://www.jaorium.com/api/webhooks/supabase を叩く
+    → src/app/api/webhooks/supabase/route.js が受け、
+      table === "mentors" のとき revalidateTag("mentors") で
+      Next.jsのキャッシュを再検証する
+    → 新規メンター登録・情報更新が公開ページ（メンター一覧等）に
+      即座に反映されるようにするための仕組み
+
+
+--------------------------------------------------
+5. ステップ④: アイコン設定 (/setAccount/user/icon, /setAccount/mentor/icon)
+--------------------------------------------------
+  - AddIcon コンポーネントでアイコン画像をアップロード（任意）
+  - 「アイコンを設定しない」リンクで /dashboard/user へスキップ可能
+    ※ mentor側ページも同リンク先が /dashboard/user になっている
+      （mentor側は本来 /dashboard/mentor が正しいはずで、既存の
+        表示崩れ/バグの可能性あり。修正の要望があれば別途対応可能）
+
+
+--------------------------------------------------
+6. ロールベースのリダイレクト (src/lib/supabase/proxy.js / middleware.js)
+--------------------------------------------------
+全リクエストで updateSession() が走り、profiles.role と profiles.set を見て
+以下のように振り分ける:
+
+  - 未ログイン: /dashboard, /admin, /setAccount, /resetPass へのアクセスは
+    /login にリダイレクト
+  - role="user" かつ set=false: /setAccount/user 以外の関連ページへ来たら
+    /setAccount/user に強制送還（オンボーディング未完了の間は他画面に
+    行けない）
+  - role="user" かつ set=true: /setAccount/user に来たら /dashboard/user へ
+  - role="mentor" も同様に /setAccount/mentor ⇔ /dashboard/mentor で対応
+  - role="admin": /dashboard, /setAccount 等に来たら常に /dashboard/admin
+  - role="pending"（＝OTP検証は終えたがsetAccountをまだ完了していない
+    ユーザー）は上記のいずれにもマッチしないため、リダイレクトされず
+    素通りする（＝pendingのままどのページにでも一旦アクセスできてしまうが、
+    setAccount側のupsertでuser/mentorに確定するまでDB上のroleは
+    pendingのまま）
+
+
+--------------------------------------------------
+7. 未使用/旧実装として残っているコード（重要・混同注意）
+--------------------------------------------------
+以下は現在どこからもimportされておらず、画面上のフローには一切関与しない
+「パスワード方式サインアップ」の旧実装の残骸。コード中にコメントで明記
+されている:
+
+  - src/app/(main)/signup/user/actions.js の signupMentor()
+    → email/password/password_checkを受け取りsignUp()する旧実装
+    → 既知バグ: 成功可否に関わらず
+      auth.updateUser({ data: { role: "user" } }) を呼んでしまい、
+      本来mentorとして登録しているのに role="user" を刺してしまう
+      （CLAUDE.mdに記載の [known bug] と同一）
+  - src/app/(main)/signup/mentor/actions.js の signupUser()
+    → 同様の旧実装（passwordsMatch含む）
+
+  現行フローはどちらもOTP（signInWithOtp）方式であり、上記2関数は
+  実際のサインアップ導線には使われていない。
+
+
+--------------------------------------------------
+8. まとめ図
+--------------------------------------------------
+[/signup/user]                       [/signup/mentor]
+  email入力 → email_exists RPC確認     email入力 → email_exists RPC確認
+  → signInWithOtp(shouldCreateUser)    → signInWithOtp(shouldCreateUser)
+        │                                    │
+        ▼ 8桁コード入力 or メール内リンク
+  verifyOtp() 成功
+        │
+        ▼ ここでauth.usersにINSERT発生
+  [DBトリガー] handle_new_user()
+     → public.profiles に (id, name) を1行作成 ※role='pending'
+        │
+        ▼ redirect
+[/setAccount/user]                   [/setAccount/mentor]
+  フォーム送信(名前/学年/志望校等)      フォーム送信(名前/大学/学部/タグ等)
+  → updateUser({role:"user"})          → updateUser({role:"mentor"})
+     [DBトリガー protect_role_update: pending→user/mentorのみ許可]
+  → users へ upsert                    → mentors へ upsert
+                                           [DBトリガー create_mentor_secret
+                                            → mentor_secretに行作成]
+                                           [Webhook: mentors変更 → revalidateTag]
+  → profiles.set = true                → mentor_tags へ upsert
+     [DBトリガー grant_signup_credit      → profiles.set = true
+      → role=user & set:false→true で
+        credit_logsに+1(signup_bonus)]
+        │                                    │
+        ▼                                    ▼
+[/setAccount/user/icon]              [/setAccount/mentor/icon]
+  アイコン設定 or スキップ              アイコン設定 or スキップ
+        │                                    │
+        ▼                                    ▼
+   /dashboard/user                      /dashboard/user (※本来/dashboard/mentorのはず、要確認)

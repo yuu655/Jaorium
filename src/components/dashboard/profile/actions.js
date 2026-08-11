@@ -6,6 +6,18 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import {
+  userProfileSchema,
+  mentorProfileSchema,
+  firstValidationError,
+} from "@/lib/validation/profileSchema";
+import {
+  AVATAR_MAX_SIZE_LABEL,
+  AVATAR_ALLOWED_LABEL,
+  getAvatarContentType,
+  isAllowedAvatarFile,
+  isAllowedAvatarSize,
+} from "@/lib/validation/avatarLimits";
 
 // ---- 純粋ロジック ----
 
@@ -40,23 +52,6 @@ function resolveIsAllowed(isAllowedValues) {
 
 function buildMentorTagRecords(mentorId, tagIds) {
   return tagIds.map((tagId) => ({ mentor_id: mentorId, tag_id: tagId }));
-}
-
-const AVATAR_CONTENT_TYPES = {
-  // 画像
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  webp: "image/webp",
-  gif: "image/gif",
-  svg: "image/svg+xml",
-  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  pdf: "application/pdf",
-};
-
-function getContentType(filename) {
-  const ext = filename.split(".").pop()?.toLowerCase();
-  return AVATAR_CONTENT_TYPES[ext ?? ""] ?? "application/octet-stream";
 }
 
 // パストラバーサル防止: パス区切りや".."を含む値をR2キーに使わせない
@@ -138,6 +133,9 @@ async function saveAvatarKey(supabase, { table, userId, key }) {
 // ---- Server Actions（オーケストレーション） ----
 
 export async function updateUserProfile(prevState, formData) {
+  const parsed = userProfileSchema.safeParse(parseUserProfileForm(formData));
+  if (!parsed.success) return { error: firstValidationError(parsed) };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -145,31 +143,33 @@ export async function updateUserProfile(prevState, formData) {
 
   const { error } = await updateUserRecord(supabase, {
     userId: user.id,
-    profile: parseUserProfileForm(formData),
+    profile: parsed.data,
   });
 
-  if (!error) {
-    revalidateTag(`dashboard-user-${user.id}`);
-    redirect("/dashboard/user");
+  if (error) {
+    console.error("updateUserProfile error:", error.message);
+    return { error: "更新に失敗しました。もう一度お試しください。" };
   }
+
+  revalidateTag(`dashboard-user-${user.id}`);
+  redirect("/dashboard/user");
 }
 
 export async function updateMentorProfile(prevState, formData) {
+  const form = parseMentorProfileForm(formData);
+
+  const parsed = mentorProfileSchema.safeParse(form);
+  if (!parsed.success) return { error: firstValidationError(parsed) };
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const form = parseMentorProfileForm(formData);
 
   const { error } = await updateMentorRecord(supabase, {
     mentorId: user.id,
     profile: {
-      name: form.name,
-      university: form.university,
-      faculty: form.faculty,
-      bio: form.bio,
-      region: form.region,
-      quote: form.quote,
+      ...parsed.data,
       is_allowed: resolveIsAllowed(form.isAllowedValues),
     },
   });
@@ -179,11 +179,14 @@ export async function updateMentorProfile(prevState, formData) {
     tagIds: form.tagIds,
   });
 
-  if (!error && !error_insert) {
-    revalidateTag(`dashboard-mentor-${user.id}`);
-    revalidateTag(`mentor-tags-${user.id}`);
-    redirect("/dashboard/mentor");
+  if (error || error_insert) {
+    console.error("updateMentorProfile error:", (error ?? error_insert)?.message);
+    return { error: "更新に失敗しました。もう一度お試しください。" };
   }
+
+  revalidateTag(`dashboard-mentor-${user.id}`);
+  revalidateTag(`mentor-tags-${user.id}`);
+  redirect("/dashboard/mentor");
 }
 
 export async function uploadAvatar(inputFiles) {
@@ -201,13 +204,27 @@ export async function uploadAvatar(inputFiles) {
     return { success: false, message: "不正なファイル名です" };
   }
 
+  if (!isAllowedAvatarFile(inputFiles.name)) {
+    return {
+      success: false,
+      message: `対応していないファイル形式です（${AVATAR_ALLOWED_LABEL}のみ）`,
+    };
+  }
+
+  if (!isAllowedAvatarSize(inputFiles.size)) {
+    return {
+      success: false,
+      message: `ファイルサイズは${AVATAR_MAX_SIZE_LABEL}以内にしてください`,
+    };
+  }
+
   const role = await fetchCallerRole(supabase, user.id);
   if (role !== "user" && role !== "mentor") {
     return { success: false, message: "アカウント情報を取得できませんでした" };
   }
 
   const key = buildAvatarKey({ role, userId: user.id, filename: inputFiles.name });
-  const url = await createAvatarUploadUrl({ key, contentType: getContentType(inputFiles.name) });
+  const url = await createAvatarUploadUrl({ key, contentType: getAvatarContentType(inputFiles.name) });
 
   const uploadRes = await uploadFileToR2(url, inputFiles);
 

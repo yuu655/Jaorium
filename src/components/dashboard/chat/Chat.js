@@ -72,6 +72,7 @@ export default function Chat({
   const [meetingConfirmation, setMeetingConfirmation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [credit, setCredit] = useState(null);
+  const [orgId, setOrgId] = useState(null); // 所属組織があれば組織プールから消費する
   // console.log(meeting_sc)
 
   const bottomRef = useRef(null);
@@ -135,7 +136,7 @@ const canceled = searchParams.get("canceled");
   // }, [meeting.id, currentUserId]);
   useEffect(() => {
     // 1つのチャンネルにまとめる
-    const channel = supabase
+    let channel = supabase
       .channel(`room:${meeting.id}`)
       .on(
         "postgres_changes",
@@ -185,26 +186,42 @@ const canceled = searchParams.get("canceled");
         (payload) => {
           setMeetingConfirmation(payload.new);
         },
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*", // INSERT・UPDATEどちらも拾う
-          schema: "public",
-          table: "credits",
-          filter: `user_id=eq.${currentUserId}`,
-        },
-        (payload) => {
-          setCredit(payload.new);
-        },
-      )
-      .subscribe();
+      );
+
+    // 組織所属の有無で購読先テーブルを出し分ける（組織メンバーはorganization_creditsのみ見る）
+    channel = orgId
+      ? channel.on(
+          "postgres_changes",
+          {
+            event: "*", // INSERT・UPDATEどちらも拾う
+            schema: "public",
+            table: "organization_credits",
+            filter: `organization_id=eq.${orgId}`,
+          },
+          (payload) => {
+            setCredit(payload.new);
+          },
+        )
+      : channel.on(
+          "postgres_changes",
+          {
+            event: "*", // INSERT・UPDATEどちらも拾う
+            schema: "public",
+            table: "credits",
+            filter: `user_id=eq.${currentUserId}`,
+          },
+          (payload) => {
+            setCredit(payload.new);
+          },
+        );
+
+    channel.subscribe();
 
     // クリーンアップ関数でチャンネルを破棄
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [meeting.id]);
+  }, [meeting.id, orgId]);
 
   useEffect(() => {
     const fetchConfirmation = async () => {
@@ -222,6 +239,25 @@ const canceled = searchParams.get("canceled");
 
   useEffect(() => {
     const fetchCredit = async () => {
+      // 組織のアクティブメンバーなら組織の共有残高を、そうでなければ個人残高を見る
+      const { data: membership } = await supabase
+        .from("organization_members")
+        .select("organization_id")
+        .eq("user_id", currentUserId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (membership?.organization_id) {
+        setOrgId(membership.organization_id);
+        const { data } = await supabase
+          .from("organization_credits")
+          .select("balance")
+          .eq("organization_id", membership.organization_id)
+          .single();
+        if (data) setCredit(data);
+        return;
+      }
+
       const { data } = await supabase
         .from("credits")
         .select("balance")
@@ -334,8 +370,14 @@ const canceled = searchParams.get("canceled");
     setLoading(false);
 
     if (result.error === "INSUFFICIENT_CREDITS") {
-      // クレジット不足 → Checkoutへ
-      router.push("/dashboard/account");
+      if (orgId) {
+        // 組織メンバーは自己購入できないため、Checkoutへは飛ばさない
+        alert("組織の共有クレジットが不足しています。組織の管理者にクレジット追加を依頼してください。");
+      } else {
+        router.push("/dashboard/account");
+      }
+    } else if (result.error === "MEMBER_CREDIT_LIMIT_REACHED") {
+      alert("ご自身の利用上限に達しています。組織の管理者にご相談ください。");
     } else if (result.error) {
       alert(result.error);
     }
@@ -470,7 +512,7 @@ const canceled = searchParams.get("canceled");
                     {(credit?.balance ?? 0) > 0 ? (
                       <>
                         <CreditCard size={14} className="text-blue-400" />
-                        残りクレジット{" "}
+                        {orgId ? "組織の共有クレジット" : "残りクレジット"}{" "}
                         <strong className="text-gray-700 font-medium">
                           {credit.balance}
                         </strong>{" "}
@@ -479,7 +521,7 @@ const canceled = searchParams.get("canceled");
                     ) : (
                       <>
                         <AlertCircle size={14} className="text-amber-400" />
-                        残りクレジット{" "}
+                        {orgId ? "組織の共有クレジット" : "残りクレジット"}{" "}
                         <strong className="text-amber-600 font-medium">
                           0
                         </strong>{" "}
@@ -498,6 +540,10 @@ const canceled = searchParams.get("canceled");
                         <Check size={13} />
                         {loading ? "処理中..." : "クレジットを消費して確定"}
                       </button>
+                    ) : orgId ? (
+                      <span className="text-xs text-amber-600 font-medium">
+                        組織の管理者にクレジット追加を依頼してください
+                      </span>
                     ) : (
                       <button
                         onClick={() => redirectToCheckout(meeting.id)}

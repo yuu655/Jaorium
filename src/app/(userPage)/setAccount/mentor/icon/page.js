@@ -25,7 +25,7 @@ export default function SetAccount() {
               <AddIcon/>
             </div>
             <div className="text-center mt-6">
-              <Link href="/dashboard/user" className="text-xl text-blue-600 hover:text-gray-900">
+              <Link href="/dashboard/mentor" className="text-xl text-blue-600 hover:text-gray-900">
                 →アイコンを設定しない
               </Link>
             </div>

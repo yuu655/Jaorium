@@ -70,11 +70,31 @@ describe("updateUserProfile server action", () => {
       }),
     );
 
-    await updateUserProfile(null, formData({ name: "太郎", grade: "高3", desire: "東京大学" }));
+    const result = await updateUserProfile(
+      null,
+      formData({ name: "太郎", grade: "高3", desire: "東京大学" }),
+    );
 
+    expect(result).toEqual({ error: "更新に失敗しました。もう一度お試しください。" });
     expect(revalidateTag).not.toHaveBeenCalled();
   });
+
+  it("returns a form error when the name is blank, before touching Supabase", async () => {
+    createClient.mockResolvedValue(createSupabaseMock());
+
+    const result = await updateUserProfile(null, formData({ name: "  ", grade: "高3" }));
+
+    expect(result).toEqual({ error: "ユーザーネームを入力してください。" });
+  });
 });
+
+const validMentorFields = {
+  name: "花子",
+  university: "京都大学",
+  faculty: "工学部",
+  bio: "受験勉強や進路選びについて、実体験をもとに丁寧にサポートします。よろしくお願いします。",
+  quote: "一緒に頑張りましょう",
+};
 
 describe("updateMentorProfile server action", () => {
   it("replaces mentor_tags (delete then insert) and redirects on success", async () => {
@@ -94,9 +114,9 @@ describe("updateMentorProfile server action", () => {
           name: "花子",
           university: "京都大学",
           faculty: "工学部",
-          bio: "よろしく",
+          bio: "受験勉強や進路選びについて、実体験をもとに丁寧にサポートします。よろしくお願いします。",
           region: "関西",
-          quote: "頑張ろう",
+          quote: "一緒に頑張りましょう",
           tagIds: ["tag-1", "tag-2"],
         }),
       ),
@@ -126,7 +146,7 @@ describe("updateMentorProfile server action", () => {
     );
 
     await expect(
-      updateMentorProfile(null, formData({ name: "花子", tagIds: [] })),
+      updateMentorProfile(null, formData({ ...validMentorFields, tagIds: [] })),
     ).rejects.toThrow("REDIRECT:/dashboard/mentor");
 
     expect(mentorsChain.update).toHaveBeenCalledWith(expect.objectContaining({ is_allowed: true }));
@@ -143,9 +163,32 @@ describe("updateMentorProfile server action", () => {
       }),
     );
 
-    await updateMentorProfile(null, formData({ name: "花子", tagIds: [] }));
+    const result = await updateMentorProfile(null, formData({ ...validMentorFields, tagIds: [] }));
 
+    expect(result).toEqual({ error: "更新に失敗しました。もう一度お試しください。" });
     expect(revalidateTag).not.toHaveBeenCalled();
+  });
+
+  it("returns a form error when faculty is blank, before touching Supabase", async () => {
+    createClient.mockResolvedValue(createSupabaseMock());
+
+    const result = await updateMentorProfile(
+      null,
+      formData({ ...validMentorFields, faculty: "", tagIds: [] }),
+    );
+
+    expect(result).toEqual({ error: "学部名を入力してください。" });
+  });
+
+  it("returns a form error when bio is shorter than the minimum length", async () => {
+    createClient.mockResolvedValue(createSupabaseMock());
+
+    const result = await updateMentorProfile(
+      null,
+      formData({ ...validMentorFields, bio: "よろしくお願いします", tagIds: [] }),
+    );
+
+    expect(result).toEqual({ error: "詳細は30文字以上で入力してください。" });
   });
 });
 
@@ -163,7 +206,7 @@ describe("uploadAvatar server action", () => {
       createSupabaseMock({ auth: { getUser: vi.fn(async () => ({ data: { user: null } })) } }),
     );
 
-    const result = await uploadAvatar({ name: "avatar.png", type: "image/png" });
+    const result = await uploadAvatar({ name: "avatar.png", type: "image/png", size: 1024 });
 
     expect(result).toEqual({ success: false, message: "ログインしてください" });
   });
@@ -194,6 +237,43 @@ describe("uploadAvatar server action", () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it("rejects a disallowed file extension without signing an upload URL", async () => {
+    createClient.mockResolvedValue(
+      createSupabaseMock({
+        auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) },
+      }),
+    );
+    global.fetch = vi.fn();
+
+    const result = await uploadAvatar({ name: "avatar.exe", type: "application/octet-stream", size: 1024 });
+
+    expect(result).toEqual({
+      success: false,
+      message: "対応していないファイル形式です（PNG・JPG・GIF・WEBPのみ）",
+    });
+    expect(getSignedUrl).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects a file over the size limit without signing an upload URL", async () => {
+    createClient.mockResolvedValue(
+      createSupabaseMock({
+        auth: { getUser: vi.fn(async () => ({ data: { user: { id: "user-1" } } })) },
+      }),
+    );
+    global.fetch = vi.fn();
+
+    const result = await uploadAvatar({
+      name: "avatar.png",
+      type: "image/png",
+      size: 6 * 1024 * 1024,
+    });
+
+    expect(result).toEqual({ success: false, message: "ファイルサイズは5MB以内にしてください" });
+    expect(getSignedUrl).not.toHaveBeenCalled();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   // roleはuser_metadataではなくprofilesテーブルから読む(現行のOTPサインアップは
   // user_metadata.roleを設定しないため)。user_metadataなしのユーザーで検証する。
   it("uploads to R2 under the profiles.role/id namespace and saves the returned key", async () => {
@@ -211,7 +291,7 @@ describe("uploadAvatar server action", () => {
     );
     global.fetch = vi.fn(async () => ({ ok: true }));
 
-    const result = await uploadAvatar({ name: "avatar.png", type: "image/png" });
+    const result = await uploadAvatar({ name: "avatar.png", type: "image/png", size: 1024 });
 
     expect(result).toEqual({ success: true });
     expect(getSignedUrl).toHaveBeenCalled();
@@ -238,7 +318,7 @@ describe("uploadAvatar server action", () => {
     );
     global.fetch = vi.fn(async () => ({ ok: true }));
 
-    await uploadAvatar({ name: "avatar.png", type: "image/png" });
+    await uploadAvatar({ name: "avatar.png", type: "image/png", size: 1024 });
 
     expect(mentorsChain.update).toHaveBeenCalledWith({ icon: "mentor/mentor-1/avatars/avatar.png" });
     expect(revalidatePath).toHaveBeenCalledWith("/dashboard/mentor");
@@ -257,7 +337,7 @@ describe("uploadAvatar server action", () => {
     );
     global.fetch = vi.fn();
 
-    const result = await uploadAvatar({ name: "avatar.png", type: "image/png" });
+    const result = await uploadAvatar({ name: "avatar.png", type: "image/png", size: 1024 });
 
     expect(result).toEqual({ success: false, message: "アカウント情報を取得できませんでした" });
     expect(getSignedUrl).not.toHaveBeenCalled();
@@ -280,7 +360,7 @@ describe("uploadAvatar server action", () => {
     );
     global.fetch = vi.fn(async () => ({ ok: true }));
 
-    const result = await uploadAvatar({ name: "avatar.png", type: "image/png" });
+    const result = await uploadAvatar({ name: "avatar.png", type: "image/png", size: 1024 });
 
     expect(result).toEqual({ success: false, message: "プロフィールが見つかりませんでした" });
     expect(revalidatePath).not.toHaveBeenCalled();
@@ -297,7 +377,7 @@ describe("uploadAvatar server action", () => {
     );
     global.fetch = vi.fn(async () => ({ ok: false }));
 
-    const result = await uploadAvatar({ name: "avatar.png", type: "image/png" });
+    const result = await uploadAvatar({ name: "avatar.png", type: "image/png", size: 1024 });
 
     expect(result).toEqual({ success: false, message: "R2へのアップロードに失敗しました" });
   });

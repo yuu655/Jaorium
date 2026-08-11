@@ -5,13 +5,21 @@ import getUrls from "@/utils/getUrls";
 async function exchangeCodeForSession(code) {
   const supabase = await createClient()
   const { error } = await supabase.auth.exchangeCodeForSession(code)
-  return { ok: !error }
+  return { ok: !error, error }
 }
 
 async function verifyOtpTokenHash(token_hash, type) {
   const supabase = await createClient()
   const { error } = await supabase.auth.verifyOtp({ token_hash, type })
-  return { ok: !error }
+  return { ok: !error, error }
+}
+
+// 原因が分かるよう、サーバーログに残しつつ/errorページにもメッセージを渡す
+// （以前はここで握りつぶしていたため、失敗時に何も手がかりが残らなかった）
+function redirectToError(reason, error) {
+  console.error(`auth/confirm ${reason} error:`, error?.message ?? error)
+  const message = error?.message ?? "認証に失敗しました"
+  return NextResponse.redirect(`${getUrls()}/error?message=${encodeURIComponent(message)}`)
 }
 
 export async function GET(request) {
@@ -28,21 +36,29 @@ export async function GET(request) {
   // 成功しないため、別端末・メールアプリ内ブラウザで開くと失敗する。
   // token_hash + verifyOtp はクッキー不要で、どの端末で開いても成功する。
   if (token_hash && type) {
-    const { ok } = await verifyOtpTokenHash(token_hash, type)
+    const { ok, error } = await verifyOtpTokenHash(token_hash, type)
     if (ok) {
       return NextResponse.redirect(`${getUrls()}${next}`)
     }
-    return NextResponse.redirect(`${getUrls()}/error`)
+    return redirectToError('verifyOtp', error)
   }
 
   if (code) {
-    const { ok } = await exchangeCodeForSession(code)
+    const { ok, error } = await exchangeCodeForSession(code)
     if (ok) {
       // 認証成功 → next で指定されたページへリダイレクト
       return NextResponse.redirect(`${getUrls()}${next}`)
     }
+    return redirectToError('exchangeCodeForSession', error)
   }
 
-  // 認証失敗 → エラーページへリダイレクト
-  return NextResponse.redirect(`${getUrls()}/error`)
+  // code/token_hash+typeのいずれも無い＝不正なリンク
+  console.error('auth/confirm: missing code or token_hash+type', {
+    hasCode: Boolean(code),
+    hasTokenHash: Boolean(token_hash),
+    type,
+  })
+  return NextResponse.redirect(
+    `${getUrls()}/error?message=${encodeURIComponent('認証パラメータが不足しています')}`,
+  )
 }

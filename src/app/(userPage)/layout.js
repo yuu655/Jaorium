@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "@/app/globals.css";
 
 import Header from "@/components/dashboard/header";
+import PushNotificationSetup from "@/components/dashboard/PushNotificationSetup";
 
 // import { SpeedInsights } from "@vercel/speed-insights/next"
 
@@ -38,6 +39,7 @@ export default function RootLayout({ children }) {
   return (
     <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       <Header />
+      <PushNotificationSetup />
       {children}
     </div>
   );

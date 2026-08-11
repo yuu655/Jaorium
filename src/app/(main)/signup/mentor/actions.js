@@ -28,40 +28,6 @@ export async function login(prevState, formData) {
   redirect("/dashboard"); // 成功時はリダイレクト
 }
 
-function passwordsMatch(password, confirmPassword) {
-  return password === confirmPassword;
-}
-
-async function signUpWithPassword(supabase, { email, password, emailRedirectTo }) {
-  return supabase.auth.signUp({ email, password, options: { emailRedirectTo } });
-}
-
-// 注: このページ (signup/mentor) からは呼ばれておらず、現状どこからもimportされていない。
-// パスワード方式の旧サインアップ実装の残骸と見られる。挙動保存のためロジックはそのまま。
-export async function signupUser(prevState, formData) {
-  const email = formData.get("email");
-  const password = formData.get("password");
-  const confirmPassword = formData.get("password_check");
-
-  if (!passwordsMatch(password, confirmPassword)) {
-    return { error: "再入力のパスワードと一致しません" };
-  }
-
-  const supabase = await createClient();
-  const { error } = await signUpWithPassword(supabase, {
-    email,
-    password,
-    emailRedirectTo: `${getUrls()}/api/auth/confirm?next=/setAccount/user`,
-  });
-
-  if (error) {
-    return { error: "サインアップに失敗しました: " + error.message };
-  }
-
-  // サインアップ成功時は、メール確認が必要なためリダイレクトせずにメッセージを期待する
-  return { success: true };
-}
-
 async function checkEmailExists(email) {
   const masterSupabase = createAdminSupabaseClient();
   return masterSupabase.rpc("email_exists", { check_email: email });

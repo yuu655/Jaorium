@@ -52,6 +52,14 @@ describe("submitUser server action", () => {
     expect(result).toEqual({ error: "パスワードは6文字以上で入力してください。" });
   });
 
+  it("returns a form error when the name is blank, before touching Supabase", async () => {
+    createClient.mockResolvedValue({ auth: {}, from: vi.fn() });
+
+    const result = await submitUser(null, formData({ ...userFields, name: "  " }));
+
+    expect(result).toEqual({ error: "ユーザーネームを入力してください。" });
+  });
+
   it("returns a form error when the profiles update fails", async () => {
     const supabase = createSupabaseMock({
       auth: {
@@ -166,9 +174,9 @@ const mentorFields = {
   name: "先輩花子",
   university: "京都大学",
   faculty: "工学部",
-  bio: "よろしくお願いします",
+  bio: "受験勉強や進路選びについて、実体験をもとに丁寧にサポートします。よろしくお願いします。",
   region: "関西",
-  quote: "頑張ろう",
+  quote: "一緒に頑張りましょう",
   tagIds: ["tag-1", "tag-2"],
   password: "secret1",
   password_check: "secret1",
@@ -184,6 +192,30 @@ describe("submitMentor server action", () => {
     );
 
     expect(result).toEqual({ error: "再入力のパスワードと一致しません。" });
+  });
+
+  it("returns a form error when university is blank, before touching Supabase", async () => {
+    createClient.mockResolvedValue({ auth: {}, from: vi.fn() });
+
+    const result = await submitMentor(null, formData({ ...mentorFields, university: "" }));
+
+    expect(result).toEqual({ error: "大学名を入力してください。" });
+  });
+
+  it("returns a form error when bio is shorter than the minimum length", async () => {
+    createClient.mockResolvedValue({ auth: {}, from: vi.fn() });
+
+    const result = await submitMentor(null, formData({ ...mentorFields, bio: "よろしくお願いします" }));
+
+    expect(result).toEqual({ error: "詳細は30文字以上で入力してください。" });
+  });
+
+  it("returns a form error when quote is shorter than the minimum length", async () => {
+    createClient.mockResolvedValue({ auth: {}, from: vi.fn() });
+
+    const result = await submitMentor(null, formData({ ...mentorFields, quote: "頑張ろう" }));
+
+    expect(result).toEqual({ error: "アピールポイントは5文字以上で入力してください。" });
   });
 
   it("upserts mentor + mentor_tags, marks the profile set last, and redirects on success", async () => {

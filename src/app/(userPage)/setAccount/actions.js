@@ -1,6 +1,11 @@
 "use server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import {
+  userProfileSchema,
+  mentorProfileSchema,
+  firstValidationError,
+} from "@/lib/validation/profileSchema";
 
 // ---- フォーム解析（純粋関数） ----
 
@@ -127,6 +132,9 @@ async function submitUser(prevState, formData) {
     if (passwordError) return { error: passwordError };
   }
 
+  const parsedProfile = userProfileSchema.safeParse(data);
+  if (!parsedProfile.success) return { error: firstValidationError(parsedProfile) };
+
   const supabase = await createClient();
   const user = await getCurrentUser(supabase);
   if (!user) redirect("/login");
@@ -144,7 +152,7 @@ async function submitUser(prevState, formData) {
 
   const { error: userError } = await upsertUserRecord(
     supabase,
-    buildUserRecord(user.id, data),
+    buildUserRecord(user.id, parsedProfile.data),
   );
   if (userError) {
     console.error("setAccount users upsert error:", userError.message);
@@ -169,6 +177,10 @@ async function submitMentor(prevState, formData) {
     if (passwordError) return { error: passwordError };
   }
 
+  const parsedProfile = mentorProfileSchema.safeParse(data);
+  if (!parsedProfile.success) return { error: firstValidationError(parsedProfile) };
+  const validatedData = { ...data, ...parsedProfile.data };
+
   const supabase = await createClient();
   const user = await getCurrentUser(supabase);
   if (!user) redirect("/login");
@@ -186,7 +198,7 @@ async function submitMentor(prevState, formData) {
 
   const { error: mentorError } = await upsertMentorRecord(
     supabase,
-    buildMentorRecord(user.id, data),
+    buildMentorRecord(user.id, validatedData),
   );
   if (mentorError) {
     console.error("setAccount mentors upsert error:", mentorError.message);

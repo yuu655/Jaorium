@@ -1,0 +1,16 @@
+{
+  "name": "JaoRium",
+  "short_name": "JaoRium",
+  "description": "受験生と先輩をつなぐオンラインメンタリング",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}

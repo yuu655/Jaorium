@@ -1,6 +1,13 @@
 "use client";
 import { useActionState, useState, useEffect } from "react";
 import { Eye, Lock, EyeOff } from "lucide-react";
+import { FormError } from "@/components/ui/form-error";
+import {
+  QUOTE_MIN_LENGTH,
+  QUOTE_MAX_LENGTH,
+  BIO_MIN_LENGTH,
+  BIO_MAX_LENGTH,
+} from "@/lib/validation/profileLimits";
 
 export default function AddMentorProfile({
   profile,
@@ -41,7 +48,7 @@ export default function AddMentorProfile({
 
   return (
     <>
-      {state?.error && <p className="text-red-500 text-sm">{state.error}</p>}
+      <FormError message={state?.error} />
       <form action={action}>
         {!isFirst && (
           <div className="mb-6">
@@ -74,6 +81,7 @@ export default function AddMentorProfile({
             type="text"
             id="name"
             name="name"
+            required
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             placeholder="山田 太郎"
             defaultValue={profile?.name || ""}
@@ -163,6 +171,7 @@ export default function AddMentorProfile({
             type="text"
             id="university"
             name="university"
+            required
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             placeholder="○○大学"
             defaultValue={profile?.university || ""}
@@ -177,6 +186,7 @@ export default function AddMentorProfile({
             type="text"
             id="faculty"
             name="faculty"
+            required
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             placeholder="○○学部"
             defaultValue={profile?.faculty || ""}
@@ -185,12 +195,15 @@ export default function AddMentorProfile({
 
         <div className="mb-6">
           <label htmlFor="quote" className="block text-sm font-medium mb-2">
-            アピールポイント
+            アピールポイント（{QUOTE_MIN_LENGTH}〜{QUOTE_MAX_LENGTH}文字）
           </label>
           <input
             type="text"
             id="quote"
             name="quote"
+            required
+            minLength={QUOTE_MIN_LENGTH}
+            maxLength={QUOTE_MAX_LENGTH}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             placeholder="例：逆転合格の秘訣"
             defaultValue={profile?.quote || ""}
@@ -199,11 +212,14 @@ export default function AddMentorProfile({
 
         <div className="mb-6">
           <label htmlFor="bio" className="block text-sm font-medium mb-2">
-            詳細
+            詳細（{BIO_MIN_LENGTH}〜{BIO_MAX_LENGTH}文字）
           </label>
           <textarea
             id="bio"
             name="bio"
+            required
+            minLength={BIO_MIN_LENGTH}
+            maxLength={BIO_MAX_LENGTH}
             defaultValue={profile?.bio || ""}
             rows={5}
             placeholder="例：高3夏までE判定。部活引退後からの猛勉強で合格をつかみました。効率的な勉強法には自信があります！"

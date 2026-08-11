@@ -2,6 +2,7 @@
  
 import { useActionState } from 'react';
 import { sendContactEmail } from './actions';
+import { FormError } from '@/components/ui/form-error';
  
 const initialState = {};
  
@@ -75,9 +76,7 @@ export default function ContactPage() {
                   : 'border-stone-200 focus:border-blue-300'}
               `}
             />
-            {state.errors?.name && (
-              <ErrorMessage message={state.errors.name[0]} />
-            )}
+            <FormError message={state.errors?.name?.[0]} />
           </div>
  
           {/* Email */}
@@ -99,9 +98,7 @@ export default function ContactPage() {
                   : 'border-stone-200 focus:border-blue-300'}
               `}
             />
-            {state.errors?.email && (
-              <ErrorMessage message={state.errors.email[0]} />
-            )}
+            <FormError message={state.errors?.email?.[0]} />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -122,9 +119,7 @@ export default function ContactPage() {
                   : 'border-stone-200 focus:border-blue-300'}
               `}
             />
-            {state.errors?.email_re && (
-              <ErrorMessage message={state.errors.email_re[0]} />
-            )}
+            <FormError message={state.errors?.email_re?.[0]} />
           </div>
  
           {/* Message */}
@@ -146,9 +141,7 @@ export default function ContactPage() {
                   : 'border-stone-200 focus:border-blue-300'}
               `}
             />
-            {state.errors?.message && (
-              <ErrorMessage message={state.errors.message[0]} />
-            )}
+            <FormError message={state.errors?.message?.[0]} />
           </div>
  
           {/* Footer */}
@@ -188,16 +181,5 @@ export default function ContactPage() {
         </form>
       </div>
     </div>
-  );
-}
- 
-function ErrorMessage({ message }) {
-  return (
-    <p className="flex items-center gap-1.5 text-red-500 text-xs">
-      <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-      </svg>
-      {message}
-    </p>
   );
 }

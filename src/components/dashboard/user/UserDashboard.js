@@ -4,6 +4,7 @@ import { useState } from "react";
 import UserSidebar from "./UserSidebar";
 import UserAppointmentContent from "./UserAppointmentContent";
 import UserProfile from "./UserProfile";
+import OrganizationJoin from "./OrganizationJoin";
 import StatusCode from "../common/statusCode";
 
 import { updateUserIcon, updateUserProfile } from "../profile/actions";
@@ -29,6 +30,7 @@ export default function UserDashboard({ profile, meetings, mentors, mentorTagsMa
               {side === "profile" && (
                 <UserProfile funcProfile={updateUserProfile} profile={profile} />
               )}
+              {side === "organization" && <OrganizationJoin />}
             </div>
           </main>
         </div>

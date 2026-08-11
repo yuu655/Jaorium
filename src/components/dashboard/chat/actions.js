@@ -119,6 +119,40 @@ async function consumeCreditViaRpc(supabase, { userId, meetingId }) {
   return supabase.rpc("consume_credit", { p_user_id: userId, p_meeting_id: meetingId });
 }
 
+// 組織に所属しているユーザーは、面談確定時のクレジットを個人の残高ではなく
+// 組織の共有プールからのみ消費する（フォールバックなし）。
+async function fetchActiveOrgMembership(supabase, userId) {
+  const { data } = await supabase
+    .from("organization_members")
+    .select("organization_id")
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .maybeSingle();
+  return data?.organization_id ?? null;
+}
+
+async function fetchOrganizationCreditBalance(supabase, organizationId) {
+  const { data, error } = await supabase
+    .from("organization_credits")
+    .select("balance")
+    .eq("organization_id", organizationId)
+    .single();
+  if (error || !data) return null;
+  return data.balance;
+}
+
+async function consumeOrganizationCreditViaRpc(supabase, { organizationId, userId, meetingId }) {
+  return supabase.rpc("consume_organization_credit", {
+    p_organization_id: organizationId,
+    p_user_id: userId,
+    p_meeting_id: meetingId,
+  });
+}
+
+function isMemberCreditLimitError(error) {
+  return Boolean(error?.message?.includes("MEMBER_CREDIT_LIMIT_REACHED"));
+}
+
 async function fetchStripeCustomerId(supabase, userId) {
   const { data } = await supabase.from("users").select("customer_id").eq("id", userId).single();
   return data?.customer_id ?? null;
@@ -252,6 +286,35 @@ export async function consumeCredit(meetingId) {
   const meeting = await fetchMeetingById(supabase, meetingId);
   if (!meeting || meeting.user !== user.id) {
     return { error: "権限がありません" };
+  }
+
+  // 組織のアクティブメンバーは、個人クレジットへのフォールバックなしで
+  // 組織の共有プールからのみ消費する
+  const organizationId = await fetchActiveOrgMembership(supabase, user.id);
+  if (organizationId) {
+    const orgBalance = await fetchOrganizationCreditBalance(supabase, organizationId);
+    if (hasInsufficientCredits(orgBalance)) {
+      return { error: "INSUFFICIENT_CREDITS" };
+    }
+
+    const { error: orgRpcError } = await consumeOrganizationCreditViaRpc(supabase, {
+      organizationId,
+      userId: user.id,
+      meetingId,
+    });
+
+    if (orgRpcError) {
+      if (isMemberCreditLimitError(orgRpcError)) {
+        return { error: "MEMBER_CREDIT_LIMIT_REACHED" };
+      }
+      if (isInsufficientCreditsError(orgRpcError)) {
+        return { error: "INSUFFICIENT_CREDITS" };
+      }
+      console.error("consume_organization_credit error:", orgRpcError);
+      return { error: "クレジットの消費に失敗しました" };
+    }
+
+    return { success: true };
   }
 
   const balance = await fetchCreditBalance(supabase, user.id);

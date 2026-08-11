@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, MessageCircle, User, Settings } from "lucide-react";
+import { Calendar, MessageCircle, User, Settings, Building2 } from "lucide-react";
 import Icon from "../profile/icon";
 
 export default function UserSidebar({ profile, side, setSide }) {
@@ -26,6 +26,9 @@ export default function UserSidebar({ profile, side, setSide }) {
           </button> */}
           <button className={`${baseStyle} ${side === "profile" ? activeStyle : inactiveStyle}`} onClick={() => setSide("profile")}>
             <User size={20} />プロフィール
+          </button>
+          <button className={`${baseStyle} ${side === "organization" ? activeStyle : inactiveStyle}`} onClick={() => setSide("organization")}>
+            <Building2 size={20} />組織
           </button>
           {/* <button className={`${baseStyle} ${side === "setting" ? activeStyle : inactiveStyle}`} onClick={() => setSide("setting")}>
             <Settings size={20} />設定

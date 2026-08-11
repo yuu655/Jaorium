@@ -1,6 +1,7 @@
 "use client";
 import { useActionState, useState } from "react";
 import { Eye, Lock, EyeOff } from "lucide-react";
+import { FormError } from "@/components/ui/form-error";
 
 export default function AddUserProfile({
   profile,
@@ -14,7 +15,7 @@ export default function AddUserProfile({
 
   return (
     <>
-      {state?.error && <p className="text-red-500 text-sm">{state.error}</p>}
+      <FormError message={state?.error} />
       <form action={action}>
         <div className="mb-6">
           <label htmlFor="name" className="block text-sm font-medium mb-2">

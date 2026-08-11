@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { FormError } from "@/components/ui/form-error";
 
 export default function ReviewForm({ func }) {
   const [state, action, isPending] = useActionState(func, null);
@@ -9,7 +10,7 @@ export default function ReviewForm({ func }) {
 
   return (
     <>
-      {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
+      <FormError message={state?.error} />
       <form action={action} className="space-y-8">
         <div className="p-6 space-y-6">
           {/* 星評価 */}
@@ -33,9 +34,7 @@ export default function ReviewForm({ func }) {
             </div>
             {/* hidden input で stars の値をフォームに含める */}
             <input type="hidden" name="stars" value={stars} />
-            {state?.errors?.stars && (
-              <p className="text-sm text-red-500">{state.errors.stars}</p>
-            )}
+            <FormError message={state?.errors?.stars} />
           </div>
 
           {/* コメント */}
@@ -53,9 +52,7 @@ export default function ReviewForm({ func }) {
               placeholder="レビューを入力してください"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            {state?.errors?.comments && (
-              <p className="text-sm text-red-500">{state.errors.comments}</p>
-            )}
+            <FormError message={state?.errors?.comments} />
           </div>
         </div>
 

@@ -2,6 +2,12 @@
 import { useState, useRef } from "react";
 import { uploadAvatar } from "./actions";
 import { useRouter } from "next/navigation";
+import {
+  AVATAR_MAX_SIZE_LABEL,
+  AVATAR_ALLOWED_LABEL,
+  isAllowedAvatarFile,
+  isAllowedAvatarSize,
+} from "@/lib/validation/avatarLimits";
 
 
 export default function AddIcon() {
@@ -13,10 +19,21 @@ export default function AddIcon() {
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setInputFiles(file);
-      setPreviewUrl(URL.createObjectURL(file));
+    if (!file) return;
+
+    if (!isAllowedAvatarFile(file.name)) {
+      alert(`対応していないファイル形式です（${AVATAR_ALLOWED_LABEL}のみ）`);
+      e.target.value = "";
+      return;
     }
+    if (!isAllowedAvatarSize(file.size)) {
+      alert(`ファイルサイズは${AVATAR_MAX_SIZE_LABEL}以内にしてください`);
+      e.target.value = "";
+      return;
+    }
+
+    setInputFiles(file);
+    setPreviewUrl(URL.createObjectURL(file));
   };
   return (
     <>
@@ -95,7 +112,7 @@ export default function AddIcon() {
           </button>
 
           <p className="text-sm text-gray-400 text-center -mt-4">
-            JPG・PNG・GIF に対応　／　推奨サイズ：400 × 400px 以上
+            {AVATAR_ALLOWED_LABEL} に対応　／　最大{AVATAR_MAX_SIZE_LABEL}　／　推奨サイズ：400 × 400px 以上
           </p>
 
           <button

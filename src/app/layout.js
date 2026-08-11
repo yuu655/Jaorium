@@ -45,6 +45,16 @@ export const metadata = {
   verification: {
     google: "GTHkrz6bcP2vOPgAQEjL9jLlujRA0CvDUkUYZPJgjAg",
   },
+  // iOSでWeb Pushを使うにはホーム画面追加(PWA)が必要なため、manifestを配信する
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "JaoRium",
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/logo.png",
+  },
   // twitter: {
   //   card: 'summary_large_image',
   //   title: 'サービス名',
