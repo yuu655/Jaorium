@@ -184,6 +184,68 @@ describe("updateSession — role: mentor", () => {
   });
 });
 
+describe("updateSession — role: organization", () => {
+  const user = { id: "owner-1" };
+
+  it.each([
+    "/login",
+    "/signup/user",
+    "/dashboard",
+    "/dashboard/user",
+    "/dashboard/mentor",
+    "/setAccount",
+    "/setAccount/user",
+    "/setAccount/mentor",
+    "/",
+  ])("セットアップ完了済みなら %s から /dashboard/organization へ", async (pathname) => {
+    mockSession({ user, profile: { role: "organization", set: true } });
+
+    const res = await updateSession(makeRequest(pathname));
+
+    expect(locationOf(res)).toBe("https://www.jaorium.com/dashboard/organization");
+  });
+
+  it("セットアップ未完了なら /dashboard/organization/setPassword へ", async () => {
+    mockSession({ user, profile: { role: "organization", set: false } });
+
+    const res = await updateSession(makeRequest("/dashboard"));
+
+    expect(locationOf(res)).toBe("https://www.jaorium.com/dashboard/organization/setPassword");
+  });
+
+  it("セットアップ未完了のownerが /dashboard/organization/setPassword 自体にいるときは自己リダイレクトしない", async () => {
+    mockSession({ user, profile: { role: "organization", set: false } });
+
+    const res = await updateSession(makeRequest("/dashboard/organization/setPassword"));
+
+    expect(locationOf(res)).toBeNull();
+  });
+
+  it("セットアップ完了後に /dashboard/organization/setPassword へ来たら /dashboard/organization へ", async () => {
+    mockSession({ user, profile: { role: "organization", set: true } });
+
+    const res = await updateSession(makeRequest("/dashboard/organization/setPassword"));
+
+    expect(locationOf(res)).toBe("https://www.jaorium.com/dashboard/organization");
+  });
+
+  it("/dashboard/admin へのアクセスは /dashboard へ戻す", async () => {
+    mockSession({ user, profile: { role: "organization", set: true } });
+
+    const res = await updateSession(makeRequest("/dashboard/admin"));
+
+    expect(locationOf(res)).toBe("https://www.jaorium.com/dashboard");
+  });
+
+  it("/dashboard/organization はそのまま通す", async () => {
+    mockSession({ user, profile: { role: "organization", set: true } });
+
+    const res = await updateSession(makeRequest("/dashboard/organization"));
+
+    expect(locationOf(res)).toBeNull();
+  });
+});
+
 describe("updateSession — role: admin", () => {
   const user = { id: "admin-1" };
 

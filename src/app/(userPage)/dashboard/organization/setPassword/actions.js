@@ -12,6 +12,12 @@ function validatePassword(password, passwordCheck) {
   return null;
 }
 
+// setAccount/actions.jsのmarkProfileAsSetと同じ「オンボーディング完了フラグ」
+async function markProfileAsSet(supabase, userId) {
+  const { error } = await supabase.from("profiles").update({ set: true }).eq("id", userId);
+  return { error };
+}
+
 export async function setOwnerPassword(prevState, formData) {
   const password = formData.get("password");
   const passwordCheck = formData.get("password_check");
@@ -22,11 +28,17 @@ export async function setOwnerPassword(prevState, formData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.updateUser({ password });
+  const { data, error } = await supabase.auth.updateUser({ password });
 
   if (error) {
     console.error("setOwnerPassword error:", error.message);
     return { error: "パスワードの設定に失敗しました。もう一度お試しください。" };
+  }
+
+  const { error: profileError } = await markProfileAsSet(supabase, data.user.id);
+  if (profileError) {
+    console.error("setOwnerPassword profiles update error:", profileError.message);
+    return { error: "パスワードは設定されましたが、状態の更新に失敗しました。もう一度お試しください。" };
   }
 
   redirect("/dashboard/organization");

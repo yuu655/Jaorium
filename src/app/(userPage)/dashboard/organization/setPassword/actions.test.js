@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { createSupabaseMock, createChain } from "@/test/supabaseMock";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -55,13 +56,43 @@ describe("setOwnerPassword server action", () => {
     expect(result).toEqual({ error: "パスワードの設定に失敗しました。もう一度お試しください。" });
   });
 
-  it("updates the password and redirects to /dashboard/organization on success", async () => {
-    createClient.mockResolvedValue({
-      auth: { updateUser: vi.fn(async () => ({ error: null })) },
+  it("returns a friendly error when marking the profile as set fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    createClient.mockResolvedValue(
+      createSupabaseMock({
+        auth: {
+          updateUser: vi.fn(async () => ({ data: { user: { id: "owner-1" } }, error: null })),
+        },
+        from: { profiles: () => createChain({ error: { message: "db error" } }) },
+      }),
+    );
+
+    const result = await setOwnerPassword(
+      null,
+      formData({ password: "newpass1", password_check: "newpass1" }),
+    );
+
+    expect(result).toEqual({
+      error: "パスワードは設定されましたが、状態の更新に失敗しました。もう一度お試しください。",
     });
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("updates the password, marks the profile set=true, and redirects to /dashboard/organization on success", async () => {
+    const profilesChain = createChain({ error: null });
+    createClient.mockResolvedValue(
+      createSupabaseMock({
+        auth: {
+          updateUser: vi.fn(async () => ({ data: { user: { id: "owner-1" } }, error: null })),
+        },
+        from: { profiles: () => profilesChain },
+      }),
+    );
 
     await expect(
       setOwnerPassword(null, formData({ password: "newpass1", password_check: "newpass1" })),
     ).rejects.toThrow("REDIRECT:/dashboard/organization");
+
+    expect(profilesChain.update).toHaveBeenCalledWith({ set: true });
   });
 });

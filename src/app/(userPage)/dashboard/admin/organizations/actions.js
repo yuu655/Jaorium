@@ -17,6 +17,16 @@ function isUniqueViolation(error) {
 
 // ---- I/O（Supabase呼び出し） ----
 
+// isNewInvite=true（まだパスワード未設定）ならset=false、既存ユーザー（既にログイン可能）
+// ならset=trueにする。setAccount/actions.jsのmarkProfileAsSetと同じ「オンボーディング
+// 完了フラグ」の考え方を、招待済み/既存ユーザーどちらの経路でも一貫させたもの。
+async function setOwnerProfileState(masterSupabase, { userId, isNewInvite }) {
+  return masterSupabase
+    .from("profiles")
+    .update({ role: "organization", set: !isNewInvite })
+    .eq("id", userId);
+}
+
 async function getCurrentUser(supabase) {
   const {
     data: { user },
@@ -98,8 +108,9 @@ export async function assignOwner(organizationId, email) {
   }
 
   let ownerUserId = existingUserId;
+  const isNewInvite = !ownerUserId;
 
-  if (!ownerUserId) {
+  if (isNewInvite) {
     // 招待メールのリンク先は専用のパスワード設定ページへ（通常ログインのpassword欄には誘導しない）
     const { data, error } = await masterSupabase.auth.admin.inviteUserByEmail(trimmedEmail, {
       redirectTo: `${getUrls()}/api/auth/confirm?next=/dashboard/organization/setPassword`,
@@ -115,15 +126,28 @@ export async function assignOwner(organizationId, email) {
     .from("organization_owners")
     .insert({ organization_id: organizationId, user_id: ownerUserId });
 
-  if (insertError) {
-    if (isUniqueViolation(insertError)) {
-      return { error: "このユーザーは既にownerとして登録されています。" };
-    }
+  const alreadyOwner = insertError && isUniqueViolation(insertError);
+  if (insertError && !alreadyOwner) {
     console.error("assignOwner insert error:", insertError.message);
     return { error: "owner登録に失敗しました。" };
   }
 
+  // 既にowner登録済みの再実行でもrole/setを再同期できるよう、常に実行する
+  const { error: profileError } = await setOwnerProfileState(masterSupabase, {
+    userId: ownerUserId,
+    isNewInvite,
+  });
+
+  if (profileError) {
+    console.error("assignOwner profiles update error:", profileError.message);
+    return { error: "アカウント状態の更新に失敗しました。" };
+  }
+
   revalidatePath("/dashboard/admin/organizations");
+
+  if (alreadyOwner) {
+    return { error: "このユーザーは既にownerとして登録されています。" };
+  }
   return { success: true };
 }
 
@@ -141,6 +165,26 @@ export async function removeOwner(organizationId, userId) {
   if (error) {
     console.error("removeOwner error:", error.message);
     return { error: "ownerの削除に失敗しました。" };
+  }
+
+  // 他に所有している組織が残っていなければ、role="organization"のまま
+  // /dashboard/organizationへ誘導され続けてしまう（ページ側は「owner権限なし」で
+  // /dashboardへ戻すため、ミドルウェアとの間で無限リダイレクトになる）。
+  // 未設定状態に戻し、必要なら改めてassignOwnerで再割り当てする。
+  const { data: remainingOwnerships } = await masterSupabase
+    .from("organization_owners")
+    .select("organization_id")
+    .eq("user_id", userId)
+    .limit(1);
+
+  if (!remainingOwnerships || remainingOwnerships.length === 0) {
+    const { error: profileError } = await masterSupabase
+      .from("profiles")
+      .update({ role: "pending", set: false })
+      .eq("id", userId);
+    if (profileError) {
+      console.error("removeOwner profiles reset error:", profileError.message);
+    }
   }
 
   revalidatePath("/dashboard/admin/organizations");

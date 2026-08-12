@@ -80,6 +80,29 @@ function roleDestinationFor(role, pathname, isProfileSet) {
     return null;
   }
 
+  // organization: user/mentorと同じ構造で、setAccountの代わりにパスワード設定ページへ誘導する
+  if (role === "organization") {
+    if (isProfileSet === true) {
+      if (pathname === "/dashboard/organization/setPassword") {
+        return "/dashboard/organization";
+      }
+    }
+    if (
+      pathname === "/setAccount" ||
+      pathname === "/setAccount/user" ||
+      pathname === "/setAccount/mentor" ||
+      pathname === "/" ||
+      pathname === "/login" ||
+      pathname.startsWith("/signup") ||
+      pathname === "/dashboard" ||
+      pathname === "/dashboard/user" ||
+      pathname === "/dashboard/mentor"
+    ) {
+      return isProfileSet === false ? "/dashboard/organization/setPassword" : "/dashboard/organization";
+    }
+    return null;
+  }
+
   return null;
 }
 
