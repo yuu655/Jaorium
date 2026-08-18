@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 
 const { sendMock } = vi.hoisted(() => ({ sendMock: vi.fn(async () => ({})) }));
-vi.mock("resend", () => ({
-  Resend: vi.fn(function Resend() {
-    this.emails = { send: sendMock };
-  }),
+vi.mock("nodemailer", () => ({
+  default: {
+    createTransport: vi.fn(() => ({ sendMail: sendMock })),
+  },
 }));
 
 import { sendContactEmail } from "./actions";

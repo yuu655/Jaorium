@@ -1,9 +1,17 @@
 'use server';
 
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { z } from 'zod';
 
-const resend = new Resend(process.env.SMTP_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: 'smtp.zoho.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.ZOHO_SMTP_USER,
+    pass: process.env.ZOHO_SMTP_PASSWORD,
+  },
+});
 
 const contactSchema = z.object({
   name: z.string().min(1, '名前を入力してください').max(50),
@@ -22,9 +30,9 @@ function parseContactForm(formData) {
 }
 
 async function sendContactNotificationEmail({ name, email, message }) {
-  return resend.emails.send({
-    from: 'jaorium_contact@jaorium.com',
-    to: 'kazuto335.yama@gmail.com',
+  return transporter.sendMail({
+    from: process.env.ZOHO_SMTP_USER,
+    to: 'support@jaorium.com',
     replyTo: email,
     subject: `お問い合わせ: ${name}`,
     html: `
