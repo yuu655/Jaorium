@@ -1,0 +1,49 @@
+import Header from "@/components/header";
+import Footer from "@/components/footer";
+import Hero from "@/components/home/hero";
+import Concept from "@/components/home/concept";
+import AdContact from "@/components/home/adContact";
+import Mentors from "@/components/home/mentors";
+import Articles from "@/components/home/articles";
+import TimeLine from "@/components/home/timeLine";
+import HowWork from "@/components/home/howWork";
+import ForCompany from "@/components/home/forCompany";
+import Features from "@/components/home/features";
+
+export default async function Home() {
+  return (
+    <>
+      {/* <Header propClassName="bg-white shadow-md relative z-0" /> */}
+
+      <Hero />
+      
+      <Concept />
+      {/* <section>
+        <TimeLine />
+      </section> */}
+      <Features />
+      <section>
+        <Mentors />
+      </section>
+      <section>
+        <HowWork />
+      </section>
+      {/* <section>
+        <AdContact />
+      </section> */}
+      <section>
+        <Articles />
+      </section>
+
+      {/* <ForCompany /> */}
+
+      
+
+      {/* <div className="flex min-h-screen items-center justify-center bg-white">
+        <main className="flex min-h-screen w-full max-w-5xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+          <Link href={`/articles`}>ニュース</Link>
+        </main>
+      </div> */}
+    </>
+  );
+}

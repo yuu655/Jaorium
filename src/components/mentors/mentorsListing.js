@@ -1,10 +1,11 @@
 "use client";
 
-import Mentor from "@/components/mentor";
+import MentorCard from "@/components/mentors/MentorCard";
 import { Search, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
-export default function Mentors({ diagState, setDiagState, currentQIndex, diagnosisQuestions, handleAnswer, resetDiagnosis, tagGroups, toggleTag, filteredMentors, selectedTags, searchTerm, setSearchTerm }) {
+export default function Mentors({ diagState, setDiagState, currentQIndex, diagnosisQuestions, handleAnswer, resetDiagnosis, tagGroups, toggleTag, filteredMentors, selectedTags, searchTerm, setSearchTerm, mentorTagsMap, tags }) {
+  const tagById = Object.fromEntries((tags ?? []).map((t) => [t.id, t]));
   return (
     <div className="bg-white min-h-screen">
       {/* Header */}
@@ -202,7 +203,14 @@ export default function Mentors({ diagState, setDiagState, currentQIndex, diagno
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredMentors.map((mentor) => (
               <div key={mentor.id}>
-                <Mentor mentor={mentor} toggleTag={toggleTag} />
+                <MentorCard
+                  mentor={mentor}
+                  reviewSum={mentor.review_sum}
+                  tagNames={(mentorTagsMap?.[mentor.id] ?? [])
+                    .map(({ tag_id }) => tagById[tag_id])
+                    .filter(Boolean)}
+                  onTagClick={toggleTag}
+                />
               </div>
             ))}
           </div>
