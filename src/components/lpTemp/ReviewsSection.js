@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { FileText, Star, TrendingUp, ChevronsRight, ChevronsLeft, Quote } from "lucide-react";
 
+const R2_LP_URL = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/LP`;
+
 const stats = [
   {
     icon: FileText,
@@ -30,17 +32,17 @@ const voices = [
   {
     quote: "大学生にしか分からない大学のリアルを知ることができ、大学入学後の自分を想像できました。",
     tag: "高校2年生",
-    image: "/jaorium_LP/sympathy/1.png",
+    image: `${R2_LP_URL}/sympathy/1.webp`,
   },
   {
     quote: "勉強の仕方や考え方、総合型の情報を教えてもらえて、とても参考になりました。",
     tag: "高校3年生",
-    image: "/jaorium_LP/sympathy/2.png",
+    image: `${R2_LP_URL}/sympathy/2.webp`,
   },
   {
     quote: "九大生から、受験までの流れや対策、メンタルの保ち方、計画の大切さを知ることができました。",
     tag: "高校3年生",
-    image: "/jaorium_LP/sympathy/3.png",
+    image: `${R2_LP_URL}/sympathy/3.webp`,
   },
 ];
 

@@ -12,6 +12,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "rmjjlkxqtrpuhemmjlun.supabase.co",
       },
+      {
+        protocol: "https",
+        hostname: "pub-82fd75c747c5482d817c65b49817a015.r2.dev",
+      },
     ],
   },
   turbopack: {

@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+const R2_LP_URL = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/LP`;
+
 const searchResults = [
   { univ: "東京大学 文科一類 2年", name: "田中 健太", tags: ["一般入試", "文系"] },
   { univ: "早稲田大学 教育学部 3年", name: "佐藤 美咲", tags: ["総合型選抜", "文系"] },
@@ -179,7 +181,7 @@ export default function HowToStartSection() {
           <StepShell n={4} title="オンライン面談">
             <div className="relative flex-1 min-h-60 rounded-xl overflow-hidden">
               <Image
-                src="/jaorium_LP/start/1.png"
+                src={`${R2_LP_URL}/start/1.webp`}
                 alt=""
                 fill
                 className="object-cover"

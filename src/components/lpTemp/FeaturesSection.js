@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import SlidePreview from "./SlidePreviewClient";
 
+const R2_LP_URL = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/LP`;
+
 export default function FeaturesSection() {
   return (
     <section className="bg-slate-50 py-14 lg:py-24 px-6">
@@ -32,7 +34,7 @@ export default function FeaturesSection() {
             </div>
             <div className="relative h-[25vh] lg:h-full lg:row-span-2 rounded-xl overflow-hidden my-4 lg:my-0">
               <Image
-                src="/jaorium_LP/charactar/1.jpg"
+                src={`${R2_LP_URL}/charactar/1.webp`}
                 alt=""
                 fill
                 className="object-cover"
@@ -89,7 +91,7 @@ export default function FeaturesSection() {
             </div>
             <div className="relative h-[25vh] lg:h-full lg:row-span-2 rounded-xl overflow-hidden my-4 lg:my-0">
               <Image
-                src="/jaorium_LP/charactar/2.png"
+                src={`${R2_LP_URL}/charactar/2.webp`}
                 alt=""
                 fill
                 className="object-cover"

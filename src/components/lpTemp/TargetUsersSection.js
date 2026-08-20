@@ -12,10 +12,12 @@ import {
   Search,
 } from "lucide-react";
 
+const R2_LP_URL = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/LP`;
+
 const groups = [
   {
     icon: School,
-    image: "/jaorium_LP/users/1.png",
+    image: `${R2_LP_URL}/users/1.webp`,
     title: "志望校選びに",
     questions: [
       "◯◯学部と△△学部、実際どう違う？",
@@ -25,7 +27,7 @@ const groups = [
   },
   {
     icon: BookOpen,
-    image: "/jaorium_LP/users/2.png",
+    image: `${R2_LP_URL}/users/2.webp`,
     title: "受験勉強について",
     questions: [
       "共通テストの勉強法が知りたい",
@@ -35,7 +37,7 @@ const groups = [
   },
   {
     icon: ClipboardCheck,
-    image: "/jaorium_LP/users/3.jpg",
+    image: `${R2_LP_URL}/users/3.webp`,
     title: "入試本番について",
     questions: [
       "面接って何を聞かれたの？",
@@ -45,7 +47,7 @@ const groups = [
   },
   {
     icon: Users,
-    image: "/jaorium_LP/users/4.png",
+    image: `${R2_LP_URL}/users/4.webp`,
     title: "入学してからのこと",
     questions: [
       "実際に通ってみてギャップはありましたか？",

@@ -1,24 +1,26 @@
 import Image from "next/image";
 import { Laptop, MessagesSquare, Clock } from "lucide-react";
 
+const R2_LP_URL = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/LP`;
+
 const items = [
   {
     icon: Laptop,
     title: "ネットの情報が多すぎて、何が正しいか分からない",
     body: "ネットやSNSには情報があふれていて、結局どれを信じればいいのか分からない…。自分に合った情報にたどり着けない。",
-    image: "/jaorium_LP/sympathy/1.png",
+    image: `${R2_LP_URL}/sympathy/1.webp`,
   },
   {
     icon: MessagesSquare,
     title: "実際に受かった先輩に話を聞くのは難しい",
     body: "学校や塾に自分の志望校の先輩がいない。聞きたくても、知り合いがいなくて相談できない。",
-    image: "/jaorium_LP/sympathy/2.png",
+    image: `${R2_LP_URL}/sympathy/2.webp`,
   },
   {
     icon: Clock,
     title: "オープンキャンパスは時間もお金もかかる",
     body: "遠方の大学に行くには交通費や宿泊費がかかるし、日程も限られていて、気軽に行けない。",
-    image: "/jaorium_LP/sympathy/3.png",
+    image: `${R2_LP_URL}/sympathy/3.webp`,
   },
 ];
 

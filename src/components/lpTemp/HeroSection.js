@@ -2,6 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
+const heroImage = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/LP/hero/hero_girl.webp`;
+
 const bubbles = [
   "面接ってどんなこと聞かれたの？",
   "２つの大学学部で迷ってるけど違いがわからない…",
@@ -55,7 +57,7 @@ export default function HeroSection() {
       <div className="lg:hidden">
         <div className="relative h-57.5 bg-blue-50 overflow-hidden">
           <Image
-            src="/jaorium_LP/hero/hero_girl.png"
+            src={heroImage}
             alt=""
             fill
             priority
@@ -82,7 +84,7 @@ export default function HeroSection() {
       <div className="hidden lg:block relative overflow-hidden">
         <div className="absolute inset-0">
           <Image
-            src="/jaorium_LP/hero/hero_girl.png"
+            src={heroImage}
             alt=""
             fill
             priority
