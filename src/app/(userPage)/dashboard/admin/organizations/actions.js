@@ -1,7 +1,7 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { revalidatePath } from "next/cache";
 import getUrls from "@/utils/getUrls";
 
@@ -25,32 +25,6 @@ async function setOwnerProfileState(masterSupabase, { userId, isNewInvite }) {
     .from("profiles")
     .update({ role: "organization", set: !isNewInvite })
     .eq("id", userId);
-}
-
-async function getCurrentUser(supabase) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
-}
-
-async function isCallerAdmin(supabase, userId) {
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .single();
-  return !error && profile?.role === "admin";
-}
-
-async function requireAdmin() {
-  const supabase = await createClient();
-  const user = await getCurrentUser(supabase);
-  if (!user) return { error: "ログインが必要です。" };
-  if (!(await isCallerAdmin(supabase, user.id))) {
-    return { error: "権限がありません。" };
-  }
-  return { user };
 }
 
 // ---- Server Actions（オーケストレーション） ----

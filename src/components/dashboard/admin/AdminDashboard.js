@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2 } from "lucide-react";
+import { Building2, Users } from "lucide-react";
 import AdminAppointmentContent from "./AdminAppointmentContent";
 
 // import { updateUserIcon, updateUserProfile } from "../profile/actions";
@@ -13,7 +13,14 @@ export default function AdminDashboard({ meetings }) {
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end gap-4 mb-4">
+          <Link
+            href="/dashboard/admin/mentors"
+            className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
+            <Users size={16} />
+            メンター管理
+          </Link>
           <Link
             href="/dashboard/admin/organizations"
             className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
