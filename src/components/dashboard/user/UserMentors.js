@@ -1,9 +1,30 @@
 "use client";
 
-import { Search, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import {
+  Search,
+  Sparkles,
+  Loader2,
+  RefreshCw,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import Mentor from "../mentor";
+import Pagination from "@/components/common/pagination";
+import MentorFilterSheet from "@/components/mentors/MentorFilterSheet";
+import { buildTagById, getMentorTags } from "@/lib/mentorFilter";
 
-export default function UserMentors({ diagState, setDiagState, currentQIndex, diagnosisQuestions, resetDiagnosis, tagGroups, toggleTag, filteredMentors, selectedTags, searchTerm, setSearchTerm, handleAnswer }) {
+export default function UserMentors({ diagState, setDiagState, currentQIndex, diagnosisQuestions, resetDiagnosis, tagGroups, toggleTag, clearTags, clearFilters, filteredMentors, pagedMentors, page, totalPages, pageSize, goToPage, selectedTags, searchTerm, setSearchTerm, handleAnswer, mentorTagsMap, tags }) {
+  const tagById = buildTagById(tags);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const handlePageChange = (nextPage) => {
+    goToPage(nextPage);
+    document
+      .getElementById("mentor-list")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <div className="bg-white">
       <section className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden my-12 relative max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -110,87 +131,140 @@ export default function UserMentors({ diagState, setDiagState, currentQIndex, di
         </div>
       </section>
 
-      {/* Search and Filter */}
-      <section className="py-8 bg-white border-b">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={20}
-              />
-              <input
-                type="text"
-                placeholder="名前、大学、専門分野で検索..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-              />
+      {/* 検索 + 絞り込み。一覧をスクロールしても画面上部に残す。 */}
+      <section className="sticky top-0 z-30 border-b border-[#E4E7EB] bg-white/94 py-3.5 shadow-[0_2px_10px_rgba(31,35,40,.05)] backdrop-blur-md lg:py-4.5">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-4.5">
+            <div className="flex items-center gap-2.5 lg:flex-1 lg:gap-4.5">
+              <div className="relative flex-1">
+                <Search
+                  className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[#98A0AA]"
+                  size={17}
+                />
+                <input
+                  type="text"
+                  placeholder="名前、大学、学部、タグで検索（スペースでAND検索）"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded-[10px] border border-[#D5D9DF] py-3.5 pr-10 pl-11 text-[13.5px] text-[#1F2328] placeholder:text-[#98A0AA] focus:border-[#2563EB] focus:ring-3 focus:ring-[#2563EB]/12 focus:outline-none"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    aria-label="検索キーワードをクリア"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-[#98A0AA] transition-colors hover:text-[#1F2328]"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(true)}
+                className="flex flex-none items-center gap-2 rounded-[10px] border-1.5 border-[#1F2328] px-4 py-3.25 text-[13px] font-bold whitespace-nowrap text-[#1F2328] transition-colors hover:bg-[#1F2328] hover:text-white lg:gap-2.25 lg:px-6 lg:text-sm"
+              >
+                <SlidersHorizontal size={17} />
+                絞り込み
+                {selectedTags.length > 0 && (
+                  <span className="rounded-full bg-[#2563EB] px-2 py-0.75 text-[11px] leading-none font-bold text-white">
+                    {selectedTags.length}
+                  </span>
+                )}
+              </button>
             </div>
 
-            {/* Region Filter */}
-            {/* <select
-              value={selectedRegion}
-              onChange={(e) => setSelectedRegion(e.target.value)}
-              className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-            >
-              {regions.map((region) => (
-                <option key={region} value={region}>
-                  {region}
-                </option>
-              ))}
-            </select> */}
-          </div>
-        </div>
-      </section>
-
-      <section className="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {tagGroups.map((group) => (
-          <div key={group.label} className="mb-4">
-            <p className="text-xs text-gray-400 mb-2">{group.label}</p>
-            <div className="flex flex-wrap gap-2">
-              {group.tags.map((tag) => (
-                <button
-                  key={tag.id}
-                  onClick={() => toggleTag(tag.id)}
-                  className={`px-3 py-1.5 rounded-full text-sm border transition-all ${
-                    selectedTags.includes(tag.id)
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-gray-700 border-gray-200 hover:border-blue-400"
-                  }`}
-                >
-                  {tag.name}
-                </button>
-                //               <button
-                //   key={tag.id}
-                //   onClick={() => toggleTag(tag.id)}
-                //   className={`... ${selectedTags.includes(tag.id) ? "bg-blue-600 ..." : "..."}`}
-                // >
-                //   {tag.name}
-                // </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </section>
-
-      {/* Mentors Grid */}
-      <section id="mentor-list" className="py-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-6">
-            <p className="text-gray-600">
-              {filteredMentors.length}名のメンターが見つかりました
+            <p className="text-[13px] whitespace-nowrap text-[#4B5563]">
+              <span className="text-xl font-bold text-[#1F2328]">
+                {filteredMentors.length}
+              </span>
+              {" 名のメンター"}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-            {filteredMentors.map((mentor) => (
-              <div key={mentor.id}>
-                <Mentor mentor={mentor} toggleTag={toggleTag} />
+          {/* 選択中のタグ。ここから個別に外せる。 */}
+          {selectedTags.length > 0 && (
+            <div className="mt-2.5 flex items-center gap-1.75 overflow-x-auto pb-0.5 lg:mt-3 lg:flex-wrap lg:overflow-x-visible">
+              {selectedTags.map((tagId) => (
+                <button
+                  key={tagId}
+                  type="button"
+                  onClick={() => toggleTag(tagId)}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#2563EB] bg-[#2563EB] px-3.5 py-2 text-xs leading-none font-bold whitespace-nowrap text-white transition-colors hover:bg-[#1D4ED8]"
+                >
+                  {tagById[tagId]?.name ?? "タグ"}
+                  <X size={13} strokeWidth={2.5} />
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={clearTags}
+                className="shrink-0 px-1 text-xs font-medium text-[#2F5FD0] hover:underline"
+              >
+                解除
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <MentorFilterSheet
+        open={isFilterOpen}
+        onOpenChange={setIsFilterOpen}
+        tagGroups={tagGroups}
+        selectedTags={selectedTags}
+        toggleTag={toggleTag}
+        clearTags={clearTags}
+        resultCount={filteredMentors.length}
+      />
+
+      {/* Mentors Grid */}
+      <section id="mentor-list" className="py-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {filteredMentors.length > 0 && (
+            <p className="mb-6 text-sm text-[#98A0AA]">
+              {(page - 1) * pageSize + 1}〜
+              {Math.min(page * pageSize, filteredMentors.length)}件目を表示 （
+              {page} / {totalPages}ページ）
+            </p>
+          )}
+
+          {filteredMentors.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-gray-600 mb-4">
+                条件に合うメンターが見つかりませんでした。
+              </p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-full shadow-md transition-all duration-200"
+              >
+                検索条件をクリア
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+                {pagedMentors.map((mentor) => (
+                  <div key={mentor.id}>
+                    <Mentor
+                      mentor={mentor}
+                      toggleTag={toggleTag}
+                      tagNames={getMentorTags(mentor.id, mentorTagsMap, tagById)}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                label="メンター一覧のページ送り"
+              />
+            </>
+          )}
         </div>
       </section>
     </div>

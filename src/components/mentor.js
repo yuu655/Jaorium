@@ -12,9 +12,16 @@ import Icon from "./dashboard/profile/icon";
 import { is } from "zod/v4/locales";
 
 const supabase = createClient();
-export default function Mentor({ mentor, toggleTag, isTop = false }) {
-  const [tags, setTags] = useState([]);
+export default function Mentor({ mentor, toggleTag, tagNames, isTop = false }) {
+  const [fetchedTags, setFetchedTags] = useState([]);
+  // 一覧側でmentorTagsMapから解決済みのタグを渡された場合はそれを使う。
+  // 渡されない呼び出し元のために、自前で取りに行くフォールバックを残している。
+  const hasProvidedTags = Boolean(tagNames);
+  const tags = tagNames ?? fetchedTags;
+
   useEffect(() => {
+    if (hasProvidedTags) return;
+
     const fetchAll = async () => {
       // まずtag_idを取得
       const { data, error } = await supabase
@@ -33,15 +40,15 @@ export default function Mentor({ mentor, toggleTag, isTop = false }) {
         ),
       );
 
-      const tagNames = tagResults
-        .filter(({ error }) => !error)
-        .map(({ data }) => ({ name: data.name, id: data.id }));
-
-      setTags(tagNames);
+      setFetchedTags(
+        tagResults
+          .filter(({ error }) => !error)
+          .map(({ data }) => ({ name: data.name, id: data.id })),
+      );
     };
 
     fetchAll();
-  }, []);
+  }, [mentor.id, hasProvidedTags]);
   // console.log(mentor);
   return (
     <>

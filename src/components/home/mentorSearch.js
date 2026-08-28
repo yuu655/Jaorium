@@ -1,6 +1,8 @@
 "use client";
 
 import Mentor from "@/components/mentor";
+import Pagination from "@/components/common/pagination";
+import { buildTagById, getMentorTags } from "@/lib/mentorFilter";
 import { Search, Sparkles, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
@@ -14,10 +16,25 @@ export default function MentorSearchInner({
   tagGroups,
   toggleTag,
   filteredMentors,
+  pagedMentors,
+  page,
+  totalPages,
+  goToPage,
   selectedTags,
   searchTerm,
   setSearchTerm,
+  mentorTagsMap,
+  tags,
 }) {
+  const tagById = buildTagById(tags);
+
+  const handlePageChange = (nextPage) => {
+    goToPage(nextPage);
+    document
+      .getElementById("diagnosis-result")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div className="w-full">
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden my-12 relative max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -86,7 +103,10 @@ export default function MentorSearchInner({
 
           {/* 状態4: 結果表示 */}
           {diagState === "result" && (
-            <div className="text-center animate-in zoom-in fade-in duration-500">
+            <div
+              id="diagnosis-result"
+              className="text-center animate-in zoom-in fade-in duration-500"
+            >
               <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Sparkles className="w-8 h-8 text-green-500" />
               </div>
@@ -101,10 +121,19 @@ export default function MentorSearchInner({
                   </span> */}
               </p>
 
-              <ul className="grid grid-cols-1 md:grid-cols-3 gap-10 w-full md:flex-row">
-                {filteredMentors.map((mentor) => (
-                  <li key={mentor.id} className="w-full h-full md:w-1/3">
-                    {/* <Mentor
+              {filteredMentors.length === 0 ? (
+                <p className="text-gray-500 mb-8">
+                  条件に合うメンターが見つかりませんでした。「やり直す」から条件を変えてみてください。
+                </p>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-400 mb-4">
+                    該当{filteredMentors.length}名（{page} / {totalPages}ページ）
+                  </p>
+                  <ul className="grid grid-cols-1 md:grid-cols-3 gap-10 w-full md:flex-row">
+                    {pagedMentors.map((mentor) => (
+                      <li key={mentor.id} className="w-full h-full md:w-1/3">
+                        {/* <Mentor
                         icon_url={mentor.icon.url}
                         name={mentor.name}
                         university={mentor.university}
@@ -112,11 +141,26 @@ export default function MentorSearchInner({
                         region={mentor.region}
                         specialties={mentor.specialties}
                       /> */}
-                    <Mentor mentor={mentor} />
-                  </li>
-                ))}
-              </ul>
-              <div className="flex gap-4 justify-center">
+                        <Mentor
+                          mentor={mentor}
+                          tagNames={getMentorTags(
+                            mentor.id,
+                            mentorTagsMap,
+                            tagById,
+                          )}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                  <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    label="診断結果のページ送り"
+                  />
+                </>
+              )}
+              <div className="flex gap-4 justify-center mt-8">
                 <button
                   onClick={resetDiagnosis}
                   className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 font-medium py-2.5 px-6 rounded-full transition-all duration-200"

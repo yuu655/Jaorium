@@ -1,17 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { setMentorAdminAllow } from "@/app/(userPage)/dashboard/admin/mentors/actions";
+import Pagination from "@/components/common/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  getTotalPages,
+  clampPage,
+  paginate,
+} from "@/lib/pagination";
 
-export default function AdminMentorList({ mentors }) {
+export default function AdminMentorList({ mentors, pageSize = DEFAULT_PAGE_SIZE }) {
   const router = useRouter();
   const [pendingOnly, setPendingOnly] = useState(false);
   const [busyId, setBusyId] = useState(null);
+  const [page, setPage] = useState(1);
 
   const visibleMentors = pendingOnly
     ? mentors.filter((mentor) => !mentor.adminAllow)
     : mentors;
+
+  // 絞り込みを切り替えたら1ページ目に戻す。
+  useEffect(() => {
+    setPage(1);
+  }, [pendingOnly, mentors]);
+
+  const totalPages = getTotalPages(visibleMentors.length, pageSize);
+  const currentPage = clampPage(page, totalPages);
+  const pagedMentors = paginate(visibleMentors, currentPage, pageSize);
 
   const handleToggle = async (mentor) => {
     setBusyId(mentor.id);
@@ -40,7 +57,15 @@ export default function AdminMentorList({ mentors }) {
       </div>
 
       <p className="text-sm text-gray-500">
-        {visibleMentors.length}名を表示中（全{mentors.length}名）
+        {visibleMentors.length}名該当（全{mentors.length}名）
+        {visibleMentors.length > 0 && (
+          <>
+            {" "}
+            / {(currentPage - 1) * pageSize + 1}〜
+            {Math.min(currentPage * pageSize, visibleMentors.length)}件目を表示（
+            {currentPage} / {totalPages}ページ）
+          </>
+        )}
       </p>
 
       <section className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
@@ -58,7 +83,7 @@ export default function AdminMentorList({ mentors }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {visibleMentors.map((mentor) => (
+                {pagedMentors.map((mentor) => (
                   <tr key={mentor.id}>
                     <td className="px-4 py-3 font-medium text-gray-900">{mentor.name}</td>
                     <td className="px-4 py-3 text-gray-600 break-all">{mentor.email}</td>
@@ -97,6 +122,13 @@ export default function AdminMentorList({ mentors }) {
           </div>
         )}
       </section>
+
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        label="メンター管理一覧のページ送り"
+      />
     </div>
   );
 }

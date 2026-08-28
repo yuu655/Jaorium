@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { fetchMentorDirectory } from "@/lib/mentorDirectory";
 
 import HeroSection from "@/components/lpTemp/HeroSection";
 import RegisteredMentorsStrip from "@/components/lpTemp/RegisteredMentorsStrip";
@@ -15,43 +16,12 @@ import FaqSection from "@/components/lpTemp/FaqSection";
 import FinalCtaSection from "@/components/lpTemp/FinalCtaSection";
 import MobileStickyCta from "@/components/lpTemp/MobileStickyCta";
 
-const fetchMentorTags = async (mentorId, supabase) => {
-  const { data } = await supabase
-    .from("mentor_tags")
-    .select("tag_id")
-    .eq("mentor_id", mentorId);
-  return data;
-};
-
-const hasIcon = (mentor) => Boolean(mentor?.icon);
-
 const getMentors = (supabase) =>
   unstable_cache(
     async () => {
-      const [{ data: mentors }, { data: tags }] = await Promise.all([
-        supabase.from("public_mentors").select("*"),
-        supabase.from("tags").select("*"),
-      ]);
-
-      const mentorTagsMap = Object.fromEntries(
-        await Promise.all(
-          (mentors ?? []).map(async (mentor) => [
-            mentor.id,
-            await fetchMentorTags(mentor.id, supabase),
-          ]),
-        ),
-      );
-
-      // アイコンを設定しているメンターを先に表示する(同条件内の順序は元のまま)。
-      const sortedMentors = [...(mentors ?? [])].sort(
-        (a, b) => hasIcon(b) - hasIcon(a),
-      );
-
-      return {
-        allMentors: sortedMentors,
-        mentorTagsMap,
-        tags,
-      };
+      const { mentors, mentorTagsMap, tags } =
+        await fetchMentorDirectory(supabase);
+      return { allMentors: mentors, mentorTagsMap, tags };
     },
     ["mentors-list"],
     { revalidate: 3600, tags: ["mentors"] },

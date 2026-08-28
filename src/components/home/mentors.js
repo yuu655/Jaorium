@@ -5,39 +5,17 @@ import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import MentorSearch from "@/components/common/mentorSearch";
 import MentorSearchInner from "./mentorSearch";
-const fetchMentorTags = async (mentorId, supabase) => {
-  const { data } = await supabase
-    .from("mentor_tags")
-    .select("tag_id")
-    .eq("mentor_id", mentorId);
-  return data;
-};
+import { fetchMentorDirectory } from "@/lib/mentorDirectory";
+import { buildTagById, getMentorTags } from "@/lib/mentorFilter";
+
 const getMentors = (supabase) =>
   unstable_cache(
     async () => {
-      // mentor_secretはRLSで本人しか読めず、一般ユーザー・未ログインからは0行になる。
-      // admin_allowでの絞り込みはpublic_mentorsビュー(公開カラムのみ)に任せる。
-      const [{ data: mentors }, { data: tags }] =
-        await Promise.all([
-          supabase.from("public_mentors").select("*"),
-          supabase.from("tags").select("*"),
-        ]);
-
-      const mentorTagsMap = Object.fromEntries(
-        await Promise.all(
-          mentors.map(async (mentor) => [
-            mentor.id,
-            await fetchMentorTags(mentor.id, supabase),
-          ]),
-        ),
-      );
-      // const { data: mentors } = await supabase
-      //   .from("mentors")
-      //   .select("*")
-      //   .limit(3);
+      const { mentors, mentorTagsMap, tags } =
+        await fetchMentorDirectory(supabase);
       return {
         mentors: mentors.slice(0, 3),
-        allMentors: mentors ?? [],
+        allMentors: mentors,
         mentorTagsMap,
         tags,
       };
@@ -59,6 +37,7 @@ export default async function Mentors() {
   // console.log(mentors);
   const supabase = await createClient();
   const { mentors, allMentors, mentorTagsMap, tags } = await getMentors(supabase)();
+  const tagById = buildTagById(tags);
   return (
     <>
       <div className="bg-gray-50">
@@ -71,6 +50,8 @@ export default async function Mentors() {
             mentors={allMentors}
             mentorTagsMap={mentorTagsMap}
             tags={tags}
+            /* トップの診断結果はカード内に収める見せ方なので3列×3行ぶんで区切る */
+            pageSize={9}
           >
             <MentorSearchInner />
           </MentorSearch>
@@ -85,7 +66,11 @@ export default async function Mentors() {
                 region={mentor.region}
                 specialties={mentor.specialties}
               /> */}
-                <Mentor mentor={mentor} isTop={true} />
+                <Mentor
+                  mentor={mentor}
+                  isTop={true}
+                  tagNames={getMentorTags(mentor.id, mentorTagsMap, tagById)}
+                />
               </li>
             ))}
           </ul>

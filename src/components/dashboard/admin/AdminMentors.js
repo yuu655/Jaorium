@@ -1,9 +1,21 @@
 "use client";
 
-import { Search, Sparkles, Loader2, RefreshCw } from "lucide-react";
+import { Search, Sparkles, Loader2, RefreshCw, X } from "lucide-react";
 import Mentor from "../mentor";
+import Pagination from "@/components/common/pagination";
+import { buildTagById, getMentorTags } from "@/lib/mentorFilter";
 
-export default function AdminMentors({ diagState, setDiagState, currentQIndex, diagnosisQuestions, resetDiagnosis, tagGroups, toggleTag, filteredMentors, selectedTags, searchTerm, setSearchTerm, handleAnswer }) {
+export default function AdminMentors({ diagState, setDiagState, currentQIndex, diagnosisQuestions, resetDiagnosis, tagGroups, toggleTag, clearFilters, filteredMentors, pagedMentors, page, totalPages, pageSize, goToPage, selectedTags, searchTerm, setSearchTerm, handleAnswer, mentorTagsMap, tags }) {
+  const hasFilters = selectedTags.length > 0 || searchTerm.trim() !== "";
+  const tagById = buildTagById(tags);
+
+  const handlePageChange = (nextPage) => {
+    goToPage(nextPage);
+    document
+      .getElementById("mentor-list")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <div className="bg-white">
       <section className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden my-12 relative max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -122,11 +134,21 @@ export default function AdminMentors({ diagState, setDiagState, currentQIndex, d
               />
               <input
                 type="text"
-                placeholder="名前、大学、専門分野で検索..."
+                placeholder="名前、大学、学部、タグで検索...(スペース区切りでAND検索)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  aria-label="検索キーワードをクリア"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
 
             {/* Region Filter */}
@@ -146,6 +168,18 @@ export default function AdminMentors({ diagState, setDiagState, currentQIndex, d
       </section>
 
       <section className="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {hasFilters && (
+          <div className="flex justify-end mb-4">
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+            >
+              <X size={14} />
+              検索条件をクリア
+            </button>
+          </div>
+        )}
         {tagGroups.map((group) => (
           <div key={group.label} className="mb-4">
             <p className="text-xs text-gray-400 mb-2">{group.label}</p>
@@ -178,19 +212,54 @@ export default function AdminMentors({ diagState, setDiagState, currentQIndex, d
       {/* Mentors Grid */}
       <section id="mentor-list" className="py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-6">
+          <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
             <p className="text-gray-600">
               {filteredMentors.length}名のメンターが見つかりました
             </p>
+            {filteredMentors.length > 0 && (
+              <p className="text-sm text-gray-400">
+                {(page - 1) * pageSize + 1}〜
+                {Math.min(page * pageSize, filteredMentors.length)}件目を表示 （
+                {page} / {totalPages}ページ）
+              </p>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-            {filteredMentors.map((mentor) => (
-              <div key={mentor.id}>
-                <Mentor mentor={mentor} toggleTag={toggleTag} />
+          {filteredMentors.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-gray-600 mb-4">
+                条件に合うメンターが見つかりませんでした。
+              </p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-full shadow-md transition-all duration-200"
+              >
+                検索条件をクリア
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+                {pagedMentors.map((mentor) => (
+                  <div key={mentor.id}>
+                    <Mentor
+                      mentor={mentor}
+                      toggleTag={toggleTag}
+                      tagNames={getMentorTags(mentor.id, mentorTagsMap, tagById)}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                label="メンター一覧のページ送り"
+              />
+            </>
+          )}
         </div>
       </section>
     </div>

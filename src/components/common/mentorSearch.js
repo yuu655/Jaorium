@@ -1,26 +1,17 @@
 "use client";
 
-import { useState, useEffect, cloneElement, Children } from "react";
-import Mentor from "@/components/mentor";
-import { createClient } from "@/lib/supabase/client";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  Sparkles,
-  Loader2,
-  RefreshCw,
-} from "lucide-react";
-import Link from "next/link";
+import { useState, useEffect, useMemo, cloneElement, Children } from "react";
+import { filterMentors } from "@/lib/mentorFilter";
+import { DEFAULT_PAGE_SIZE, getTotalPages, clampPage } from "@/lib/pagination";
 
 export default function MentorSearch({
   mentors,
   mentorTagsMap,
   tags,
+  pageSize = DEFAULT_PAGE_SIZE,
   children,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredMentors, setFilteredMentors] = useState(mentors);
   // const [selectedRegion, setSelectedRegion] = useState("すべて");
   const [diagState, setDiagState] = useState("idle");
   const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -74,7 +65,7 @@ export default function MentorSearch({
   };
 
   const tagGroups = Object.entries(
-    tags.reduce((acc, tag) => {
+    (tags ?? []).reduce((acc, tag) => {
       if (!acc[tag.category]) acc[tag.category] = [];
       acc[tag.category].push(tag);
       return acc;
@@ -91,6 +82,14 @@ export default function MentorSearch({
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
+  };
+
+  // タグだけ解除(キーワードは残す)。絞り込みパネルの「すべて解除」用。
+  const clearTags = () => setSelectedTags([]);
+
+  const clearFilters = () => {
+    setSelectedTags([]);
+    setSearchTerm("");
   };
 
   const handleAnswer = (keyword) => {
@@ -131,26 +130,34 @@ export default function MentorSearch({
     }
   }, [diagState, collectedKeywords]);
 
+  const filteredMentors = useMemo(
+    () =>
+      filterMentors({
+        mentors,
+        mentorTagsMap,
+        tags,
+        searchTerm,
+        selectedTags,
+      }),
+    [mentors, mentorTagsMap, tags, searchTerm, selectedTags],
+  );
+
+  // ページネーション。検索条件が変わったら1ページ目に戻す。
+  const [page, setPage] = useState(1);
+
   useEffect(() => {
-    const terms = searchTerm.split(" ");
-    const filtered = mentors.filter((mentor) => {
-      const matchesTags = selectedTags.every((tagId) =>
-        mentorTagsMap[mentor.id]?.some((mt) => mt.tag_id === tagId),
-      );
-      const matchesText = terms.every((term) => {
-        const matchesSearch =
-          mentor.name.toLowerCase().includes(term) ||
-          mentor.university.toLowerCase().includes(term) ||
-          mentor.faculty.toLowerCase().includes(term);
-        return matchesSearch;
-      });
-
-      return matchesTags && matchesText;
-    });
-    setFilteredMentors(filtered);
-
-    // console.log(tags);
+    setPage(1);
   }, [searchTerm, selectedTags, mentors]);
+
+  const totalPages = getTotalPages(filteredMentors.length, pageSize);
+  // 絞り込みで件数が減った直後など、範囲外のページ番号は表示側で丸めておく。
+  const currentPage = clampPage(page, totalPages);
+  const pagedMentors = useMemo(
+    () => filteredMentors.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filteredMentors, currentPage, pageSize],
+  );
+
+  const goToPage = (nextPage) => setPage(clampPage(nextPage, totalPages));
 
   return (
     <>
@@ -163,7 +170,14 @@ export default function MentorSearch({
           resetDiagnosis,
           tagGroups,
           toggleTag,
+          clearTags,
+          clearFilters,
           filteredMentors,
+          pagedMentors,
+          page: currentPage,
+          totalPages,
+          pageSize,
+          goToPage,
           selectedTags,
           searchTerm,
           setSearchTerm,

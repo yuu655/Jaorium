@@ -1,24 +1,15 @@
 import UserDashboard from "@/components/dashboard/user/UserDashboard";
 import { createClient } from "@/lib/supabase/server";
+import { fetchMentorDirectory } from "@/lib/mentorDirectory";
 import { unstable_cache } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-
-const hasIcon = (mentor) => Boolean(mentor?.icon);
 
 export default async function UserPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const fetchMentorTags = async (mentorId) => {
-    const { data } = await supabase
-      .from("mentor_tags")
-      .select("tag_id")
-      .eq("mentor_id", mentorId);
-    return data;
-  };
 
   const getCachedData = (supabase, userId) =>
     unstable_cache(
@@ -27,35 +18,13 @@ export default async function UserPage() {
         // admin_allowでの絞り込みはpublic_mentorsビュー(公開カラムのみ)に任せる。
         const [
           { data: profile },
-          { data: mentors },
+          { mentors, tags, mentorTagsMap },
           { data: Meetings },
-          { data: tags },
         ] = await Promise.all([
           supabase.from("users").select("*").eq("id", userId).single(),
-          supabase.from("public_mentors").select("*"),
+          fetchMentorDirectory(supabase),
           supabase.from("meetings").select("*").eq("user", userId).order("created_at", { ascending: false }),
-          supabase.from("tags").select("*"),
         ]);
-
-        const mentorTagsMap = Object.fromEntries(
-          await Promise.all(
-            mentors.map(async (mentor) => [
-              mentor.id,
-              await fetchMentorTags(mentor.id),
-            ]),
-          ),
-        );
-
-        await Promise.all(
-          mentors.map(async (mentor) => {
-            const { data: review_sum } = await supabase
-              .from("review_sum")
-              .select("star_avg")
-              .eq("mentor_id", mentor.id)
-              .single();
-            mentor.review_sum = review_sum?.star_avg || 0;
-          }),
-        );
 
         const { data: meeting_sc } = await supabase
           .from("meeting_schedules")
@@ -92,16 +61,9 @@ export default async function UserPage() {
         );
         const pastMeetings = merged_meetings.filter((item) => item.is_finished);
 
-        console.log(merged_meetings)
-
-        // アイコンを設定しているメンターを先に表示する(同条件内の順序は元のまま)。
-        const sortedMentors = [...(mentors ?? [])].sort(
-          (a, b) => hasIcon(b) - hasIcon(a),
-        );
-
         return {
           profile,
-          mentors: sortedMentors,
+          mentors,
           meetings: { next: nextMeetings ?? [], past: pastMeetings ?? [] },
           mentorTagsMap,
           tags,
