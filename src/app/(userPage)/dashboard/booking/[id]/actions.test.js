@@ -101,7 +101,7 @@ describe("submitBooking server action", () => {
         },
         from: {
           profiles: () => createChain({ data: { role: "user" }, error: null }),
-          mentors: () => createChain({ data: null, error: null }),
+          public_mentors: () => createChain({ data: null, error: null }),
         },
       }),
     );
@@ -109,6 +109,31 @@ describe("submitBooking server action", () => {
     const result = await submitBooking("mentor-1", null, formData(validFields));
 
     expect(result).toEqual({ error: "メンターが存在しません" });
+  });
+
+  // public_mentorsはadmin_allow/is_allowedで絞ったビュー。mentorsに行が存在しても
+  // 未承認ならビューには出ないので、IDを直接POSTしても予約は成立しない
+  it("rejects a mentor that exists but is not published (unapproved or suspended)", async () => {
+    const meetingsChain = createChain({ data: [{ id: "meeting-1" }], error: null });
+    createClient.mockResolvedValue(
+      createSupabaseMock({
+        auth: {
+          getUser: vi.fn(async () => ({ data: { user: { id: "u1" } } })),
+        },
+        from: {
+          profiles: () => createChain({ data: { role: "user" }, error: null }),
+          mentors: () => createChain({ data: { id: "mentor-1" }, error: null }),
+          public_mentors: () => createChain({ data: null, error: null }),
+          meetings: () => meetingsChain,
+        },
+      }),
+    );
+
+    const result = await submitBooking("mentor-1", null, formData(validFields));
+
+    expect(result).toEqual({ error: "メンターが存在しません" });
+    expect(meetingsChain.insert).not.toHaveBeenCalled();
+    expect(sendMock).not.toHaveBeenCalled();
   });
 
   it("returns an error when the meeting insert fails, without sending any email", async () => {
@@ -124,7 +149,7 @@ describe("submitBooking server action", () => {
         },
         from: {
           profiles: () => createChain({ data: { role: "user" }, error: null }),
-          mentors: () => createChain({ data: { id: "mentor-1" }, error: null }),
+          public_mentors: () => createChain({ data: { id: "mentor-1" }, error: null }),
           meetings: () => createChain({ data: null, error: { message: "insert failed" } }),
         },
       }),
@@ -151,7 +176,7 @@ describe("submitBooking server action", () => {
         },
         from: {
           profiles: () => createChain({ data: { role: "user" }, error: null }),
-          mentors: () => createChain({ data: { id: "mentor-1" }, error: null }),
+          public_mentors: () => createChain({ data: { id: "mentor-1" }, error: null }),
           meetings: () => createChain({ data: [{ id: "meeting-1" }], error: null }),
         },
       }),

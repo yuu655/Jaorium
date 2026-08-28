@@ -43,8 +43,11 @@ function buildMeetingRecord({ mentorId, userId, form }) {
   };
 }
 
+// mentorsではなくpublic_mentorsビューを引く。mentorsを直接見ると存在確認しかできず、
+// admin_allow=false（未承認）やis_allowed=false（停止中）のメンターのIDを直接POSTすれば
+// 予約が成立してしまう。公開条件の判定はビュー側に一本化する。
 async function fetchMentorById(supabase, mentorId) {
-  const { data } = await supabase.from("mentors").select("id").eq("id", mentorId).single();
+  const { data } = await supabase.from("public_mentors").select("id").eq("id", mentorId).single();
   return data;
 }
 
