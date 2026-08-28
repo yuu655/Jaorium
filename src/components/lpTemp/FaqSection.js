@@ -19,7 +19,7 @@ export default function FaqSection() {
   const [openIndex, setOpenIndex] = useState(0);
 
   return (
-    <section className="bg-white py-14 lg:py-24 px-6">
+    <section id="faq" className="bg-white py-14 lg:py-24 px-6">
       <div className="max-w-350 mx-auto lg:grid lg:grid-cols-[360px_1fr] lg:gap-14 lg:items-center">
         <div className="mb-6 lg:mb-0">
           <h2 className="text-2xl lg:text-4xl font-bold text-slate-900 mb-3 lg:mb-4.5">

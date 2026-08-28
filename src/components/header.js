@@ -1,40 +1,39 @@
-"use client";
-import { Button } from "./ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import HeaderNav from "./headerComponents/headerNav";
-// import Humberger from "./headerComponents/humberger";
-import Humberger from "@/components/headerComponents/drawerMenu";
+import MobileMenu from "@/components/headerComponents/mobileMenu";
 
-export default function Header({ propClassName }) {
-  const nav_list = [
-    { name: "コンセプト", href: "/concept" },
-    { name: "メンター紹介", href: "/mentors" },
-    { name: "記事", href: "/articles/1" },
-    // { name: "メンターになりたい方へ", href: "/forCompanies" },
-  ];
+export default function Header({ propClassName = "" }) {
   return (
     <header
-      className={`h-17.5 flex items-center sticky top-0 z-50 justify-center ${propClassName}`}
+      className={`sticky top-0 z-50 border-b border-[#ECEEF1] bg-white/92 backdrop-blur-md ${propClassName}`}
+      style={{ fontFamily: "'Noto Sans JP', sans-serif" }}
     >
-      <div className="w-full max-w-300 px-4">
-        <nav className="flex p-4 justify-between items-center">
-          <Link href="/">
-            <div className="relative w-[70px] h-[70px]">
-              <Image
-                loading="eager"
-                src="/logo.png"
-                alt="ロゴ"
-                fill
-                className="object-contain"
-              />
-            </div>
-          </Link>
+      <nav className="mx-auto flex h-21.5 max-w-350 items-stretch justify-between px-4.5 lg:px-14">
+        <Link href="/" className="flex items-center">
+          <span className="relative block size-[70px]">
+            <Image
+              loading="eager"
+              src="/logo.png"
+              alt="ロゴ"
+              fill
+              className="object-contain"
+            />
+          </span>
+        </Link>
 
-          <HeaderNav nav_list={nav_list} />
-          <Humberger nav_list={nav_list} />
-        </nav>
-      </div>
+        <HeaderNav />
+
+        <div className="flex items-center gap-2.5 lg:hidden">
+          <Link
+            href="/signup/user"
+            className="rounded-lg bg-blue-600 px-4 py-2.75 text-[15px] font-bold text-white transition-colors hover:bg-blue-700"
+          >
+            予約する
+          </Link>
+          <MobileMenu />
+        </div>
+      </nav>
     </header>
   );
 }

@@ -65,7 +65,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="jp">
+    <html lang="jp" className="scroll-smooth">
       <head>
         <link
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap"

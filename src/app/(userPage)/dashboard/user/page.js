@@ -4,6 +4,8 @@ import { unstable_cache } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
+const hasIcon = (mentor) => Boolean(mentor?.icon);
+
 export default async function UserPage() {
   const supabase = await createClient();
   const {
@@ -92,9 +94,14 @@ export default async function UserPage() {
 
         console.log(merged_meetings)
 
+        // アイコンを設定しているメンターを先に表示する(同条件内の順序は元のまま)。
+        const sortedMentors = [...(mentors ?? [])].sort(
+          (a, b) => hasIcon(b) - hasIcon(a),
+        );
+
         return {
           profile,
-          mentors: mentors ?? [],
+          mentors: sortedMentors,
           meetings: { next: nextMeetings ?? [], past: pastMeetings ?? [] },
           mentorTagsMap,
           tags,

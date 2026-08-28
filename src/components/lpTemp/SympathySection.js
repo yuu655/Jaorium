@@ -26,7 +26,7 @@ const items = [
 
 export default function SympathySection() {
   return (
-    <section className="bg-slate-50 py-14 lg:py-24 px-6">
+    <section id="sympathy" className="bg-slate-50 py-14 lg:py-24 px-6">
       <div className="max-w-350 mx-auto">
         <h2 className="text-center text-2xl lg:text-4xl font-bold text-slate-900 leading-relaxed lg:leading-snug">
           受験、こんなことで

@@ -45,7 +45,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <>
-      <Header propClassName="bg-white shadow-md relative z-0" />
+      <Header />
       {children}
 
       <Footer />

@@ -18,6 +18,8 @@ const fetchMentorTags = async (mentorId, supabase) => {
     return data;
   };
 
+const hasIcon = (mentor) => Boolean(mentor?.icon);
+
 const getMentors = (supabase) =>
   unstable_cache(
     async () => {
@@ -48,7 +50,12 @@ const getMentors = (supabase) =>
         mentor.review_sum = review_sum?.star_avg || 0;
       }));
 
-      return { mentors: mentors ?? [], mentorTagsMap, tags };
+      // アイコンを設定しているメンターを先に表示する(同条件内の順序は元のまま)。
+      const sortedMentors = [...(mentors ?? [])].sort(
+        (a, b) => hasIcon(b) - hasIcon(a),
+      );
+
+      return { mentors: sortedMentors, mentorTagsMap, tags };
     },
     ["mentors-list"],
     { revalidate: 3600, tags: ["mentors"] },

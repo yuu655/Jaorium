@@ -1,9 +1,19 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { sendMock } = vi.hoisted(() => ({ sendMock: vi.fn(async () => ({})) }));
+const { sendMock, resendSendMock } = vi.hoisted(() => ({
+  sendMock: vi.fn(async () => ({})),
+  resendSendMock: vi.fn(async () => ({ data: { id: "re_1" }, error: null })),
+}));
 vi.mock("nodemailer", () => ({
   default: {
     createTransport: vi.fn(() => ({ sendMail: sendMock })),
+  },
+}));
+vi.mock("resend", () => ({
+  Resend: class {
+    constructor() {
+      this.emails = { send: resendSendMock };
+    }
   },
 }));
 
@@ -20,6 +30,10 @@ const validFields = {
   email_re: "yamada@example.com",
   message: "これはテストのお問い合わせ内容です。",
 };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe("sendContactEmail server action", () => {
   it("sends the email and returns success for valid input", async () => {
@@ -58,13 +72,55 @@ describe("sendContactEmail server action", () => {
     expect(sendMock).not.toHaveBeenCalled();
   });
 
-  it("returns a form-level error when Resend throws", async () => {
-    sendMock.mockRejectedValueOnce(new Error("resend down"));
+  it("returns a form-level error when the support notification throws", async () => {
+    sendMock.mockRejectedValueOnce(new Error("smtp down"));
 
     const result = await sendContactEmail(null, formData(validFields));
 
     expect(result).toEqual({
       errors: { _form: ["メール送信に失敗しました。しばらく経ってから再度お試しください。"] },
     });
+    expect(resendSendMock).not.toHaveBeenCalled();
+  });
+
+  it("sends a noreply confirmation to the submitter with support@ as the reply target", async () => {
+    await sendContactEmail(null, formData(validFields));
+
+    expect(resendSendMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: "JaoRium <noreply@jaorium.com>",
+        to: "yamada@example.com",
+        replyTo: "support@jaorium.com",
+        subject: "お問い合わせを受け付けました",
+        headers: { "Auto-Submitted": "auto-replied", Precedence: "bulk" },
+      }),
+    );
+  });
+
+  it("escapes user input before embedding it in the email bodies", async () => {
+    await sendContactEmail(
+      null,
+      formData({ ...validFields, name: "<script>alert(1)</script>" }),
+    );
+
+    expect(sendMock.mock.calls[0][0].html).not.toContain("<script>");
+    expect(resendSendMock.mock.calls[0][0].html).not.toContain("<script>");
+    expect(resendSendMock.mock.calls[0][0].html).toContain("&lt;script&gt;");
+  });
+
+  it("still succeeds when the confirmation email fails", async () => {
+    resendSendMock.mockResolvedValueOnce({ data: null, error: { message: "domain not verified" } });
+
+    const result = await sendContactEmail(null, formData(validFields));
+
+    expect(result).toEqual({ success: true });
+  });
+
+  it("still succeeds when the confirmation email throws", async () => {
+    resendSendMock.mockRejectedValueOnce(new Error("resend down"));
+
+    const result = await sendContactEmail(null, formData(validFields));
+
+    expect(result).toEqual({ success: true });
   });
 });

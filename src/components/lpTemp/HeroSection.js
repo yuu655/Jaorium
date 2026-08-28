@@ -38,7 +38,7 @@ function HeroCopy() {
           </p>
         </div>
         <div className="flex flex-col gap-3 pt-1 text-base font-medium text-blue-600">
-          <Link href="/concept" className="hover:underline">
+          <Link href="#sympathy" className="hover:underline">
             サービスを詳しく見る　→
           </Link>
           <Link href="/concept" className="hover:underline">
