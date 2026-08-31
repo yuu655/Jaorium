@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import CheckoutToast from "./CheckoutToast";
@@ -85,10 +85,52 @@ const success = searchParams.get("success");
 const canceled = searchParams.get("canceled");
 
 
+  // アイコンの実体はCloudflare R2にあり、mentors.icon/users.iconはR2のキー
+  // （{role}/{userId}/{kinds}/{filename}）を持つ。以前はSupabase Storageに置いていた
+  // 名残でstorage.getPublicUrl()を使っており、404 → onErrorで既定画像に差し替わっていた。
   const counterpartIconUrl = counterpart?.icon
-    ? supabase.storage.from("avatars").getPublicUrl(counterpart.icon).data
-        .publicUrl
+    ? `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${counterpart.icon}`
     : "/default.jpg";
+
+  // 組織のアクティブメンバーなら組織の共有残高を、そうでなければ個人残高を見る。
+  // consume_organization_credit RPCは「組織の共有残高」と「メンバー個人のcredit_limit」
+  // の両方を検査するため、実際に予約できる回数は両者の小さい方になる。
+  // credit_limitがnullの場合は個人上限なし＝組織残高がそのまま上限。
+  const refreshCredit = useCallback(async () => {
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("organization_id, credit_limit, credits_used")
+      .eq("user_id", currentUserId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (membership?.organization_id) {
+      setOrgId(membership.organization_id);
+
+      const { data } = await supabase
+        .from("organization_credits")
+        .select("balance")
+        .eq("organization_id", membership.organization_id)
+        .single();
+      if (!data) return;
+
+      const memberRemaining =
+        membership.credit_limit == null
+          ? data.balance
+          : Math.max(0, membership.credit_limit - (membership.credits_used ?? 0));
+
+      setCredit({ balance: Math.min(memberRemaining, data.balance) });
+      return;
+    }
+
+    const { data } = await supabase
+      .from("credits")
+      .select("balance")
+      .eq("user_id", currentUserId)
+      .single();
+
+    if (data) setCredit(data);
+  }, [currentUserId]);
 
   // リアルタイム: メッセージ購読
   // useEffect(() => {
@@ -135,8 +177,8 @@ const canceled = searchParams.get("canceled");
   //   return () => supabase.removeChannel(channel);
   // }, [meeting.id, currentUserId]);
   useEffect(() => {
-    // 1つのチャンネルにまとめる
-    let channel = supabase
+    // 面談まわりの購読は1つのチャンネルにまとめる（meeting.idが変わらない限り張り直さない）
+    const channel = supabase
       .channel(`room:${meeting.id}`)
       .on(
         "postgres_changes",
@@ -188,9 +230,27 @@ const canceled = searchParams.get("canceled");
         },
       );
 
-    // 組織所属の有無で購読先テーブルを出し分ける（組織メンバーはorganization_creditsのみ見る）
-    channel = orgId
-      ? channel.on(
+    channel.subscribe();
+
+    // クリーンアップ関数でチャンネルを破棄
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [meeting.id]);
+
+  // クレジット残高の購読は面談用チャンネルから切り離す。
+  // orgIdは初回描画時はnullで、refreshCredit()の完了後に確定する。以前はこの購読を
+  // room:{meetingId} に相乗りさせていたため、orgIdがnull→確定へ変わるたびに面談用
+  // チャンネルごと張り直していた。removeChannel()は非同期なので、同名トピックの離脱が
+  // 終わる前に再参加が走り、postgres_changesが二度と届かなくなることがある
+  // （メッセージ・日程・確定の購読が丸ごと無反応になる）。この経路を通るのは
+  // orgIdが変化する組織メンバーだけなので、症状が特定ユーザーにだけ出ていた。
+  // 購読対象ごとにトピック名を分けることで、同名トピックの競合自体を起こさない。
+  useEffect(() => {
+    if (!isUser) return;
+
+    const channel = orgId
+      ? supabase.channel(`org-credit:${orgId}`).on(
           "postgres_changes",
           {
             event: "*", // INSERT・UPDATEどちらも拾う
@@ -198,11 +258,13 @@ const canceled = searchParams.get("canceled");
             table: "organization_credits",
             filter: `organization_id=eq.${orgId}`,
           },
-          (payload) => {
-            setCredit(payload.new);
+          () => {
+            // payload.newは組織の共有残高しか持たないが、表示する「使える回数」は
+            // メンバー個人のcredits_used（別テーブル）にも依存するため引き直す
+            refreshCredit();
           },
         )
-      : channel.on(
+      : supabase.channel(`credit:${currentUserId}`).on(
           "postgres_changes",
           {
             event: "*", // INSERT・UPDATEどちらも拾う
@@ -217,11 +279,10 @@ const canceled = searchParams.get("canceled");
 
     channel.subscribe();
 
-    // クリーンアップ関数でチャンネルを破棄
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [meeting.id, orgId]);
+  }, [orgId, currentUserId, isUser, refreshCredit]);
 
   useEffect(() => {
     const fetchConfirmation = async () => {
@@ -238,37 +299,8 @@ const canceled = searchParams.get("canceled");
   }, [meeting.id]);
 
   useEffect(() => {
-    const fetchCredit = async () => {
-      // 組織のアクティブメンバーなら組織の共有残高を、そうでなければ個人残高を見る
-      const { data: membership } = await supabase
-        .from("organization_members")
-        .select("organization_id")
-        .eq("user_id", currentUserId)
-        .eq("status", "active")
-        .maybeSingle();
-
-      if (membership?.organization_id) {
-        setOrgId(membership.organization_id);
-        const { data } = await supabase
-          .from("organization_credits")
-          .select("balance")
-          .eq("organization_id", membership.organization_id)
-          .single();
-        if (data) setCredit(data);
-        return;
-      }
-
-      const { data } = await supabase
-        .from("credits")
-        .select("balance")
-        .eq("user_id", currentUserId)
-        .single();
-
-      if (data) setCredit(data);
-    };
-
-    if(isUser) fetchCredit();
-  }, [currentUserId]);
+    if (isUser) refreshCredit();
+  }, [isUser, refreshCredit]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

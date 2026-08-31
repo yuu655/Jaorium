@@ -28,7 +28,7 @@ const getMentors = (supabase) =>
   );
 
 export const metadata = {
-  title: "JaoRium | 情報戦に、終止符を。（LP案）",
+  title: "JaoRium | 情報戦に、終止符を。",
 };
 
 export default async function LpTemp() {
