@@ -21,6 +21,8 @@ import {
   ShoppingCart,
   CreditCard,
   Check,
+  Trash2,
+  Ban,
 } from "lucide-react";
 import DateProposalModal from "./DateProposalModal";
 import {
@@ -32,6 +34,7 @@ import {
   cancelFinishRequest,
   consumeCredit,
   redirectToCheckout,
+  deleteMessage,
 } from "./actions";
 
 // shadcn/ui
@@ -48,6 +51,9 @@ import {
 import { is } from "zod/v4/locales";
 
 const supabase = createClient();
+
+// 論理削除されたメッセージは本文を保持しない（サーバー側の受け渡しと揃える）
+const stripDeleted = (msg) => (msg.deleted_at ? { ...msg, content: "" } : msg);
 
 export default function Chat({
   meeting: initialMeeting,
@@ -73,6 +79,10 @@ export default function Chat({
   const [loading, setLoading] = useState(false);
   const [credit, setCredit] = useState(null);
   const [orgId, setOrgId] = useState(null); // 所属組織があれば組織プールから消費する
+  // 削除メニュー: 自分のメッセージをタップ（スマホ）/ 右クリック（PC）で開く
+  const [menuTarget, setMenuTarget] = useState(null); // { id, x, y, touch }
+  const [deletingId, setDeletingId] = useState(null);
+  const [isTouch, setIsTouch] = useState(false);
   // console.log(meeting_sc)
 
   const bottomRef = useRef(null);
@@ -198,6 +208,21 @@ const canceled = searchParams.get("canceled");
         {
           event: "UPDATE",
           schema: "public",
+          table: "messages",
+          filter: `meeting_id=eq.${meeting.id}`,
+        },
+        (payload) => {
+          // いまのところUPDATEは論理削除のみ。相手の画面からも本文を消す
+          setMessages((prev) =>
+            prev.map((m) => (m.id === payload.new.id ? stripDeleted(payload.new) : m)),
+          );
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
           table: "meetings",
           filter: `id=eq.${meeting.id}`,
         },
@@ -302,9 +327,55 @@ const canceled = searchParams.get("canceled");
     if (isUser) refreshCredit();
   }, [isUser, refreshCredit]);
 
+  // タッチ端末（スマホ）ではタップ、それ以外（PC）では右クリックで削除メニューを出す
+  useEffect(() => {
+    setIsTouch(window.matchMedia?.("(pointer: coarse)").matches ?? false);
+  }, []);
+
+  // メニューを開いたままスクロールされると座標がずれるので閉じる
+  useEffect(() => {
+    if (!menuTarget) return;
+    const close = () => setMenuTarget(null);
+    window.addEventListener("resize", close);
+    window.addEventListener("scroll", close, true);
+    return () => {
+      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [menuTarget]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // 自分が送った未削除のメッセージだけメニューを開ける
+  const openMessageMenu = (e, msg, touch) => {
+    if (msg.sender_id !== currentUserId || msg.deleted_at) return;
+    e.preventDefault();
+    setMenuTarget({ id: msg.id, x: e.clientX, y: e.clientY, touch });
+  };
+
+  const handleDeleteMessage = async () => {
+    const target = menuTarget;
+    if (!target || deletingId) return;
+
+    setDeletingId(target.id);
+    const result = await deleteMessage(target.id);
+    setDeletingId(null);
+    setMenuTarget(null);
+
+    if (result?.error) {
+      alert(result.error);
+      return;
+    }
+
+    // Realtimeでも届くが、自分の画面は待たずに反映する
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === target.id ? { ...m, content: "", deleted_at: new Date().toISOString() } : m,
+      ),
+    );
+  };
 
   const sendMessage = async () => {
     const content = input.trim();
@@ -645,9 +716,11 @@ const canceled = searchParams.get("canceled");
             <div className="space-y-3">
               {msgs.map((msg) => {
                 const isMine = msg.sender_id === currentUserId;
+                const isDeleted = Boolean(msg.deleted_at);
                 const isDateProposal = msg.type === "date_proposal";
                 const canConfirm =
-                  isDateProposal && !isMine && !meeting_sc.is_commit;
+                  isDateProposal && !isMine && !isDeleted && !meeting_sc.is_commit;
+                const canDelete = isMine && !isDeleted;
 
                 return (
                   <div
@@ -668,9 +741,28 @@ const canceled = searchParams.get("canceled");
                     )}
 
                     <div
-                      className={`flex flex-col gap-1 max-w-[70%] ${isMine ? "items-end" : "items-start"}`}
+                      className={`flex flex-col gap-1 max-w-[70%] ${isMine ? "items-end" : "items-start"} ${
+                        canDelete && isTouch ? "cursor-pointer" : ""
+                      }`}
+                      onContextMenu={(e) => {
+                        if (!isTouch) openMessageMenu(e, msg, false);
+                      }}
+                      onClick={(e) => {
+                        if (isTouch) openMessageMenu(e, msg, true);
+                      }}
                     >
-                      {isDateProposal ? (
+                      {isDeleted ? (
+                        <div
+                          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-sm italic border border-dashed ${
+                            isMine
+                              ? "bg-gray-100 text-gray-400 border-gray-300 rounded-br-sm"
+                              : "bg-white text-gray-400 border-gray-200 rounded-bl-sm"
+                          }`}
+                        >
+                          <Ban size={13} className="shrink-0" />
+                          メッセージを削除しました
+                        </div>
+                      ) : isDateProposal ? (
                         <div
                           className={`px-4 py-3 rounded-2xl border-2 text-sm min-w-[180px] ${
                             isMine
@@ -798,6 +890,56 @@ const canceled = searchParams.get("canceled");
           </button>
         </div>
       </div>
+
+      {/* メッセージ削除メニュー（スマホ=下部シート / PC=右クリックメニュー） */}
+      {menuTarget && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setMenuTarget(null)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setMenuTarget(null);
+            }}
+          />
+
+          {menuTarget.touch ? (
+            <div className="fixed inset-x-0 bottom-0 z-50 px-3 pb-3 animate-in slide-in-from-bottom duration-150">
+              <button
+                onClick={handleDeleteMessage}
+                disabled={!!deletingId}
+                className="w-full max-w-md mx-auto flex items-center justify-center gap-2 bg-white rounded-2xl py-4 text-sm font-medium text-red-600 shadow-xl disabled:text-gray-400"
+              >
+                <Trash2 size={16} />
+                {deletingId ? "削除中..." : "メッセージを削除"}
+              </button>
+              <button
+                onClick={() => setMenuTarget(null)}
+                className="w-full max-w-md mx-auto mt-2 block bg-white rounded-2xl py-4 text-sm font-medium text-gray-700 shadow-xl"
+              >
+                キャンセル
+              </button>
+            </div>
+          ) : (
+            <div
+              className="fixed z-50 bg-white rounded-xl shadow-xl border border-gray-200 py-1 w-40 animate-in fade-in zoom-in-95 duration-100"
+              style={{
+                left: Math.max(8, Math.min(menuTarget.x, window.innerWidth - 168)),
+                top: Math.max(8, Math.min(menuTarget.y, window.innerHeight - 60)),
+              }}
+            >
+              <button
+                onClick={handleDeleteMessage}
+                disabled={!!deletingId}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:text-gray-400 disabled:hover:bg-transparent"
+              >
+                <Trash2 size={14} />
+                {deletingId ? "削除中..." : "メッセージを削除"}
+              </button>
+            </div>
+          )}
+        </>
+      )}
 
       {/* 日時提案モーダル */}
       {showDateModal && (

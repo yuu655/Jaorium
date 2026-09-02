@@ -101,6 +101,22 @@ async function insertDateProposalMessage(supabase, { meetingId, senderId, date, 
   });
 }
 
+async function fetchMessageById(supabase, messageId) {
+  const { data } = await supabase
+    .from("messages")
+    .select("id, sender_id, deleted_at")
+    .eq("id", messageId)
+    .single();
+  return data;
+}
+
+async function softDeleteMessage(supabase, messageId) {
+  return supabase
+    .from("messages")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", messageId);
+}
+
 async function setFinishRequestedBy(supabase, { meetingId, userId }) {
   return supabase.from("meetings").update({ finish_requested_by: userId }).eq("id", meetingId);
 }
@@ -269,6 +285,33 @@ export async function cancelFinishRequest(meetingId) {
   const { error } = await setFinishRequestedBy(supabase, { meetingId, userId: null });
 
   if (error) return { error: "キャンセルに失敗しました" };
+  return { success: true };
+}
+
+// 自分が送ったメッセージを論理削除する。
+// messages には UPDATE 用のRLSポリシーを置いていない（クライアントから本文を
+// 書き換えられないようにするため）ので、service role のadminクライアントで更新し、
+// 「送信者本人か」をここで必ず検証する。
+export async function deleteMessage(messageId) {
+  const supabaseAuth = await createClient();
+  const supabase = createAdminSupabaseClient();
+
+  const { user } = await getAuthenticatedUser(supabaseAuth);
+  if (!user) return { error: "ログインが必要です" };
+
+  const message = await fetchMessageById(supabase, messageId);
+  if (!message || message.sender_id !== user.id) return { error: "権限がありません" };
+
+  // 既に削除済みなら何もしない（二重タップ・再送対策）
+  if (message.deleted_at) return { success: true };
+
+  const { error } = await softDeleteMessage(supabase, messageId);
+
+  if (error) {
+    console.error("deleteMessage error:", error);
+    return { error: "削除に失敗しました" };
+  }
+
   return { success: true };
 }
 

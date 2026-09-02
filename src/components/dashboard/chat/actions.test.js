@@ -26,6 +26,7 @@ import {
   cancelFinishRequest,
   consumeCredit,
   redirectToCheckout,
+  deleteMessage,
 } from "./actions";
 
 const meeting = { id: "meeting-1", user: "user-1", mentor: "mentor-1", finish_requested_by: null };
@@ -424,5 +425,77 @@ describe("redirectToCheckout", () => {
 
     expect(result).toEqual({ error: "ログインが必要です" });
     expect(redirect).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteMessage", () => {
+  // 送信者検証をJS側で行うadminクライアント（RLSをバイパスする）のモック
+  function mockAdminMessages(messageRow) {
+    const chain = createChain({ data: messageRow, error: null });
+    createSupabaseClient.mockReturnValue(
+      createSupabaseMock({ from: { messages: () => chain } }),
+    );
+    return chain;
+  }
+
+  function mockLoggedIn(user) {
+    createClient.mockResolvedValue({ auth: { getUser: vi.fn(async () => ({ data: { user } })) } });
+  }
+
+  it("soft-deletes the caller's own message", async () => {
+    const chain = mockAdminMessages({ id: "msg-1", sender_id: "user-1", deleted_at: null });
+    mockLoggedIn({ id: "user-1" });
+
+    const result = await deleteMessage("msg-1");
+
+    expect(result).toEqual({ success: true });
+    expect(chain.update).toHaveBeenCalledWith(
+      expect.objectContaining({ deleted_at: expect.any(String) }),
+    );
+    expect(chain.eq).toHaveBeenCalledWith("id", "msg-1");
+  });
+
+  it("refuses to delete someone else's message", async () => {
+    const chain = mockAdminMessages({ id: "msg-1", sender_id: "user-1", deleted_at: null });
+    mockLoggedIn({ id: "mentor-1" });
+
+    const result = await deleteMessage("msg-1");
+
+    expect(result).toEqual({ error: "権限がありません" });
+    expect(chain.update).not.toHaveBeenCalled();
+  });
+
+  it("requires authentication", async () => {
+    const chain = mockAdminMessages({ id: "msg-1", sender_id: "user-1", deleted_at: null });
+    mockLoggedIn(null);
+
+    const result = await deleteMessage("msg-1");
+
+    expect(result).toEqual({ error: "ログインが必要です" });
+    expect(chain.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects when the message does not exist", async () => {
+    const chain = mockAdminMessages(null);
+    mockLoggedIn({ id: "user-1" });
+
+    const result = await deleteMessage("missing");
+
+    expect(result).toEqual({ error: "権限がありません" });
+    expect(chain.update).not.toHaveBeenCalled();
+  });
+
+  it("is a no-op when the message is already deleted", async () => {
+    const chain = mockAdminMessages({
+      id: "msg-1",
+      sender_id: "user-1",
+      deleted_at: "2026-09-01T00:00:00Z",
+    });
+    mockLoggedIn({ id: "user-1" });
+
+    const result = await deleteMessage("msg-1");
+
+    expect(result).toEqual({ success: true });
+    expect(chain.update).not.toHaveBeenCalled();
   });
 });

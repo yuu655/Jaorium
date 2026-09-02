@@ -47,13 +47,18 @@ export default async function ChatPage({ params }) {
     .eq("meeting_id", meetingId)
     .order("created_at", { ascending: true });
 
+  // 論理削除されたメッセージは本文をクライアントに渡さない（表示は「削除しました」のみ）
+  const visibleMessages = (initialMessages ?? []).map((msg) =>
+    msg.deleted_at ? { ...msg, content: "" } : msg,
+  );
+
   return (
     <ChatWrapper
       meeting={meeting}
       meeting_schedule={meeting_schedule}
       currentUserId={user.id}
       counterpart={counterpart}
-      initialMessages={initialMessages ?? []}
+      initialMessages={visibleMessages}
       isUser={!isMentor}
     />
   );
