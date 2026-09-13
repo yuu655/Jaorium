@@ -23,7 +23,7 @@ import {
 const PAYOUT_FEE = 250;
 const MIN_PAYOUT_AMOUNT = 1000;
 
-export default function MentorPayout({ currentUserId, session, profile }) {
+export default function MentorPayout({ currentUserId, profile }) {
   const supabase = createClient();
   const [balance, setBalance] = useState(null);
   const [logs, setLogs] = useState([]);
@@ -87,6 +87,17 @@ export default function MentorPayout({ currentUserId, session, profile }) {
   const handlePayout = async () => {
     setLoading(true);
     setShowDialog(false);
+
+    // access_tokenはSSRペイロードに載せずここで取る（propsで受け取らない）
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      setLoading(false);
+      alert("セッションが切れました。再度ログインしてください。");
+      return;
+    }
 
     const res = await fetch("/api/mentor/payout", {
       method: "POST",

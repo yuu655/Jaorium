@@ -289,3 +289,50 @@ describe("updateSession — role: pending（役割未確定）", () => {
     expect(locationOf(res)).toBe("https://www.jaorium.com/dashboard");
   });
 });
+
+// /dashboard/mentor/availability を切り出した際、完全一致のゲートだと配下だけ
+// すり抜けていた（他ロールがメンター用ページを開けてしまう）。前方一致での回帰テスト。
+describe("updateSession — ロール別ダッシュボード配下のサブルート", () => {
+  it.each([
+    "/dashboard/mentor/availability",
+    "/dashboard/mentor/stripe/guide",
+  ])("userは %s でも /dashboard/user へ戻される", async (pathname) => {
+    mockSession({ user: { id: "user-1" }, profile: { role: "user", set: true } });
+
+    const res = await updateSession(makeRequest(pathname));
+
+    expect(locationOf(res)).toBe("https://www.jaorium.com/dashboard/user");
+  });
+
+  it("mentorは /dashboard/mentor/availability をそのまま通す", async () => {
+    mockSession({ user: { id: "mentor-1" }, profile: { role: "mentor", set: true } });
+
+    const res = await updateSession(makeRequest("/dashboard/mentor/availability"));
+
+    expect(locationOf(res)).toBeNull();
+  });
+
+  it("mentorは /dashboard/user 配下でも /dashboard/mentor へ戻される", async () => {
+    mockSession({ user: { id: "mentor-1" }, profile: { role: "mentor", set: true } });
+
+    const res = await updateSession(makeRequest("/dashboard/user/anything"));
+
+    expect(locationOf(res)).toBe("https://www.jaorium.com/dashboard/mentor");
+  });
+
+  it("adminは /dashboard/mentor/availability から /dashboard/admin へ", async () => {
+    mockSession({ user: { id: "admin-1" }, profile: { role: "admin", set: true } });
+
+    const res = await updateSession(makeRequest("/dashboard/mentor/availability"));
+
+    expect(locationOf(res)).toBe("https://www.jaorium.com/dashboard/admin");
+  });
+
+  it("organizationは /dashboard/mentor/availability から /dashboard/organization へ", async () => {
+    mockSession({ user: { id: "owner-1" }, profile: { role: "organization", set: true } });
+
+    const res = await updateSession(makeRequest("/dashboard/mentor/availability"));
+
+    expect(locationOf(res)).toBe("https://www.jaorium.com/dashboard/organization");
+  });
+});

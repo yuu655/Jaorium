@@ -1,45 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import MentorSidebar from "./MentorSidebar";
 import MentorAppointmentContent from "./MentorAppointmentContent";
 import MentorTemplateContent from "./MentorTemplateContent";
 import MentorPayout from "./MentorPayment";
-import { updateMentorIcon, updateMentorProfile } from "../profile/actions";
 import MentorProfile from "./MentorProfile";
-import StatusCode from "../common/statusCode";
+import MentorDashboardShell from "./MentorDashboardShell";
+import { MENTOR_DEFAULT_SIDE, MENTOR_TAB_KEYS } from "./MentorSidebar";
+import { useSideTab } from "../common/useSideTab";
+import { updateMentorProfile } from "../profile/actions";
 
-export default function MentorDashboard({ profile, meetings, users, mentorTags, allTags, initialSide, session }) {
-  const [side, setSide] = useState(initialSide || "appointment");
+// 面談可能日時は /dashboard/mentor/availability に切り出してあるので、
+// ここで扱うのは MENTOR_TAB_KEYS のタブだけ。
+export default function MentorDashboard({ profile, meetings, users, mentorTags, allTags, initialSide }) {
+  const [side, setSide] = useSideTab(
+    initialSide,
+    MENTOR_TAB_KEYS,
+    MENTOR_DEFAULT_SIDE,
+  );
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <MentorSidebar profile={profile} side={side} setSide={setSide}/>
-
-          <main className="lg:col-span-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <StatusCode meetings={meetings} />
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm">
-              {side === "appointment" && (
-                <MentorAppointmentContent meetings={meetings} users={users} />
-              )}
-              {side === "profile" && (
-                <MentorProfile funcProfile={updateMentorProfile} profile={profile} mentorTags={mentorTags} allTags={allTags} />
-              )}
-              {side === "template" && (
-                <MentorTemplateContent />
-              )}
-              {side === "payout" && (
-                <MentorPayout profile={profile} currentUserId={profile.id} session={session} />
-              )}
-            </div>
-          </main>
-        </div>
-      </div>
-    </div>
+    <MentorDashboardShell
+      profile={profile}
+      meetings={meetings}
+      side={side}
+      setSide={setSide}
+    >
+      {side === "appointment" && (
+        <MentorAppointmentContent meetings={meetings} users={users} />
+      )}
+      {side === "profile" && (
+        <MentorProfile funcProfile={updateMentorProfile} profile={profile} mentorTags={mentorTags} allTags={allTags} />
+      )}
+      {side === "template" && <MentorTemplateContent />}
+      {side === "payout" && (
+        <MentorPayout profile={profile} currentUserId={profile.id} />
+      )}
+    </MentorDashboardShell>
   );
 }

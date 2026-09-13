@@ -5,6 +5,17 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { stripe } from "@/lib/stripe";
 import { revalidateTag } from "next/cache";
 import getUrls from "@/utils/getUrls";
+import {
+  groupBandsByDate,
+  groupBookedByDate,
+  hasFutureAvailability,
+  isFutureSlot,
+  isProposableSlot,
+  isSlotTime,
+  isDateString,
+  nowInJst,
+  overlapsBookedSlot,
+} from "@/lib/schedule";
 import { redirect } from "next/navigation";
 
 // ---- 純粋ロジック ----
@@ -117,6 +128,39 @@ async function softDeleteMessage(supabase, messageId) {
     .eq("id", messageId);
 }
 
+// ---- 面談可能日時（メンターの空き）----
+
+async function fetchMentorAvailability(admin, { mentorId, from }) {
+  const { data } = await admin
+    .from("mentor_availabilities")
+    .select("date, start_time, end_time")
+    .eq("mentor_id", mentorId)
+    .gte("date", from);
+  return data ?? [];
+}
+
+// 同じメンターが「別の面談」で確定済みの日時。ダブルブッキング判定に使う。
+// 他人の面談のscheduleはRLSで読めないので service role で引く。
+async function fetchMentorBookedByDate(admin, { mentorId, excludeMeetingId, from }) {
+  const { data: mentorMeetings } = await admin.from("meetings").select("id").eq("mentor", mentorId);
+
+  const meetingIds = (mentorMeetings ?? [])
+    .map((m) => m.id)
+    .filter((id) => id !== excludeMeetingId);
+
+  if (meetingIds.length === 0) return {};
+
+  const { data: schedules } = await admin
+    .from("meeting_schedules")
+    .select("date, time")
+    .in("meeting_id", meetingIds)
+    .eq("is_commit", true)
+    .eq("is_finished", false)
+    .gte("date", from);
+
+  return groupBookedByDate(schedules);
+}
+
 async function setFinishRequestedBy(supabase, { meetingId, userId }) {
   return supabase.from("meetings").update({ finish_requested_by: userId }).eq("id", meetingId);
 }
@@ -180,7 +224,11 @@ async function createCreditCheckoutSession(params) {
 
 // ---- Server Actions（オーケストレーション） ----
 
-// 日時確定
+// 日時確定。
+// 提案が送られてから確定されるまでの間に、同じメンターの別の面談が同じ枠で
+// 確定している可能性があるため、ここでもう一度ダブルブッキングを見る。
+// 空き時間の帯は見ない（メンター本人は帯の外を提案できるため、確定側で弾くと
+// 正当な提案まで承認できなくなる）。
 export async function confirmDate(meetingId, date, time) {
   const supabase = await createClient();
   const { user } = await getAuthenticatedUser(supabase);
@@ -188,6 +236,21 @@ export async function confirmDate(meetingId, date, time) {
 
   const meeting = await getMeetingWithAuth(supabase, meetingId, user.id);
   if (!meeting) return { error: "権限がありません" };
+
+  const now = nowInJst();
+  if (!isDateString(date) || !isSlotTime(time) || !isFutureSlot(date, time, now)) {
+    return { error: "その日時では確定できません" };
+  }
+
+  const bookedByDate = await fetchMentorBookedByDate(createAdminSupabaseClient(), {
+    mentorId: meeting.mentor,
+    excludeMeetingId: meetingId,
+    from: now.date,
+  });
+
+  if (overlapsBookedSlot(time, bookedByDate[date])) {
+    return { error: "その日時は別の面談と重なっています。別の日時を提案してください" };
+  }
 
   const { ok } = await patchMeeting(meetingId, { action: "set_schedule", date, time });
   if (!ok) return { error: "APIエラー" };
@@ -212,7 +275,9 @@ export async function resetDate(meetingId) {
   return { success: true };
 }
 
-// 日時提案メッセージを送る
+// 日時提案メッセージを送る。
+// メンターが面談可能日時を登録している場合、ユーザーはその範囲内しか提案できない
+// （UIでも絞っているが、ここが最終的な判定）。
 export async function sendDateProposal(meetingId, date, time) {
   const supabase = await createClient();
   const { user } = await getAuthenticatedUser(supabase);
@@ -220,6 +285,35 @@ export async function sendDateProposal(meetingId, date, time) {
 
   const meeting = await getMeetingWithAuth(supabase, meetingId, user.id);
   if (!meeting) return { error: "権限がありません" };
+
+  const admin = createAdminSupabaseClient();
+  const now = nowInJst();
+  const availability = await fetchMentorAvailability(admin, {
+    mentorId: meeting.mentor,
+    from: now.date,
+  });
+  const bookedByDate = await fetchMentorBookedByDate(admin, {
+    mentorId: meeting.mentor,
+    excludeMeetingId: meetingId,
+    from: now.date,
+  });
+
+  // メンター本人は自分の予定を把握しているので帯の制限を受けない。ユーザーも、
+  // これから先に使える枠が1つも残っていなければ自由に提案できる。
+  const unrestricted = user.id === meeting.mentor || !hasFutureAvailability(availability, now);
+
+  const proposable = isProposableSlot({
+    date,
+    time,
+    bandsByDate: groupBandsByDate(availability),
+    bookedByDate,
+    unrestricted,
+    now,
+  });
+
+  if (!proposable) {
+    return { error: "その日時は提案できません。空き状況を確認してください" };
+  }
 
   const { error } = await insertDateProposalMessage(supabase, {
     meetingId,

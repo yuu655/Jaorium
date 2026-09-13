@@ -31,6 +31,22 @@ import {
 
 const meeting = { id: "meeting-1", user: "user-1", mentor: "mentor-1", finish_requested_by: null };
 
+// 日時の検証は「今日以降」を要求するので、テストは常に来年の日付を使う
+const FUTURE_DATE = `${new Date().getFullYear() + 1}-07-10`;
+
+// 面談可能日時・他面談の確定枠を引くadminクライアント（service role）のモック
+function mockScheduleAdminClient({ availability = [], mentorMeetings = [], schedules = [] } = {}) {
+  createSupabaseClient.mockReturnValue(
+    createSupabaseMock({
+      from: {
+        mentor_availabilities: () => createChain({ data: availability, error: null }),
+        meetings: () => createChain({ data: mentorMeetings, error: null }),
+        meeting_schedules: () => createChain({ data: schedules, error: null }),
+      },
+    }),
+  );
+}
+
 function mockAuthedSupabase({ user = { id: "user-1" }, meetingsResult = { data: meeting, error: null }, extraFrom = {} } = {}) {
   const supabase = createSupabaseMock({
     auth: { getUser: vi.fn(async () => ({ data: { user } })) },
@@ -48,6 +64,8 @@ beforeEach(() => {
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.stubEnv("NEXT_APIROUTE_SECRET", "route-secret");
   global.fetch = vi.fn(async () => ({ ok: true }));
+  // 既定は「空き時間の登録なし・他の面談なし」
+  mockScheduleAdminClient();
 });
 
 describe("meeting authorization (getMeetingWithAuth), via requestFinish", () => {
@@ -80,7 +98,7 @@ describe("confirmDate", () => {
   it("calls the meeting PATCH API with set_schedule and revalidates both dashboards", async () => {
     mockAuthedSupabase();
 
-    const result = await confirmDate("meeting-1", "2026-07-10", "10:00");
+    const result = await confirmDate("meeting-1", FUTURE_DATE, "10:00");
 
     expect(result).toEqual({ success: true });
     expect(global.fetch).toHaveBeenCalledWith(
@@ -88,7 +106,7 @@ describe("confirmDate", () => {
       expect.objectContaining({
         method: "PATCH",
         headers: { "x-api-key": "route-secret" },
-        body: JSON.stringify({ action: "set_schedule", date: "2026-07-10", time: "10:00" }),
+        body: JSON.stringify({ action: "set_schedule", date: FUTURE_DATE, time: "10:00" }),
       }),
     );
     expect(revalidateTag).toHaveBeenCalledWith("dashboard-user-user-1");
@@ -99,7 +117,7 @@ describe("confirmDate", () => {
     mockAuthedSupabase();
     global.fetch = vi.fn(async () => ({ ok: false, status: 500, text: async () => "boom" }));
 
-    const result = await confirmDate("meeting-1", "2026-07-10", "10:00");
+    const result = await confirmDate("meeting-1", FUTURE_DATE, "10:00");
 
     expect(result).toEqual({ error: "APIエラー" });
     expect(revalidateTag).not.toHaveBeenCalled();
@@ -134,13 +152,13 @@ describe("sendDateProposal", () => {
     const messagesChain = createChain({ error: null });
     mockAuthedSupabase({ extraFrom: { messages: () => messagesChain } });
 
-    const result = await sendDateProposal("meeting-1", "2026-07-10", "10:00");
+    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "10:00");
 
     expect(result).toEqual({ success: true });
     expect(messagesChain.insert).toHaveBeenCalledWith({
       meeting_id: "meeting-1",
       sender_id: "user-1",
-      content: "2026-07-10|10:00",
+      content: `${FUTURE_DATE}|10:00`,
       type: "date_proposal",
     });
   });
@@ -148,9 +166,198 @@ describe("sendDateProposal", () => {
   it("returns an error when the insert fails", async () => {
     mockAuthedSupabase({ extraFrom: { messages: () => createChain({ error: { message: "db" } }) } });
 
-    const result = await sendDateProposal("meeting-1", "2026-07-10", "10:00");
+    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "10:00");
 
     expect(result).toEqual({ error: "送信に失敗しました" });
+  });
+});
+
+describe("sendDateProposal / mentor availability", () => {
+  // メンターが 13:00-15:00 を開けている状態
+  const availability = [{ date: FUTURE_DATE, start_time: "13:00:00", end_time: "15:00:00" }];
+
+  function setup({ availability: rows = [], schedules = [], user = { id: "user-1" } } = {}) {
+    const messagesChain = createChain({ error: null });
+    mockAuthedSupabase({ user, extraFrom: { messages: () => messagesChain } });
+    mockScheduleAdminClient({
+      availability: rows,
+      mentorMeetings: [{ id: "meeting-1" }, { id: "meeting-2" }],
+      schedules,
+    });
+    return messagesChain;
+  }
+
+  it("accepts a slot inside the mentor's availability", async () => {
+    const messagesChain = setup({ availability });
+
+    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "13:30");
+
+    expect(result).toEqual({ success: true });
+    expect(messagesChain.insert).toHaveBeenCalled();
+  });
+
+  it("rejects a slot outside the mentor's availability", async () => {
+    const messagesChain = setup({ availability });
+
+    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "16:00");
+
+    expect(result).toEqual({
+      error: "その日時は提案できません。空き状況を確認してください",
+    });
+    expect(messagesChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects a date the mentor did not open at all", async () => {
+    setup({ availability });
+
+    const result = await sendDateProposal("meeting-1", `${FUTURE_DATE.slice(0, 8)}11`, "13:00");
+
+    expect(result.error).toBeDefined();
+  });
+
+  it("falls back to free proposals when the mentor set no availability", async () => {
+    const messagesChain = setup({ availability: [] });
+
+    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "20:00");
+
+    expect(result).toEqual({ success: true });
+    expect(messagesChain.insert).toHaveBeenCalled();
+  });
+
+  it("enforces 30-minute slots even without availability", async () => {
+    const messagesChain = setup({ availability: [] });
+
+    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "13:15");
+
+    expect(result.error).toBeDefined();
+    expect(messagesChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects past dates", async () => {
+    const messagesChain = setup({ availability: [] });
+
+    const result = await sendDateProposal("meeting-1", "2020-01-01", "13:00");
+
+    expect(result.error).toBeDefined();
+    expect(messagesChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("lets the mentor propose outside their own availability", async () => {
+    const messagesChain = setup({ availability, user: { id: "mentor-1" } });
+
+    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "20:00");
+
+    expect(result).toEqual({ success: true });
+    expect(messagesChain.insert).toHaveBeenCalled();
+  });
+
+  it("falls back to free proposals once the last registered slot has passed", async () => {
+    // JST 18:00 時点で、その日の 10:00-12:00 しか登録が残っていない状態
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-03T09:00:00Z"));
+    const messagesChain = setup({
+      availability: [{ date: "2026-10-03", start_time: "10:00:00", end_time: "12:00:00" }],
+    });
+
+    const result = await sendDateProposal("meeting-1", "2026-10-03", "20:00");
+
+    expect(result).toEqual({ success: true });
+    expect(messagesChain.insert).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("stays restricted while a slot is still ahead today", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-03T09:00:00Z")); // JST 18:00
+    const messagesChain = setup({
+      availability: [{ date: "2026-10-03", start_time: "19:00:00", end_time: "21:00:00" }],
+    });
+
+    expect(await sendDateProposal("meeting-1", "2026-10-03", "19:30")).toEqual({ success: true });
+    // 帯の外なので弾かれる
+    expect((await sendDateProposal("meeting-1", "2026-10-03", "13:00")).error).toBeDefined();
+    // 帯の中でも、すでに過ぎた時間は提案できない
+    expect(messagesChain.insert).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("rejects a slot that has already started today", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-03T09:00:00Z")); // JST 18:00
+    const messagesChain = setup({
+      availability: [{ date: "2026-10-03", start_time: "17:00:00", end_time: "21:00:00" }],
+    });
+
+    const result = await sendDateProposal("meeting-1", "2026-10-03", "17:30");
+
+    expect(result.error).toBeDefined();
+    expect(messagesChain.insert).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("hides slots overlapping the mentor's other confirmed meeting", async () => {
+    // 別の面談が 13:00 で確定済み → 60分面談なので 13:30 も使えない
+    const messagesChain = setup({
+      availability,
+      schedules: [{ date: FUTURE_DATE, time: "13:00" }],
+    });
+
+    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "13:30");
+
+    expect(result.error).toBeDefined();
+    expect(messagesChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("still allows a slot that only touches another confirmed meeting", async () => {
+    const messagesChain = setup({
+      availability,
+      schedules: [{ date: FUTURE_DATE, time: "13:00" }],
+    });
+
+    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "14:00");
+
+    expect(result).toEqual({ success: true });
+    expect(messagesChain.insert).toHaveBeenCalled();
+  });
+});
+
+describe("confirmDate / double booking", () => {
+  it("rejects a slot another meeting of the same mentor already took", async () => {
+    mockAuthedSupabase();
+    mockScheduleAdminClient({
+      mentorMeetings: [{ id: "meeting-1" }, { id: "meeting-2" }],
+      schedules: [{ date: FUTURE_DATE, time: "13:00" }],
+    });
+
+    const result = await confirmDate("meeting-1", FUTURE_DATE, "13:30");
+
+    expect(result).toEqual({
+      error: "その日時は別の面談と重なっています。別の日時を提案してください",
+    });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("does not check the availability bands (the mentor may propose outside them)", async () => {
+    mockAuthedSupabase();
+    mockScheduleAdminClient({
+      availability: [{ date: FUTURE_DATE, start_time: "13:00:00", end_time: "15:00:00" }],
+    });
+
+    const result = await confirmDate("meeting-1", FUTURE_DATE, "20:00");
+
+    expect(result).toEqual({ success: true });
+  });
+
+  it("rejects off-grid times and past dates", async () => {
+    mockAuthedSupabase();
+
+    expect(await confirmDate("meeting-1", FUTURE_DATE, "13:15")).toEqual({
+      error: "その日時では確定できません",
+    });
+    expect(await confirmDate("meeting-1", "2020-01-01", "13:00")).toEqual({
+      error: "その日時では確定できません",
+    });
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });
 

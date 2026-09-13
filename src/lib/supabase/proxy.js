@@ -10,6 +10,16 @@ function requiresLogin(pathname) {
   return LOGIN_REQUIRED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
+// ロール別ダッシュボードは配下にサブルートを持つ（/dashboard/mentor/availability や
+// /dashboard/mentor/stripe/* など）。完全一致で判定すると配下だけゲートを
+// すり抜けるので、ここで前方一致も含めて判定する。
+function isRoleArea(pathname, base) {
+  return pathname === base || pathname.startsWith(`${base}/`);
+}
+
+const isUserArea = (pathname) => isRoleArea(pathname, "/dashboard/user");
+const isMentorArea = (pathname) => isRoleArea(pathname, "/dashboard/mentor");
+
 // 「ロール外のページに来たユーザーをどこへ飛ばすか」を返す。リダイレクト不要ならnull。
 // isProfileSet=false（オンボーディング未完了）の場合はダッシュボードではなく
 // setAccountへ誘導する。pending等の未知のロールは何もしない（現状挙動の維持）。
@@ -25,8 +35,8 @@ function roleDestinationFor(role, pathname, isProfileSet) {
   if (role === "admin") {
     if (
       pathname === "/dashboard" ||
-      pathname === "/dashboard/user" ||
-      pathname === "/dashboard/mentor" ||
+      isUserArea(pathname) ||
+      isMentorArea(pathname) ||
       pathname.startsWith("/setAccount") ||
       pathname === "/"
     ) {
@@ -53,7 +63,7 @@ function roleDestinationFor(role, pathname, isProfileSet) {
       pathname === "/login" ||
       pathname.startsWith("/signup") ||
       pathname === "/dashboard" ||
-      pathname === "/dashboard/mentor"
+      isMentorArea(pathname)
     ) {
       return isProfileSet === false ? "/setAccount/user" : "/dashboard/user";
     }
@@ -73,7 +83,7 @@ function roleDestinationFor(role, pathname, isProfileSet) {
       pathname === "/login" ||
       pathname.startsWith("/signup") ||
       pathname === "/dashboard" ||
-      pathname === "/dashboard/user"
+      isUserArea(pathname)
     ) {
       return isProfileSet === false ? "/setAccount/mentor" : "/dashboard/mentor";
     }
@@ -95,8 +105,8 @@ function roleDestinationFor(role, pathname, isProfileSet) {
       pathname === "/login" ||
       pathname.startsWith("/signup") ||
       pathname === "/dashboard" ||
-      pathname === "/dashboard/user" ||
-      pathname === "/dashboard/mentor"
+      isUserArea(pathname) ||
+      isMentorArea(pathname)
     ) {
       return isProfileSet === false ? "/dashboard/organization/setPassword" : "/dashboard/organization";
     }

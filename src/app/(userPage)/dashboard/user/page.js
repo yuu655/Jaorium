@@ -2,10 +2,10 @@ import UserDashboard from "@/components/dashboard/user/UserDashboard";
 import { createClient } from "@/lib/supabase/server";
 import { fetchMentorDirectory } from "@/lib/mentorDirectory";
 import { unstable_cache } from "next/cache";
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 
-export default async function UserPage() {
+export default async function UserPage({ searchParams }) {
+  const { side } = await searchParams;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -78,13 +78,7 @@ export default async function UserPage() {
     user.id,
   )();
 
-  console.log(profile)
-  console.log(mentors)
-  console.log(meetings)
-  console.log(mentorTagsMap)
-  console.log(tags)
-
   return (
-    <UserDashboard profile={profile} meetings={meetings} mentors={mentors} mentorTagsMap={mentorTagsMap} tags={tags} />
+    <UserDashboard profile={profile} meetings={meetings} mentors={mentors} mentorTagsMap={mentorTagsMap} tags={tags} initialSide={side} />
   );
 }

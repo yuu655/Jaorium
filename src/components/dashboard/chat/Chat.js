@@ -62,6 +62,9 @@ export default function Chat({
   counterpart,
   initialMessages,
   isUser,
+  availabilityByDate,
+  bookedByDate,
+  unrestricted,
 }) {
   const [messages, setMessages] = useState(initialMessages);
   const [meeting, setMeeting] = useState(initialMeeting);
@@ -400,7 +403,10 @@ const canceled = searchParams.get("canceled");
   };
 
   const handleDateProposal = async (date, time) => {
-    await sendDateProposal(meeting.id, date, time);
+    const result = await sendDateProposal(meeting.id, date, time);
+    // 提案時にサーバー側でも空き時間を検証している。弾かれたらモーダルは閉じない
+    if (result?.error) alert(result.error);
+    return result;
   };
 
   const handleResetDate = async () => {
@@ -437,8 +443,10 @@ const canceled = searchParams.get("canceled");
     const { date, time } = parseProposal(msg.content);
     if (!date || !time) return;
     setConfirmingId(msg.id);
-    await confirmDate(meeting.id, date, time);
+    const result = await confirmDate(meeting.id, date, time);
     setConfirmingId(null);
+    // 提案から確定までの間に他の面談が同じ枠を押さえていた場合など
+    if (result?.error) alert(result.error);
   };
 
   const formatTime = (dateStr) =>
@@ -946,6 +954,9 @@ const canceled = searchParams.get("canceled");
         <DateProposalModal
           onClose={() => setShowDateModal(false)}
           onSubmit={handleDateProposal}
+          availabilityByDate={availabilityByDate}
+          bookedByDate={bookedByDate}
+          unrestricted={unrestricted}
         />
       )}
 

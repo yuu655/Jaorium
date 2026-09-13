@@ -223,7 +223,7 @@ Supabase (Postgres) 上の `public` スキーマ。すべてRLS有効。
 
 | サービス | 用途 |
 |---|---|
-| Supabase | 認証・Postgres DB・Storage(未使用?要確認) |
+| Supabase | 認証・Postgres DB |
 | Stripe | クレジット決済、メンター報酬のConnect送金 |
 | LiveKit | ビデオ面談・録画（Egress） |
 | Cloudflare R2 | アイコン画像・面談録画ファイルの保存（S3互換） |

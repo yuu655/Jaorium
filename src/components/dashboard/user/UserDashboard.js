@@ -1,16 +1,24 @@
 "use client";
 
-import { useState } from "react";
 import UserSidebar from "./UserSidebar";
 import UserAppointmentContent from "./UserAppointmentContent";
 import UserProfile from "./UserProfile";
 import OrganizationJoin from "./OrganizationJoin";
 import StatusCode from "../common/statusCode";
+import { useSideTab } from "../common/useSideTab";
 
-import { updateUserIcon, updateUserProfile } from "../profile/actions";
+import { updateUserProfile } from "../profile/actions";
 
-export default function UserDashboard({ profile, meetings, mentors, mentorTagsMap, tags }) {
-  const [side, setSide] = useState("appointment");
+// mentor側と同じく ?side= で開くタブを指定できる
+export const USER_DEFAULT_SIDE = "appointment";
+export const USER_TAB_KEYS = ["appointment", "profile", "organization"];
+
+export default function UserDashboard({ profile, meetings, mentors, mentorTagsMap, tags, initialSide }) {
+  const [side, setSide] = useSideTab(
+    initialSide,
+    USER_TAB_KEYS,
+    USER_DEFAULT_SIDE,
+  );
 
   return (
     <div className="bg-gray-50 min-h-screen">
