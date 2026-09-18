@@ -33,11 +33,12 @@ export default function MentorPayout({ currentUserId, profile }) {
   // 残高取得
   useEffect(() => {
     const fetchBalance = async () => {
+      // 報酬がまだ発生していないメンターには行がない（0行で406にしない）
       const { data } = await supabase
         .from("mentor_balances")
         .select("balance")
         .eq("mentor_id", currentUserId)
-        .single();
+        .maybeSingle();
       if (data) setBalance(data.balance);
     };
 

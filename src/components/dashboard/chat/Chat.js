@@ -131,7 +131,7 @@ const canceled = searchParams.get("canceled");
         .from("organization_credits")
         .select("balance")
         .eq("organization_id", membership.organization_id)
-        .single();
+        .maybeSingle();
       if (!data) return;
 
       const memberRemaining =
@@ -143,11 +143,12 @@ const canceled = searchParams.get("canceled");
       return;
     }
 
+    // 一度も購入していないユーザーには行がない（0行で406にしない）
     const { data } = await supabase
       .from("credits")
       .select("balance")
       .eq("user_id", currentUserId)
-      .single();
+      .maybeSingle();
 
     if (data) setCredit(data);
   }, [currentUserId]);
@@ -357,11 +358,13 @@ const canceled = searchParams.get("canceled");
 
   useEffect(() => {
     const fetchConfirmation = async () => {
+      // クレジット未消費の面談には行がない。single()だとPostgRESTが406を返して
+      // ログが汚れるので、0行を正常値として扱うmaybeSingle()を使う
       const { data } = await supabase
         .from("meeting_confirmations")
         .select()
         .eq("meeting_id", meeting.id)
-        .single();
+        .maybeSingle();
 
       if (data) setMeetingConfirmation(data);
     };
