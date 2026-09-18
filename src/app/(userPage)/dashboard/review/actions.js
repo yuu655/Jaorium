@@ -14,7 +14,12 @@ async function fetchMeetingById(supabase, meetingId) {
 }
 
 async function reviewExistsForMeeting(supabase, meetingId) {
-  const { data } = await supabase.from("reviews").select("*").eq("meeting_id", meetingId).single();
+  // 未投稿が普通の状態なので、0行を406にしないmaybeSingle()を使う
+  const { data } = await supabase
+    .from("reviews")
+    .select("*")
+    .eq("meeting_id", meetingId)
+    .maybeSingle();
   return Boolean(data);
 }
 
