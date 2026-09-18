@@ -2,8 +2,13 @@
 
 import { Calendar, MessageCircle, User, Settings, Building2 } from "lucide-react";
 import Icon from "../profile/icon";
+import UnreadBadge from "../common/UnreadBadge";
+import { totalUnread } from "@/lib/unreadMessages";
 
-export default function UserSidebar({ profile, side, setSide }) {
+export default function UserSidebar({ profile, side, setSide, unreadByMeeting = {} }) {
+  // 未読は予約管理タブのカードから辿るので、合計は「予約管理」に出す
+  const unreadCount = totalUnread(unreadByMeeting);
+
   const baseStyle = "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium";
   const activeStyle = "bg-blue-50 text-blue-600";
   const inactiveStyle = "text-gray-700 hover:bg-gray-50";
@@ -20,6 +25,7 @@ export default function UserSidebar({ profile, side, setSide }) {
         <nav className="space-y-2">
           <button className={`${baseStyle} ${side === "appointment" ? activeStyle : inactiveStyle}`} onClick={() => setSide("appointment")}>
             <Calendar size={20} />予約管理
+            <UnreadBadge count={unreadCount} className="ml-auto" />
           </button>
           {/* <button className={`${baseStyle} ${side === "message" ? activeStyle : inactiveStyle}`} onClick={() => setSide("message")}>
             <MessageCircle size={20} />メッセージ

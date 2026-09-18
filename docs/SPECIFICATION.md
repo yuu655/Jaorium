@@ -126,12 +126,14 @@ JaoRium（jaorium.com）は、大学受験生（**ユーザー**）が、実際�
 | 項目 | 内容 |
 |---|---|
 | 前提 | メンターはStripe Connect（Expressアカウント）のオンボーディングを完了している必要がある（`/dashboard/mentor/stripe/guide` から `createStripeOnboarding` を実行） |
-| 報酬発生 | 面談完了（`meeting_schedules.is_finished = true`）をトリガーに `mentor_balance_logs` へ加算記録 → `mentor_balances.balance` が自動更新（トリガー） |
-| 報酬率 | `mentor_secret.transfer_rate`（デフォルト0.70 = 70%）。実際の金額計算はDB関数側で行われる（要確認: 具体的な計算式はマイグレーション履歴上に存在するが本書執筆時点で詳細未検証） |
+| 報酬発生 | 面談完了（`meeting_schedules.is_finished` が `false`/`null` → `true` に変化）をトリガー `on_meeting_finished` → 関数 `add_mentor_balance_on_finished()` が `mentor_balance_logs` に `reason='meeting_completed'` で加算記録 → トリガー `on_mentor_balance_log_insert` → `sync_mentor_balance()` が `mentor_balances.balance` を更新。アプリ側は残高を直接書かず、必ず `mentor_balance_logs` へINSERTする |
+| 報酬率・計算式 | `add_mentor_balance_on_finished()` 内で `floor(credit_price × mentor_secret.transfer_rate)`。`transfer_rate` はデフォルト 0.70（70%）、`credit_price` は同関数内のローカル変数 `v_credit_price`（DBの関数定義がソース。テーブルにも定数ファイルにも無い） |
+| **現在の `credit_price` = 0（無料トライアル期間・意図的）** | トライアル期間中はメンターに報酬を発生させない方針のため、`v_credit_price` を `2000` → `0` に変更済み。実データも一致しており、2026-08-15 までの面談完了は `change = 1400`（= 2000 × 0.70）、2026-08-28 以降は `change = 0`。あわせて 2026-08-20 に `reason='trial_period_adjustment'` で計 -8,400円の調整（既存の 1400×6 の取り消し）が入っている。**この結果、残高は増えないため最低振込額に到達せず、下記の振込申請は事実上実行できない状態（これも意図通り）。** 報酬を再開するときは `v_credit_price` を戻す |
+| 注意 | 上記の `2000` → `0` 変更と `trial_period_adjustment` の投入はSQLエディタから直接実行されており、**マイグレーション履歴には存在しない**（2026-08-12 の次の記録は 2026-08-31）。ローカル環境やDB復元時に再現されない点に注意 |
 | 振込手数料 | 固定250円（`PAYOUT_FEE`） |
 | 最低振込額 | 1,000円（`MIN_PAYOUT_AMOUNT`） |
-| 振込経路1（メンター起点） | `POST /api/mentor/payout` — メンターがダッシュボードから自分の残高を即時振込申請。二重送金防止のため、送金前に `transfers` へ `status='processing'` の行を先行INSERTし、部分ユニークインデックス（`mentor_id WHERE status='processing'`）で並行リクエストを1件に制限（2件目は409）。Stripe送金はこの行のIDをidempotency keyとして実行され、成功で `completed`、失敗で `pending`（再試行可）/`failed` に更新される |
-| 振込経路2（自動バッチ） | `POST /api/batch/transfer` — 月次cron（`CRON_SECRET`で認証）。未送金の月をすべて洗い出し、メンターごとに送金。Stripe Connectのオンボーディング未完了のメンターには保留（`pending`）として記録し、口座登録を促すメールを送信 |
+| 振込経路（申請ベース・これのみ） | `POST /api/mentor/payout` — メンターがダッシュボードから自分の残高を即時振込申請。認証はメンター自身のBearerトークン（`supabase.auth.getUser(token)`）。二重送金防止のため、送金前に `transfers` へ `status='processing'` の行を先行INSERTし、部分ユニークインデックス `transfers_one_processing_per_mentor`（`mentor_id WHERE status='processing'`）で並行リクエストを1件に制限（2件目は `23505` → 409）。Stripe送金はこの行のIDをidempotency keyとして実行され、成功で `completed`、失敗で `pending`（再試行可）/`failed` に更新される。残高の消費は `mentor_balance_logs` へのINSERTで記録する（`mentor_balances` を直接更新しない） |
+| 自動バッチ送金 | **存在しない。** 以前は月次cron（`POST /api/batch/transfer`）があったが、2026-06-14 のマイグレーション `recreate_transfers_table` / `cleanup_unused_functions_and_cron` でDB側（`transfers.period` カラム、RPC `get_unpaid_periods` / `get_monthly_transfer_summary`、pg_cronジョブ `monthly-transfer`）を撤去し、その後アプリ側のルート・テストと孤立していたRPC `get_unpaid_amount()` も削除した。`period` ベースの記録やcron送金経路を復活させないこと |
 | リトライ | Stripeの一時的なエラー（`insufficient_funds`／`rate_limit`／`api_connection_error`）は `pending` として次回に持ち越し、それ以外は `failed` |
 
 ### 5.7 メンター審査（管理者機能）
@@ -189,7 +191,7 @@ JaoRium（jaorium.com）は、大学受験生（**ユーザー**）が、実際�
 
 ### API（`app/api/**`、抜粋は5章参照）
 
-認証系（`auth/callback`, `auth/confirm`, `auth/resetpass`, `auth/signout`, `auth/delete-account`）、決済系（`checkout_sessions`, `webhooks/stripe`）、面談系（`meeting/[meetingId]`, `livekit-token`, `webhooks/livekit`）、記事系（`article`, `draft`, `exit_draft`, `revalidate`, `webhooks/supabase`）、メンター系（`mentor`, `mentor/payout`, `batch/transfer`）、ファイル（`r2_upload`）。
+認証系（`auth/callback`, `auth/confirm`, `auth/resetpass`, `auth/signout`, `auth/delete-account`）、決済系（`checkout_sessions`, `webhooks/stripe`）、面談系（`meeting/[meetingId]`, `livekit-token`, `webhooks/livekit`）、記事系（`article`, `draft`, `exit_draft`, `revalidate`, `webhooks/supabase`）、メンター系（`mentor`, `mentor/payout`）、ファイル（`r2_upload`）。
 
 ---
 
@@ -234,7 +236,16 @@ Supabase (Postgres) 上の `public` スキーマ。すべてRLS有効。
 
 ## 9. バッチ・定期実行処理
 
-- `POST /api/batch/transfer` — メンター報酬の月次自動送金。`CRON_SECRET` で認証。Supabase側の `pg_cron` から呼び出される想定（マイグレーション `setup_pg_cron_monthly_transfer` 参照）。
+**このアプリ（`app/api/**`）に定期実行されるエンドポイントは存在しない。** `CRON_SECRET` を読むコードも残っていない（唯一の利用者だった `api/batch/transfer` を削除済み）。
+
+現存する定期実行は Supabase 側の pg_cron ジョブ2件のみで、いずれも Edge Function を叩く Notion 同期であり、このアプリのAPIは呼ばない。
+
+| ジョブ名 | スケジュール | 内容 |
+|---|---|---|
+| `sync-to-notion` | `*/30 * * * *` | Edge Function `write_notion` — `mentors` + `mentor_secret.admin_allow` をNotionへ全件同期（毎回アーカイブして再作成） |
+| `sync-meetings-to-notion` | `15,45 * * * *` | Edge Function `sync-meetings-to-notion` — `meetings` / `meeting_schedules` / `users` / `mentors` を突き合わせてNotionへupsert（議事録・フィードバック列は手動入力なので上書きしない） |
+
+Edge Function `smart-worker` も存在するが、pg_cronからの呼び出しはなく、内容も固定文字列を書き込むだけの雛形（要確認: 使用予定の有無）。
 
 ---
 
@@ -244,7 +255,7 @@ Supabase (Postgres) 上の `public` スキーマ。すべてRLS有効。
 
 1. **`profiles.role` の設定経路が不明**（4章参照）。新規ユーザーがどうやって `pending` から `user`/`mentor` に遷移するのか、アプリコード上に該当処理が見当たらない。
 2. **メンター公開フラグが2種類ある**（`mentors.is_allowed` と `mentor_secret.admin_allow`）。管理者承認API (`/api/mentor`) は `is_allowed` を更新するが、公開判定ロジック（5.1節）は両方を要求している。2つのフラグの役割分担の意図が要確認。
-3. **報酬率（`transfer_rate`）の実際の計算箇所**は本書では未検証（DB関数内で行われている可能性が高い）。
+3. ~~**報酬率（`transfer_rate`）の実際の計算箇所**は本書では未検証~~ → **解決済み（5.6節参照）**。DB関数 `add_mentor_balance_on_finished()` 内の `floor(credit_price × mentor_secret.transfer_rate)`。ただし `credit_price` は同関数のローカル変数で、現在は無料トライアル措置として意図的に `0`。
 4. **`comments` テーブルおよび `/dashboard/putComent` 画面**の用途が、現状のコードから明確に特定できなかった。
 5. **`updateMentorProfile`（メンタープロフィール編集）の`is_allowed`チェックボックス**は、フォームが何も送信しない場合に常に `true` として保存される実装になっている（意図した挙動か要確認、本書執筆時点では未修正）。
 6. **`submitBooking`（相談予約）確認メール**のHTML内に、Supabaseの生オブジェクトがそのまま文字列展開される箇所があり、実際のメール本文に `[object Object]` が出力される（未修正）。

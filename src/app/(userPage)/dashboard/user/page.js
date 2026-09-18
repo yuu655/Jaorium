@@ -2,6 +2,7 @@ import UserDashboard from "@/components/dashboard/user/UserDashboard";
 import { createClient } from "@/lib/supabase/server";
 import { fetchMentorDirectory } from "@/lib/mentorDirectory";
 import { unstable_cache } from "next/cache";
+import { fetchUnreadByMeeting } from "@/lib/unreadMessages";
 
 export default async function UserPage({ searchParams }) {
   const { side } = await searchParams;
@@ -78,7 +79,21 @@ export default async function UserPage({ searchParams }) {
     user.id,
   )();
 
+  // 未読は変化が速いのでキャッシュの外で引く（開いたのにバッジが残るのを防ぐ）
+  const unreadByMeeting = await fetchUnreadByMeeting(supabase, {
+    userId: user.id,
+    meetingIds: meetings.next.map((m) => m.id),
+  });
+
   return (
-    <UserDashboard profile={profile} meetings={meetings} mentors={mentors} mentorTagsMap={mentorTagsMap} tags={tags} initialSide={side} />
+    <UserDashboard
+      profile={profile}
+      meetings={meetings}
+      mentors={mentors}
+      mentorTagsMap={mentorTagsMap}
+      tags={tags}
+      initialSide={side}
+      unreadByMeeting={unreadByMeeting}
+    />
   );
 }

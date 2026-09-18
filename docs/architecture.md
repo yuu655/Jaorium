@@ -7,15 +7,17 @@
 ```bash
 npx depcruise src \
   --no-config \
-  --ts-config jsconfig.json \
+  --ts-config tsconfig.json \
+  --ts-pre-compilation-deps \
   --output-type json \
   --do-not-follow "node_modules" \
   --exclude "node_modules|[.]test[.]js$"
 ```
 
-- `--ts-config jsconfig.json` で `@/*` → `./src/*` のパスエイリアスを解決しています。
-- 除外対象: `node_modules`、`*.test.js`、テスト用ヘルパー `src/test/`。型定義のみのファイル（`*.d.ts`）は本リポジトリには存在しません（プレーン JavaScript プロジェクト）。
-- 解析対象ファイル数: **234** / 集約ノード数: **58** / 集約エッジ数: **128**
+- `--ts-config tsconfig.json` で `@/*` → `./src/*` のパスエイリアスを解決しています。
+- 除外対象: `node_modules`、`*.test.js`、テスト用ヘルパー `src/test/`。
+- TypeScript への段階移行中のため `.js` と `.ts` が混在します。`--ts-pre-compilation-deps` を付けているので、`import type` による型のみの依存もエッジとして数えています（付けないと `database.types.ts` が孤立ファイルに見えます）。
+- 解析対象ファイル数: **234** / 集約ノード数: **57** / 集約エッジ数: **126**
 - 解析日: 2026-09-13（dependency-cruiser v18.2.0）
 
 ## 凡例
@@ -30,7 +32,7 @@ npx depcruise src \
 ```mermaid
 graph LR
   subgraph L0["L0: ミドルウェア"]
-    n56["middleware<br/>(1)"]
+    n55["middleware<br/>(1)"]
   end
   subgraph L1a["L1a: ルート（公開 / (main)）"]
     n0["app<br/>(4)"]
@@ -45,7 +47,7 @@ graph LR
     n10["app/(main)/recruitment<br/>(1)"]
     n11["app/(main)/reset<br/>(2)"]
     n12["app/(main)/signup<br/>(5)"]
-    n30["app/privacy<br/>(1)"]
+    n29["app/privacy<br/>(1)"]
   end
   subgraph L1b["L1b: ルート（認証エリア / (userPage)・(admin)）"]
     n1["app/(admin)<br/>(1)"]
@@ -58,184 +60,181 @@ graph LR
   subgraph L2["L2: API ルート"]
     n18["app/api/article<br/>(1)"]
     n19["app/api/auth<br/>(5)"]
-    n20["app/api/batch<br/>(1)"]
-    n21["app/api/checkout_sessions<br/>(1)"]
-    n22["app/api/draft<br/>(1)"]
-    n23["app/api/exit_draft<br/>(1)"]
-    n24["app/api/livekit-token<br/>(1)"]
-    n25["app/api/meeting<br/>(1)"]
-    n26["app/api/mentor<br/>(2)"]
-    n27["app/api/r2_upload<br/>(1)"]
-    n28["app/api/revalidate<br/>(1)"]
-    n29["app/api/webhooks<br/>(3)"]
+    n20["app/api/checkout_sessions<br/>(1)"]
+    n21["app/api/draft<br/>(1)"]
+    n22["app/api/exit_draft<br/>(1)"]
+    n23["app/api/livekit-token<br/>(1)"]
+    n24["app/api/meeting<br/>(1)"]
+    n25["app/api/mentor<br/>(2)"]
+    n26["app/api/r2_upload<br/>(1)"]
+    n27["app/api/revalidate<br/>(1)"]
+    n28["app/api/webhooks<br/>(3)"]
   end
   subgraph L3["L3: コンポーネント（サイト共通・マーケティング）"]
-    n31["components<br/>(3)"]
-    n32["components/articles<br/>(4)"]
-    n33["components/common<br/>(3)"]
-    n46["components/headerComponents<br/>(3)"]
-    n47["components/home<br/>(10)"]
-    n48["components/lpTemp<br/>(16)"]
-    n49["components/mentors<br/>(3)"]
-    n50["components/recruitment<br/>(10)"]
+    n30["components<br/>(3)"]
+    n31["components/articles<br/>(4)"]
+    n32["components/common<br/>(3)"]
+    n45["components/headerComponents<br/>(3)"]
+    n46["components/home<br/>(10)"]
+    n47["components/lpTemp<br/>(16)"]
+    n48["components/mentors<br/>(3)"]
+    n49["components/recruitment<br/>(10)"]
   end
   subgraph L4["L4: コンポーネント（ダッシュボード）"]
-    n34["components/dashboard<br/>(6)"]
-    n35["components/dashboard/admin<br/>(12)"]
-    n36["components/dashboard/appointment<br/>(6)"]
-    n37["components/dashboard/chat<br/>(5)"]
-    n38["components/dashboard/common<br/>(3)"]
-    n39["components/dashboard/livekit-token<br/>(4)"]
-    n40["components/dashboard/mentor<br/>(17)"]
-    n41["components/dashboard/organization<br/>(1)"]
-    n42["components/dashboard/profile<br/>(3)"]
-    n43["components/dashboard/review<br/>(1)"]
-    n44["components/dashboard/setup<br/>(2)"]
-    n45["components/dashboard/user<br/>(10)"]
+    n33["components/dashboard<br/>(6)"]
+    n34["components/dashboard/admin<br/>(12)"]
+    n35["components/dashboard/appointment<br/>(6)"]
+    n36["components/dashboard/chat<br/>(5)"]
+    n37["components/dashboard/common<br/>(3)"]
+    n38["components/dashboard/livekit-token<br/>(4)"]
+    n39["components/dashboard/mentor<br/>(17)"]
+    n40["components/dashboard/organization<br/>(1)"]
+    n41["components/dashboard/profile<br/>(3)"]
+    n42["components/dashboard/review<br/>(1)"]
+    n43["components/dashboard/setup<br/>(2)"]
+    n44["components/dashboard/user<br/>(10)"]
   end
   subgraph L5["L5: UI プリミティブ（shadcn/ui）"]
-    n51["components/ui<br/>(6)"]
+    n50["components/ui<br/>(6)"]
   end
   subgraph L6["L6: ライブラリ / ユーティリティ"]
-    n52["lib<br/>(10)"]
-    n53["lib/auth<br/>(1)"]
-    n54["lib/supabase<br/>(4)"]
-    n55["lib/validation<br/>(3)"]
-    n57["utils<br/>(1)"]
+    n51["lib<br/>(10)"]
+    n52["lib/auth<br/>(1)"]
+    n53["lib/supabase<br/>(5)"]
+    n54["lib/validation<br/>(3)"]
+    n56["utils<br/>(1)"]
   end
 
   n1 --> n0
-  n1 --> n34
-  n3 -->|5| n32
-  n5 --> n57
-  n7 --> n51
-  n7 --> n54
-  n7 --> n57
-  n8 --> n31
-  n8 -->|9| n47
-  n9 --> n33
-  n9 --> n49
-  n9 --> n52
-  n9 --> n54
-  n10 -->|10| n50
+  n1 --> n33
+  n3 -->|5| n31
+  n5 --> n56
+  n7 --> n50
+  n7 --> n53
+  n7 --> n56
+  n8 --> n30
+  n8 -->|9| n46
+  n9 --> n32
+  n9 --> n48
+  n9 --> n51
+  n9 --> n53
+  n10 -->|10| n49
+  n11 --> n50
   n11 --> n51
-  n11 --> n52
-  n11 --> n54
-  n11 --> n57
-  n12 --> n52
-  n12 -->|6| n54
-  n12 -->|4| n57
+  n11 --> n53
+  n11 --> n56
+  n12 --> n51
+  n12 -->|6| n53
+  n12 -->|4| n56
   n2 --> n0
-  n2 --> n31
-  n2 -->|13| n48
-  n2 --> n52
-  n2 --> n54
-  n14 --> n34
-  n14 ==>|4| n35
-  n14 --> n37
-  n14 --> n39
-  n14 -->|5| n40
-  n14 ==> n41
-  n14 --> n43
-  n14 ==> n45
-  n14 --> n51
-  n14 -->|7| n52
-  n14 --> n53
-  n14 -->|30| n54
-  n14 -->|3| n57
-  n16 --> n51
-  n16 --> n54
-  n17 --> n40
-  n17 --> n42
-  n17 --> n45
-  n17 -->|3| n54
-  n17 --> n55
+  n2 --> n30
+  n2 -->|13| n47
+  n2 --> n51
+  n2 --> n53
+  n14 --> n33
+  n14 ==>|4| n34
+  n14 --> n36
+  n14 --> n38
+  n14 -->|5| n39
+  n14 ==> n40
+  n14 --> n42
+  n14 ==> n44
+  n14 --> n50
+  n14 -->|7| n51
+  n14 --> n52
+  n14 -->|30| n53
+  n14 -->|3| n56
+  n16 --> n50
+  n16 --> n53
+  n17 --> n39
+  n17 --> n41
+  n17 --> n44
+  n17 -->|3| n53
+  n17 --> n54
   n13 --> n0
-  n13 --> n34
-  n19 -->|3| n54
-  n19 -->|3| n57
-  n20 --> n52
-  n20 --> n54
-  n21 --> n52
-  n21 --> n54
-  n24 --> n54
-  n25 --> n54
-  n26 --> n52
-  n26 --> n54
-  n27 --> n52
-  n27 --> n54
-  n29 --> n52
-  n29 --> n54
-  n0 --> n31
-  n0 --> n51
-  n32 --> n51
-  n33 -->|3| n52
-  n35 ==> n14
-  n35 -->|3| n33
-  n35 --> n34
-  n35 --> n36
-  n35 -->|4| n42
-  n35 --> n51
-  n35 --> n52
-  n36 --> n34
-  n36 --> n42
-  n36 --> n54
-  n37 --> n51
-  n37 -->|3| n52
-  n37 -->|3| n54
-  n37 --> n57
-  n39 --> n57
-  n40 --> n36
-  n40 --> n38
-  n40 -->|5| n42
-  n40 -->|6| n51
-  n40 -->|5| n52
-  n40 -->|4| n54
-  n40 --> n55
-  n40 --> n57
-  n41 ==> n14
-  n42 --> n52
-  n42 --> n54
-  n42 -->|3| n55
-  n43 --> n51
-  n45 ==> n14
-  n45 --> n33
-  n45 --> n34
-  n45 --> n36
-  n45 --> n38
-  n45 -->|5| n42
-  n45 --> n49
-  n45 -->|3| n51
-  n45 --> n52
-  n45 --> n54
-  n34 --> n31
-  n34 --> n42
+  n13 --> n33
+  n19 -->|3| n53
+  n19 -->|3| n56
+  n20 --> n51
+  n20 --> n53
+  n23 --> n53
+  n24 --> n53
+  n25 --> n51
+  n25 --> n53
+  n26 --> n51
+  n26 --> n53
+  n28 --> n51
+  n28 --> n53
+  n0 --> n30
+  n0 --> n50
+  n31 --> n50
+  n32 -->|3| n51
+  n34 ==> n14
+  n34 -->|3| n32
+  n34 --> n33
+  n34 --> n35
+  n34 -->|4| n41
+  n34 --> n50
   n34 --> n51
-  n34 --> n54
-  n46 --> n51
-  n47 --> n31
-  n47 --> n32
-  n47 -->|5| n33
-  n47 -->|3| n51
-  n47 -->|3| n52
-  n47 --> n54
-  n48 --> n42
-  n48 --> n49
-  n48 -->|4| n51
-  n49 --> n33
-  n49 --> n42
-  n49 --> n51
-  n51 -->|5| n52
-  n31 --> n42
-  n31 --> n46
-  n31 --> n51
-  n31 --> n54
-  n53 --> n54
-  n56 --> n54
+  n35 --> n33
+  n35 --> n41
+  n35 --> n53
+  n36 --> n50
+  n36 -->|3| n51
+  n36 -->|3| n53
+  n36 --> n56
+  n38 --> n56
+  n39 --> n35
+  n39 --> n37
+  n39 -->|5| n41
+  n39 -->|6| n50
+  n39 -->|5| n51
+  n39 -->|4| n53
+  n39 --> n54
+  n39 --> n56
+  n40 ==> n14
+  n41 --> n51
+  n41 --> n53
+  n41 -->|3| n54
+  n42 --> n50
+  n44 ==> n14
+  n44 --> n32
+  n44 --> n33
+  n44 --> n35
+  n44 --> n37
+  n44 -->|5| n41
+  n44 --> n48
+  n44 -->|3| n50
+  n44 --> n51
+  n44 --> n53
+  n33 --> n30
+  n33 --> n41
+  n33 --> n50
+  n33 --> n53
+  n45 --> n50
+  n46 --> n30
+  n46 --> n31
+  n46 -->|5| n32
+  n46 -->|3| n50
+  n46 -->|3| n51
+  n46 --> n53
+  n47 --> n41
+  n47 --> n48
+  n47 -->|4| n50
+  n48 --> n32
+  n48 --> n41
+  n48 --> n50
+  n50 -->|5| n51
+  n30 --> n41
+  n30 --> n45
+  n30 --> n50
+  n30 --> n53
+  n52 --> n53
+  n55 --> n53
 
   classDef cyc fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#7f1d1d;
-  class n14,n35,n41,n45 cyc;
-  linkStyle 27,31,33,66,89,94 stroke:#dc2626,stroke-width:2.5px;
+  class n14,n34,n40,n44 cyc;
+  linkStyle 27,31,33,64,87,92 stroke:#dc2626,stroke-width:2.5px;
 ```
 
 ## 双方向依存（循環）
@@ -316,7 +315,6 @@ graph LR
 | `src/app/(userPage)/setAccount` | 6 |
 | `src/app/api/article` | 1 |
 | `src/app/api/auth` | 5 |
-| `src/app/api/batch` | 1 |
 | `src/app/api/checkout_sessions` | 1 |
 | `src/app/api/draft` | 1 |
 | `src/app/api/exit_draft` | 1 |
@@ -350,7 +348,7 @@ graph LR
 | `src/components/ui` | 6 |
 | `src/lib` | 10 |
 | `src/lib/auth` | 1 |
-| `src/lib/supabase` | 4 |
+| `src/lib/supabase` | 5 |
 | `src/lib/validation` | 3 |
 | `src/middleware` | 1 |
 | `src/utils` | 1 |

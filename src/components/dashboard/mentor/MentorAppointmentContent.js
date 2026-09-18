@@ -7,7 +7,7 @@ import MentorAppointmentUnit from "./MentorAppointmentUnit";
 // import AppointmentUnitPast from "../appointment/appointmentUnitPast";
 import MentorAppointmentUnitPast from "./MentorAppointmentUnitPast";
 
-export default function MentorAppointmentContent({ meetings, users }) {
+export default function MentorAppointmentContent({ meetings, users, unreadByMeeting = {} }) {
   const [isActive, setIsActive] = useState("upcoming");
 
   // meeting.user (ID) からuserオブジェクトを引くためのMap
@@ -26,6 +26,7 @@ export default function MentorAppointmentContent({ meetings, users }) {
                   key={appointment.id}
                   appointment={appointment}
                   user={userMap[appointment.user]}
+                  unreadCount={unreadByMeeting[appointment.id] ?? 0}
                 />
               ))
             ) : (

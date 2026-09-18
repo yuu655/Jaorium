@@ -7,7 +7,7 @@ import AdminAppointmentContent from "./AdminAppointmentContent";
 
 // import { updateUserIcon, updateUserProfile } from "../profile/actions";
 
-export default function AdminDashboard({ meetings }) {
+export default function AdminDashboard({ meetings, pastMeetings = [] }) {
   const [side, setSide] = useState("appointment");
 
   return (
@@ -38,7 +38,7 @@ export default function AdminDashboard({ meetings }) {
             </div> */}
 
             <div className="bg-white rounded-lg shadow-sm">
-              <AdminAppointmentContent meetings={meetings}/>
+              <AdminAppointmentContent meetings={meetings} pastMeetings={pastMeetings} />
               {/* {side === "appointment" && (
                 <UserAppointmentContent meetings={meetings} mentors={mentors} mentorTagsMap={mentorTagsMap} tags={tags} />
               )} */}

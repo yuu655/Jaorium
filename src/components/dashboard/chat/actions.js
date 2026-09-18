@@ -6,15 +6,19 @@ import { stripe } from "@/lib/stripe";
 import { revalidateTag } from "next/cache";
 import getUrls from "@/utils/getUrls";
 import {
+  fetchMentorAvailability,
+  fetchMentorBookedByDate,
+} from "@/lib/mentorSchedule";
+import {
   groupBandsByDate,
-  groupBookedByDate,
   hasFutureAvailability,
   isFutureSlot,
-  isProposableSlot,
   isSlotTime,
   isDateString,
   nowInJst,
   overlapsBookedSlot,
+  formatProposals,
+  validateProposalChoices,
 } from "@/lib/schedule";
 import { redirect } from "next/navigation";
 
@@ -103,11 +107,13 @@ async function patchMeeting(meetingId, payload) {
   return { ok: true };
 }
 
-async function insertDateProposalMessage(supabase, { meetingId, senderId, date, time }) {
+// 第1〜第3希望をカンマ区切りで1行に入れる。メッセージが3通に分かれないようにし、
+// Push通知もチャットの吹き出しも1つにまとめるため。
+async function insertDateProposalMessage(supabase, { meetingId, senderId, choices }) {
   return supabase.from("messages").insert({
     meeting_id: meetingId,
     sender_id: senderId,
-    content: `${date}|${time}`,
+    content: formatProposals(choices),
     type: "date_proposal",
   });
 }
@@ -126,39 +132,6 @@ async function softDeleteMessage(supabase, messageId) {
     .from("messages")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", messageId);
-}
-
-// ---- 面談可能日時（メンターの空き）----
-
-async function fetchMentorAvailability(admin, { mentorId, from }) {
-  const { data } = await admin
-    .from("mentor_availabilities")
-    .select("date, start_time, end_time")
-    .eq("mentor_id", mentorId)
-    .gte("date", from);
-  return data ?? [];
-}
-
-// 同じメンターが「別の面談」で確定済みの日時。ダブルブッキング判定に使う。
-// 他人の面談のscheduleはRLSで読めないので service role で引く。
-async function fetchMentorBookedByDate(admin, { mentorId, excludeMeetingId, from }) {
-  const { data: mentorMeetings } = await admin.from("meetings").select("id").eq("mentor", mentorId);
-
-  const meetingIds = (mentorMeetings ?? [])
-    .map((m) => m.id)
-    .filter((id) => id !== excludeMeetingId);
-
-  if (meetingIds.length === 0) return {};
-
-  const { data: schedules } = await admin
-    .from("meeting_schedules")
-    .select("date, time")
-    .in("meeting_id", meetingIds)
-    .eq("is_commit", true)
-    .eq("is_finished", false)
-    .gte("date", from);
-
-  return groupBookedByDate(schedules);
 }
 
 async function setFinishRequestedBy(supabase, { meetingId, userId }) {
@@ -275,10 +248,11 @@ export async function resetDate(meetingId) {
   return { success: true };
 }
 
-// 日時提案メッセージを送る。
+// 日時提案メッセージを送る。第1希望は必須、第2・第3希望は任意で、
+// choices は [{ date, time }, ...]（最大3件、第1希望が先頭）。
 // メンターが面談可能日時を登録している場合、ユーザーはその範囲内しか提案できない
 // （UIでも絞っているが、ここが最終的な判定）。
-export async function sendDateProposal(meetingId, date, time) {
+export async function sendDateProposal(meetingId, choices) {
   const supabase = await createClient();
   const { user } = await getAuthenticatedUser(supabase);
   if (!user) return { error: "ログインが必要です" };
@@ -302,27 +276,52 @@ export async function sendDateProposal(meetingId, date, time) {
   // これから先に使える枠が1つも残っていなければ自由に提案できる。
   const unrestricted = user.id === meeting.mentor || !hasFutureAvailability(availability, now);
 
-  const proposable = isProposableSlot({
-    date,
-    time,
+  const { choices: validated, error: invalid } = validateProposalChoices({
+    choices,
     bandsByDate: groupBandsByDate(availability),
     bookedByDate,
     unrestricted,
     now,
   });
 
-  if (!proposable) {
-    return { error: "その日時は提案できません。空き状況を確認してください" };
-  }
+  if (invalid) return { error: invalid };
 
   const { error } = await insertDateProposalMessage(supabase, {
     meetingId,
     senderId: user.id,
-    date,
-    time,
+    choices: validated,
   });
 
   if (error) return { error: "送信に失敗しました" };
+  return { success: true };
+}
+
+// チャットを開いている間、既読時刻を進める。
+// DM通知メールの「未読のときだけ送る」判定に使う（画面上の既読表示はまだない）。
+// last_notified_at はwebhook（service role）だけが書くので、ここでは触らない。
+export async function markChatRead(meetingId) {
+  const supabase = await createClient();
+  const { user } = await getAuthenticatedUser(supabase);
+  if (!user) return { error: "ログインが必要です" };
+
+  const meeting = await getMeetingWithAuth(supabase, meetingId, user.id);
+  if (!meeting) return { error: "権限がありません" };
+
+  const { error } = await supabase.from("meeting_reads").upsert(
+    {
+      meeting_id: meetingId,
+      user_id: user.id,
+      last_read_at: new Date().toISOString(),
+    },
+    { onConflict: "meeting_id,user_id" },
+  );
+
+  // 既読の記録は補助機能なので、失敗してもチャットの操作は止めない
+  if (error) {
+    console.error("markChatRead error:", error);
+    return { error: "既読の更新に失敗しました" };
+  }
+
   return { success: true };
 }
 

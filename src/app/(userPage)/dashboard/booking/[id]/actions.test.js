@@ -28,9 +28,13 @@ function formData(fields) {
   return { get: (key) => map.get(key) ?? null };
 }
 
+// 日時の検証は「今日以降」を要求するので、テストは常に来年の日付を使う
+const FUTURE_DATE = `${new Date().getFullYear() + 1}-07-10`;
+
 const validFields = {
   title: "受験相談",
   description: "詳細です",
+  date_choices: `${FUTURE_DATE}|13:00`,
   trouble_episode: "つまずいた話",
   actions_taken: "やったこと",
   unresolved_issues: "未解決の課題",
@@ -191,5 +195,199 @@ describe("submitBooking server action", () => {
     expect(sendMock).toHaveBeenCalledWith(expect.objectContaining({ to: "user@example.com" }));
     expect(revalidateTag).toHaveBeenCalledWith("dashboard-user-u1");
     expect(revalidateTag).toHaveBeenCalledWith("dashboard-mentor-mentor-1");
+  });
+});
+
+describe("submitBooking / 希望日時（第1〜第3希望）", () => {
+  // 予約フォームの日程入力は第1希望が必須。第2・第3希望は任意。
+  function mockClients({ messagesChain, availability = [], meetings } = {}) {
+    createSupabaseClient.mockReturnValue(
+      createSupabaseMock({
+        auth: {
+          admin: {
+            getUserById: vi.fn(async () => ({
+              data: { user: { email: "mentor@example.com" } },
+            })),
+          },
+        },
+        from: {
+          mentor_availabilities: () => createChain({ data: availability, error: null }),
+          meetings: () => createChain({ data: [], error: null }),
+          meeting_schedules: () => createChain({ data: [], error: null }),
+        },
+      }),
+    );
+    createClient.mockResolvedValue(
+      createSupabaseMock({
+        auth: {
+          getUser: vi.fn(async () => ({
+            data: { user: { id: "u1", email: "user@example.com" } },
+          })),
+        },
+        from: {
+          profiles: () => createChain({ data: { role: "user" }, error: null }),
+          public_mentors: () => createChain({ data: { id: "mentor-1" }, error: null }),
+          meetings: () => meetings ?? createChain({ data: [{ id: "meeting-1" }], error: null }),
+          messages: () => messagesChain ?? createChain({ error: null }),
+        },
+      }),
+    );
+  }
+
+  it("posts the choices as one date_proposal message on the new meeting", async () => {
+    const messagesChain = createChain({ error: null });
+    mockClients({ messagesChain });
+
+    await expect(
+      submitBooking(
+        "mentor-1",
+        null,
+        formData({
+          ...validFields,
+          date_choices: `${FUTURE_DATE}|13:00,${FUTURE_DATE}|15:00,${FUTURE_DATE}|17:30`,
+        }),
+      ),
+    ).rejects.toThrow("REDIRECT:/dashboard/chat/meeting-1");
+
+    expect(messagesChain.insert).toHaveBeenCalledTimes(1);
+    expect(messagesChain.insert).toHaveBeenCalledWith({
+      meeting_id: "meeting-1",
+      sender_id: "u1",
+      content: `${FUTURE_DATE}|13:00,${FUTURE_DATE}|15:00,${FUTURE_DATE}|17:30`,
+      type: "date_proposal",
+    });
+  });
+
+  it("accepts a first choice on its own", async () => {
+    const messagesChain = createChain({ error: null });
+    mockClients({ messagesChain });
+
+    await expect(
+      submitBooking("mentor-1", null, formData(validFields)),
+    ).rejects.toThrow("REDIRECT:/dashboard/chat/meeting-1");
+
+    expect(messagesChain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ content: `${FUTURE_DATE}|13:00` }),
+    );
+  });
+
+  it("requires a first choice", async () => {
+    const messagesChain = createChain({ error: null });
+    mockClients({ messagesChain });
+
+    const result = await submitBooking(
+      "mentor-1",
+      null,
+      formData({ ...validFields, date_choices: "" }),
+    );
+
+    expect(result).toEqual({ error: "日時を選択してください" });
+    expect(messagesChain.insert).not.toHaveBeenCalled();
+    expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  // 不正な日時で先に meetings を作ってしまうと、宙に浮いた面談が残る
+  it("validates the choices before creating the meeting", async () => {
+    const meetingsChain = createChain({ data: [{ id: "meeting-1" }], error: null });
+    mockClients({ meetings: meetingsChain });
+
+    const result = await submitBooking(
+      "mentor-1",
+      null,
+      formData({ ...validFields, date_choices: "2020-01-01|13:00" }),
+    );
+
+    expect(result).toEqual({
+      error: "第1希望の日時は提案できません。空き状況を確認してください",
+    });
+    expect(meetingsChain.insert).not.toHaveBeenCalled();
+    expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a choice outside the mentor's availability", async () => {
+    const messagesChain = createChain({ error: null });
+    // メンターは 13:00-15:00 しか開けていない
+    mockClients({
+      messagesChain,
+      availability: [{ date: FUTURE_DATE, start_time: "13:00:00", end_time: "15:00:00" }],
+    });
+
+    const result = await submitBooking(
+      "mentor-1",
+      null,
+      formData({
+        ...validFields,
+        date_choices: `${FUTURE_DATE}|13:00,${FUTURE_DATE}|20:00`,
+      }),
+    );
+
+    expect(result).toEqual({
+      error: "第2希望の日時は提案できません。空き状況を確認してください",
+    });
+    expect(messagesChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects duplicate choices", async () => {
+    mockClients({});
+
+    const result = await submitBooking(
+      "mentor-1",
+      null,
+      formData({ ...validFields, date_choices: `${FUTURE_DATE}|13:00,${FUTURE_DATE}|13:00` }),
+    );
+
+    expect(result).toEqual({ error: "同じ日時は選べません" });
+  });
+
+  it("rejects more than three choices", async () => {
+    mockClients({});
+
+    const result = await submitBooking(
+      "mentor-1",
+      null,
+      formData({
+        ...validFields,
+        date_choices: [
+          `${FUTURE_DATE}|13:00`,
+          `${FUTURE_DATE}|14:00`,
+          `${FUTURE_DATE}|15:00`,
+          `${FUTURE_DATE}|16:00`,
+        ].join(","),
+      }),
+    );
+
+    expect(result).toEqual({ error: "日時は3つまで選択できます" });
+  });
+
+  it("lists the requested dates in the mentor's notification email", async () => {
+    mockClients({});
+
+    await expect(
+      submitBooking(
+        "mentor-1",
+        null,
+        formData({
+          ...validFields,
+          date_choices: `${FUTURE_DATE}|13:00,${FUTURE_DATE}|15:00`,
+        }),
+      ),
+    ).rejects.toThrow("REDIRECT:/dashboard/chat/meeting-1");
+
+    const mentorMail = sendMock.mock.calls
+      .map(([mail]) => mail)
+      .find((mail) => mail.to === "mentor@example.com");
+
+    const year = FUTURE_DATE.slice(0, 4);
+    expect(mentorMail.html).toContain(`第1希望: ${year}年7月10日 13:00`);
+    expect(mentorMail.html).toContain(`第2希望: ${year}年7月10日 15:00`);
+  });
+
+  // 面談自体は作成済みなので、メッセージの失敗で予約をやり直させない
+  it("still redirects to the chat when the proposal message fails to insert", async () => {
+    mockClients({ messagesChain: createChain({ error: { message: "db" } }) });
+
+    await expect(
+      submitBooking("mentor-1", null, formData(validFields)),
+    ).rejects.toThrow("REDIRECT:/dashboard/chat/meeting-1");
   });
 });

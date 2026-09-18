@@ -1,13 +1,22 @@
 import AppointmentTabUnit from "../appointment/appointmentTabUnit";
 
-// userは「予約する」タブがある
+// adminは予約する側ではないので「予定中」「終了済み」だけ
 export default function AdminAppointmentTab({ isActive, setIsActive }) {
   return (
     <div className="border-b">
       <div className="flex gap-8 px-6">
-        <AppointmentTabUnit isActive={isActive} setIsActive={setIsActive} state="upcoming" name="予定中の相談" />
-        <AppointmentTabUnit isActive={isActive} setIsActive={setIsActive} state="past" name="過去の相談" />
-        <AppointmentTabUnit isActive={isActive} setIsActive={setIsActive} state="mentor" name="予約する" />
+        <AppointmentTabUnit
+          isActive={isActive}
+          setIsActive={setIsActive}
+          state="upcoming"
+          name="予定中の相談"
+        />
+        <AppointmentTabUnit
+          isActive={isActive}
+          setIsActive={setIsActive}
+          state="past"
+          name="終了済みの相談"
+        />
       </div>
     </div>
   );

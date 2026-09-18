@@ -11,12 +11,13 @@ export default function MentorDashboardShell({
   side,
   setSide,
   children,
+  unreadByMeeting = {},
 }) {
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <MentorSidebar profile={profile} side={side} setSide={setSide} />
+          <MentorSidebar profile={profile} side={side} setSide={setSide} unreadByMeeting={unreadByMeeting} />
 
           <main className="lg:col-span-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

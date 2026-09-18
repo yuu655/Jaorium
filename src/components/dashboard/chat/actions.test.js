@@ -27,6 +27,7 @@ import {
   consumeCredit,
   redirectToCheckout,
   deleteMessage,
+  markChatRead,
 } from "./actions";
 
 const meeting = { id: "meeting-1", user: "user-1", mentor: "mentor-1", finish_requested_by: null };
@@ -152,7 +153,7 @@ describe("sendDateProposal", () => {
     const messagesChain = createChain({ error: null });
     mockAuthedSupabase({ extraFrom: { messages: () => messagesChain } });
 
-    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "10:00");
+    const result = await sendDateProposal("meeting-1", [{ date: FUTURE_DATE, time: "10:00" }]);
 
     expect(result).toEqual({ success: true });
     expect(messagesChain.insert).toHaveBeenCalledWith({
@@ -163,10 +164,86 @@ describe("sendDateProposal", () => {
     });
   });
 
+  it("sends three choices as one comma-joined message", async () => {
+    const messagesChain = createChain({ error: null });
+    mockAuthedSupabase({ extraFrom: { messages: () => messagesChain } });
+
+    const result = await sendDateProposal("meeting-1", [
+      { date: FUTURE_DATE, time: "10:00" },
+      { date: FUTURE_DATE, time: "13:00" },
+      { date: FUTURE_DATE, time: "15:30" },
+    ]);
+
+    expect(result).toEqual({ success: true });
+    expect(messagesChain.insert).toHaveBeenCalledTimes(1);
+    expect(messagesChain.insert).toHaveBeenCalledWith({
+      meeting_id: "meeting-1",
+      sender_id: "user-1",
+      content: `${FUTURE_DATE}|10:00,${FUTURE_DATE}|13:00,${FUTURE_DATE}|15:30`,
+      type: "date_proposal",
+    });
+  });
+
+  it("accepts a second choice without a third", async () => {
+    const messagesChain = createChain({ error: null });
+    mockAuthedSupabase({ extraFrom: { messages: () => messagesChain } });
+
+    const result = await sendDateProposal("meeting-1", [
+      { date: FUTURE_DATE, time: "10:00" },
+      { date: FUTURE_DATE, time: "13:00" },
+    ]);
+
+    expect(result).toEqual({ success: true });
+    expect(messagesChain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ content: `${FUTURE_DATE}|10:00,${FUTURE_DATE}|13:00` }),
+    );
+  });
+
+  it("rejects an empty choice list", async () => {
+    const messagesChain = createChain({ error: null });
+    mockAuthedSupabase({ extraFrom: { messages: () => messagesChain } });
+
+    expect(await sendDateProposal("meeting-1", [])).toEqual({
+      error: "日時を選択してください",
+    });
+    expect(await sendDateProposal("meeting-1", undefined)).toEqual({
+      error: "日時を選択してください",
+    });
+    expect(messagesChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects more than three choices", async () => {
+    const messagesChain = createChain({ error: null });
+    mockAuthedSupabase({ extraFrom: { messages: () => messagesChain } });
+
+    const result = await sendDateProposal("meeting-1", [
+      { date: FUTURE_DATE, time: "10:00" },
+      { date: FUTURE_DATE, time: "13:00" },
+      { date: FUTURE_DATE, time: "15:30" },
+      { date: FUTURE_DATE, time: "17:00" },
+    ]);
+
+    expect(result).toEqual({ error: "日時は3つまで選択できます" });
+    expect(messagesChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("rejects duplicate choices", async () => {
+    const messagesChain = createChain({ error: null });
+    mockAuthedSupabase({ extraFrom: { messages: () => messagesChain } });
+
+    const result = await sendDateProposal("meeting-1", [
+      { date: FUTURE_DATE, time: "10:00" },
+      { date: FUTURE_DATE, time: "10:00" },
+    ]);
+
+    expect(result).toEqual({ error: "同じ日時は選べません" });
+    expect(messagesChain.insert).not.toHaveBeenCalled();
+  });
+
   it("returns an error when the insert fails", async () => {
     mockAuthedSupabase({ extraFrom: { messages: () => createChain({ error: { message: "db" } }) } });
 
-    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "10:00");
+    const result = await sendDateProposal("meeting-1", [{ date: FUTURE_DATE, time: "10:00" }]);
 
     expect(result).toEqual({ error: "送信に失敗しました" });
   });
@@ -190,7 +267,7 @@ describe("sendDateProposal / mentor availability", () => {
   it("accepts a slot inside the mentor's availability", async () => {
     const messagesChain = setup({ availability });
 
-    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "13:30");
+    const result = await sendDateProposal("meeting-1", [{ date: FUTURE_DATE, time: "13:30" }]);
 
     expect(result).toEqual({ success: true });
     expect(messagesChain.insert).toHaveBeenCalled();
@@ -199,10 +276,25 @@ describe("sendDateProposal / mentor availability", () => {
   it("rejects a slot outside the mentor's availability", async () => {
     const messagesChain = setup({ availability });
 
-    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "16:00");
+    const result = await sendDateProposal("meeting-1", [{ date: FUTURE_DATE, time: "16:00" }]);
 
     expect(result).toEqual({
-      error: "その日時は提案できません。空き状況を確認してください",
+      error: "第1希望の日時は提案できません。空き状況を確認してください",
+    });
+    expect(messagesChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("names which choice fell outside the mentor's availability", async () => {
+    const messagesChain = setup({ availability });
+
+    const result = await sendDateProposal("meeting-1", [
+      { date: FUTURE_DATE, time: "13:00" },
+      { date: FUTURE_DATE, time: "13:30" },
+      { date: FUTURE_DATE, time: "16:00" },
+    ]);
+
+    expect(result).toEqual({
+      error: "第3希望の日時は提案できません。空き状況を確認してください",
     });
     expect(messagesChain.insert).not.toHaveBeenCalled();
   });
@@ -210,7 +302,7 @@ describe("sendDateProposal / mentor availability", () => {
   it("rejects a date the mentor did not open at all", async () => {
     setup({ availability });
 
-    const result = await sendDateProposal("meeting-1", `${FUTURE_DATE.slice(0, 8)}11`, "13:00");
+    const result = await sendDateProposal("meeting-1", [{ date: `${FUTURE_DATE.slice(0, 8)}11`, time: "13:00" }]);
 
     expect(result.error).toBeDefined();
   });
@@ -218,7 +310,7 @@ describe("sendDateProposal / mentor availability", () => {
   it("falls back to free proposals when the mentor set no availability", async () => {
     const messagesChain = setup({ availability: [] });
 
-    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "20:00");
+    const result = await sendDateProposal("meeting-1", [{ date: FUTURE_DATE, time: "20:00" }]);
 
     expect(result).toEqual({ success: true });
     expect(messagesChain.insert).toHaveBeenCalled();
@@ -227,7 +319,7 @@ describe("sendDateProposal / mentor availability", () => {
   it("enforces 30-minute slots even without availability", async () => {
     const messagesChain = setup({ availability: [] });
 
-    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "13:15");
+    const result = await sendDateProposal("meeting-1", [{ date: FUTURE_DATE, time: "13:15" }]);
 
     expect(result.error).toBeDefined();
     expect(messagesChain.insert).not.toHaveBeenCalled();
@@ -236,7 +328,7 @@ describe("sendDateProposal / mentor availability", () => {
   it("rejects past dates", async () => {
     const messagesChain = setup({ availability: [] });
 
-    const result = await sendDateProposal("meeting-1", "2020-01-01", "13:00");
+    const result = await sendDateProposal("meeting-1", [{ date: "2020-01-01", time: "13:00" }]);
 
     expect(result.error).toBeDefined();
     expect(messagesChain.insert).not.toHaveBeenCalled();
@@ -245,7 +337,7 @@ describe("sendDateProposal / mentor availability", () => {
   it("lets the mentor propose outside their own availability", async () => {
     const messagesChain = setup({ availability, user: { id: "mentor-1" } });
 
-    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "20:00");
+    const result = await sendDateProposal("meeting-1", [{ date: FUTURE_DATE, time: "20:00" }]);
 
     expect(result).toEqual({ success: true });
     expect(messagesChain.insert).toHaveBeenCalled();
@@ -259,7 +351,7 @@ describe("sendDateProposal / mentor availability", () => {
       availability: [{ date: "2026-10-03", start_time: "10:00:00", end_time: "12:00:00" }],
     });
 
-    const result = await sendDateProposal("meeting-1", "2026-10-03", "20:00");
+    const result = await sendDateProposal("meeting-1", [{ date: "2026-10-03", time: "20:00" }]);
 
     expect(result).toEqual({ success: true });
     expect(messagesChain.insert).toHaveBeenCalled();
@@ -273,9 +365,9 @@ describe("sendDateProposal / mentor availability", () => {
       availability: [{ date: "2026-10-03", start_time: "19:00:00", end_time: "21:00:00" }],
     });
 
-    expect(await sendDateProposal("meeting-1", "2026-10-03", "19:30")).toEqual({ success: true });
+    expect(await sendDateProposal("meeting-1", [{ date: "2026-10-03", time: "19:30" }])).toEqual({ success: true });
     // 帯の外なので弾かれる
-    expect((await sendDateProposal("meeting-1", "2026-10-03", "13:00")).error).toBeDefined();
+    expect((await sendDateProposal("meeting-1", [{ date: "2026-10-03", time: "13:00" }])).error).toBeDefined();
     // 帯の中でも、すでに過ぎた時間は提案できない
     expect(messagesChain.insert).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
@@ -288,7 +380,7 @@ describe("sendDateProposal / mentor availability", () => {
       availability: [{ date: "2026-10-03", start_time: "17:00:00", end_time: "21:00:00" }],
     });
 
-    const result = await sendDateProposal("meeting-1", "2026-10-03", "17:30");
+    const result = await sendDateProposal("meeting-1", [{ date: "2026-10-03", time: "17:30" }]);
 
     expect(result.error).toBeDefined();
     expect(messagesChain.insert).not.toHaveBeenCalled();
@@ -302,7 +394,7 @@ describe("sendDateProposal / mentor availability", () => {
       schedules: [{ date: FUTURE_DATE, time: "13:00" }],
     });
 
-    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "13:30");
+    const result = await sendDateProposal("meeting-1", [{ date: FUTURE_DATE, time: "13:30" }]);
 
     expect(result.error).toBeDefined();
     expect(messagesChain.insert).not.toHaveBeenCalled();
@@ -314,7 +406,7 @@ describe("sendDateProposal / mentor availability", () => {
       schedules: [{ date: FUTURE_DATE, time: "13:00" }],
     });
 
-    const result = await sendDateProposal("meeting-1", FUTURE_DATE, "14:00");
+    const result = await sendDateProposal("meeting-1", [{ date: FUTURE_DATE, time: "14:00" }]);
 
     expect(result).toEqual({ success: true });
     expect(messagesChain.insert).toHaveBeenCalled();
@@ -704,5 +796,47 @@ describe("deleteMessage", () => {
 
     expect(result).toEqual({ success: true });
     expect(chain.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("markChatRead", () => {
+  it("upserts the caller's last_read_at for the meeting", async () => {
+    const readsChain = createChain({ error: null });
+    mockAuthedSupabase({ extraFrom: { meeting_reads: () => readsChain } });
+
+    const result = await markChatRead("meeting-1");
+
+    expect(result).toEqual({ success: true });
+    expect(readsChain.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ meeting_id: "meeting-1", user_id: "user-1" }),
+      { onConflict: "meeting_id,user_id" },
+    );
+    // last_notified_at はwebhook（service role）だけが書く
+    expect(readsChain.upsert.mock.calls[0][0]).not.toHaveProperty("last_notified_at");
+  });
+
+  it("requires an authenticated user", async () => {
+    mockAuthedSupabase({ user: null });
+
+    expect(await markChatRead("meeting-1")).toEqual({ error: "ログインが必要です" });
+  });
+
+  it("rejects someone who is not a participant", async () => {
+    const readsChain = createChain({ error: null });
+    mockAuthedSupabase({
+      user: { id: "someone-else" },
+      extraFrom: { meeting_reads: () => readsChain },
+    });
+
+    expect(await markChatRead("meeting-1")).toEqual({ error: "権限がありません" });
+    expect(readsChain.upsert).not.toHaveBeenCalled();
+  });
+
+  it("reports a failed upsert without throwing", async () => {
+    mockAuthedSupabase({
+      extraFrom: { meeting_reads: () => createChain({ error: { message: "db" } }) },
+    });
+
+    expect(await markChatRead("meeting-1")).toEqual({ error: "既読の更新に失敗しました" });
   });
 });

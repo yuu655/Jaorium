@@ -1,29 +1,40 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+import type { Database } from "./database.types";
+
+// profiles.role はDBのenum。値を増やしたら database.types.ts を再生成すれば
+// ここの分岐漏れがそのまま型エラーになる。
+type UserRole = Database["public"]["Enums"]["user_role"];
 
 // ---- 純粋ロジック（仕様書4章のルーティングルール） ----
 
 // 未ログインではアクセスできないパス
 const LOGIN_REQUIRED_PREFIXES = ["/dashboard", "/admin", "/setAccount", "/resetPass"];
 
-function requiresLogin(pathname) {
+function requiresLogin(pathname: string): boolean {
   return LOGIN_REQUIRED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
 // ロール別ダッシュボードは配下にサブルートを持つ（/dashboard/mentor/availability や
 // /dashboard/mentor/stripe/* など）。完全一致で判定すると配下だけゲートを
 // すり抜けるので、ここで前方一致も含めて判定する。
-function isRoleArea(pathname, base) {
+function isRoleArea(pathname: string, base: string): boolean {
   return pathname === base || pathname.startsWith(`${base}/`);
 }
 
-const isUserArea = (pathname) => isRoleArea(pathname, "/dashboard/user");
-const isMentorArea = (pathname) => isRoleArea(pathname, "/dashboard/mentor");
+const isUserArea = (pathname: string) => isRoleArea(pathname, "/dashboard/user");
+const isMentorArea = (pathname: string) => isRoleArea(pathname, "/dashboard/mentor");
 
 // 「ロール外のページに来たユーザーをどこへ飛ばすか」を返す。リダイレクト不要ならnull。
 // isProfileSet=false（オンボーディング未完了）の場合はダッシュボードではなく
 // setAccountへ誘導する。pending等の未知のロールは何もしない（現状挙動の維持）。
-function resolveRoleRedirect(role, pathname, isProfileSet) {
+function resolveRoleRedirect(
+  role: UserRole | undefined,
+  pathname: string,
+  isProfileSet: boolean | null | undefined,
+): string | null {
   const destination = roleDestinationFor(role, pathname, isProfileSet);
   // 行き先が現在地と同じ場合は何もしない。ここでリダイレクトすると
   // set=falseのユーザーが /setAccount/user に滞在できず（フォームPOSTも含めて）
@@ -31,7 +42,11 @@ function resolveRoleRedirect(role, pathname, isProfileSet) {
   return destination === pathname ? null : destination;
 }
 
-function roleDestinationFor(role, pathname, isProfileSet) {
+function roleDestinationFor(
+  role: UserRole | undefined,
+  pathname: string,
+  isProfileSet: boolean | null | undefined,
+): string | null {
   if (role === "admin") {
     if (
       pathname === "/dashboard" ||
@@ -118,13 +133,13 @@ function roleDestinationFor(role, pathname, isProfileSet) {
 
 // ---- ミドルウェア本体 ----
 
-export async function updateSession(request) {
+export async function updateSession(request: NextRequest) {
   // Supabaseがトークンをリフレッシュした場合、setAll経由でこのresponseに新Cookieが書き込まれる
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
       cookies: {
         getAll() {
@@ -144,7 +159,7 @@ export async function updateSession(request) {
 
   // supabaseResponseに積まれた新しいトークンCookieを引き継いでリダイレクトする
   // （コピーしないとリフレッシュ済みトークンが捨てられる）
-  const redirectTo = (url) => {
+  const redirectTo = (url: string) => {
     const redirectResponse = NextResponse.redirect(new URL(url, request.url));
     supabaseResponse.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie.name, cookie.value, cookie);

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Calendar, CalendarDays, User, FileChartColumn } from "lucide-react";
 import { IconBuildingBank } from "@tabler/icons-react";
 import Icon from "../profile/icon";
+import UnreadBadge from "../common/UnreadBadge";
+import { totalUnread } from "@/lib/unreadMessages";
 
 export const MENTOR_DEFAULT_SIDE = "appointment";
 
@@ -36,7 +38,10 @@ const tabHref = (key) =>
 
 // setSide を渡さない（=独立ルート側でサイドバーだけ表示する）場合、
 // タブ項目もダッシュボード本体へのリンクとして描画する。
-export default function MentorSidebar({ profile, side, setSide }) {
+export default function MentorSidebar({ profile, side, setSide, unreadByMeeting = {} }) {
+  // 未読は予約管理タブのカードから辿るので、合計は「予約管理」に出す
+  const unreadCount = totalUnread(unreadByMeeting);
+
   const baseStyle = "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium";
   const activeStyle = "bg-blue-50 text-blue-600";
   const inactiveStyle = "text-gray-700 hover:bg-gray-50";
@@ -59,6 +64,9 @@ export default function MentorSidebar({ profile, side, setSide }) {
               <>
                 <ItemIcon size={20} />
                 {label}
+                {key === "appointment" && (
+                  <UnreadBadge count={unreadCount} className="ml-auto" />
+                )}
               </>
             );
 

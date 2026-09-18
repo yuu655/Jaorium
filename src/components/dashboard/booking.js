@@ -1,5 +1,8 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { CalendarClock } from "lucide-react";
+import DateChoiceFields from "@/components/dashboard/DateChoiceFields";
+import { emptyChoices, selectedChoices } from "@/lib/schedule";
 
 const consultationTypes = [
   "受験勉強全般",
@@ -34,8 +37,16 @@ const questions = [
   },
 ];
 
-export default function Booking({ func }) {
+export default function Booking({
+  func,
+  availabilityByDate = {},
+  bookedByDate = {},
+  unrestricted = false,
+}) {
   const [state, action, isPending] = useActionState(func, null);
+  const [choices, setChoices] = useState(emptyChoices);
+
+  const selected = selectedChoices(choices);
 
   return (
     <form action={action} className="space-y-8">
@@ -78,6 +89,29 @@ export default function Booking({ func }) {
           />
         </div>
 
+        {/* 希望日時（第1〜第3希望）。事前アンケートより前に入力してもらう */}
+        <div className="border-t pt-6">
+          <div className="flex items-center gap-2 mb-1">
+            <CalendarClock size={18} className="text-blue-600" />
+            <p className="text-lg font-bold">
+              希望日時 <span className="text-red-500">*</span>
+            </p>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">
+            各項目を押すとカレンダーが開きます。第1希望は必須です。
+            第2・第3希望も選んでおくと日程が決まりやすくなります。
+          </p>
+
+          <DateChoiceFields
+            name="date_choices"
+            choices={choices}
+            onChange={setChoices}
+            availabilityByDate={availabilityByDate}
+            bookedByDate={bookedByDate}
+            unrestricted={unrestricted}
+          />
+        </div>
+
         {/* 事前アンケート */}
         <div className="border-t pt-6 space-y-6">
           <p className="text-lg font-bold">事前アンケート</p>
@@ -100,9 +134,14 @@ export default function Booking({ func }) {
 
       {/* 送信ボタン */}
       <div className="px-6">
+        {selected.length === 0 && (
+          <p className="text-sm text-gray-500 mb-2">
+            希望日時を1つ以上選択してください。
+          </p>
+        )}
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || selected.length === 0}
           className="w-full px-8 py-4 bg-blue-600 text-white text-lg font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isPending ? "送信中..." : "登録する"}

@@ -25,8 +25,11 @@ import {
   Ban,
 } from "lucide-react";
 import DateProposalModal from "./DateProposalModal";
+import { formatProposalDate, parseProposals, proposalLabel } from "@/lib/schedule";
+import { lastReadMessageId } from "@/lib/unreadMessages";
 import {
   confirmDate,
+  markChatRead,
   resetDate,
   sendDateProposal,
   requestFinish,
@@ -65,8 +68,12 @@ export default function Chat({
   availabilityByDate,
   bookedByDate,
   unrestricted,
+  counterpartId,
+  initialCounterpartReadAt = null,
 }) {
   const [messages, setMessages] = useState(initialMessages);
+  // 相手がこのチャットを最後に開いた時刻。既読表示の基準
+  const [counterpartReadAt, setCounterpartReadAt] = useState(initialCounterpartReadAt);
   const [meeting, setMeeting] = useState(initialMeeting);
   const [meeting_sc, setMeeting_sc] = useState(meeting_schedule);
   const [input, setInput] = useState("");
@@ -189,6 +196,26 @@ const canceled = searchParams.get("canceled");
 
   //   return () => supabase.removeChannel(channel);
   // }, [meeting.id, currentUserId]);
+  // チャットを見ている間は既読時刻を進める。これが止まっている＝見ていない、として
+  // DM通知メールの送信可否が決まる（src/lib/dmNotification.js）。
+  const markRead = useCallback(() => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    markChatRead(meeting.id);
+  }, [meeting.id]);
+
+  useEffect(() => {
+    markRead();
+
+    // 別タブに行って戻ってきたときも、見ている扱いに戻す
+    const onVisibilityChange = () => markRead();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("focus", onVisibilityChange);
+    };
+  }, [markRead]);
+
   useEffect(() => {
     // 面談まわりの購読は1つのチャンネルにまとめる（meeting.idが変わらない限り張り直さない）
     const channel = supabase
@@ -204,6 +231,8 @@ const canceled = searchParams.get("canceled");
         (payload) => {
           // prevを使って最新の状態に対して追加しているので安全です
           setMessages((prev) => [...prev, payload.new]);
+          // 開いたまま受け取った相手のメッセージはその場で既読にする
+          if (payload.new.sender_id !== currentUserId) markRead();
         },
       )
       .on(
@@ -256,6 +285,20 @@ const canceled = searchParams.get("canceled");
         (payload) => {
           setMeetingConfirmation(payload.new);
         },
+      )
+      .on(
+        "postgres_changes",
+        {
+          // 相手が開いたら既読表示をその場で更新する。INSERT/UPDATEどちらも来る
+          event: "*",
+          schema: "public",
+          table: "meeting_reads",
+          filter: `meeting_id=eq.${meeting.id}`,
+        },
+        (payload) => {
+          if (payload.new?.user_id !== counterpartId) return;
+          setCounterpartReadAt(payload.new.last_read_at ?? null);
+        },
       );
 
     channel.subscribe();
@@ -264,7 +307,7 @@ const canceled = searchParams.get("canceled");
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [meeting.id]);
+  }, [meeting.id, currentUserId, counterpartId, markRead]);
 
   // クレジット残高の購読は面談用チャンネルから切り離す。
   // orgIdは初回描画時はnullで、refreshCredit()の完了後に確定する。以前はこの購読を
@@ -402,8 +445,8 @@ const canceled = searchParams.get("canceled");
     }
   };
 
-  const handleDateProposal = async (date, time) => {
-    const result = await sendDateProposal(meeting.id, date, time);
+  const handleDateProposal = async (choices) => {
+    const result = await sendDateProposal(meeting.id, choices);
     // 提案時にサーバー側でも空き時間を検証している。弾かれたらモーダルは閉じない
     if (result?.error) alert(result.error);
     return result;
@@ -433,16 +476,10 @@ const canceled = searchParams.get("canceled");
     await cancelFinishRequest(meeting.id);
   };
 
-  const parseProposal = (content) => {
-    if (!content?.includes("|")) return { date: null, time: content ?? "" };
-    const [date, time] = content.split("|");
-    return { date, time };
-  };
-
-  const handleConfirmDate = async (msg) => {
-    const { date, time } = parseProposal(msg.content);
+  // 1つの提案メッセージに希望が複数並ぶので、確定中の表示はメッセージ内の位置まで見る
+  const handleConfirmDate = async (msg, index, { date, time }) => {
     if (!date || !time) return;
-    setConfirmingId(msg.id);
+    setConfirmingId(`${msg.id}:${index}`);
     const result = await confirmDate(meeting.id, date, time);
     setConfirmingId(null);
     // 提案から確定までの間に他の面談が同じ枠を押さえていた場合など
@@ -461,11 +498,12 @@ const canceled = searchParams.get("canceled");
       day: "numeric",
     });
 
-  const formatProposalDate = (dateStr) => {
-    if (!dateStr?.includes("-")) return dateStr ?? "";
-    const [year, month, day] = dateStr.split("-");
-    return `${year}年${parseInt(month)}月${parseInt(day)}日`;
-  };
+  // 既読を出すのは「自分が送った中で相手が読んだ最後の1通」だけ
+  const readMessageId = lastReadMessageId({
+    messages,
+    userId: currentUserId,
+    counterpartReadAt,
+  });
 
   const groupedMessages = messages.reduce((groups, msg) => {
     const date = new Date(msg.created_at).toDateString();
@@ -783,41 +821,66 @@ const canceled = searchParams.get("canceled");
                             日時の提案
                           </div>
                           {(() => {
-                            const { date: pDate, time: pTime } = parseProposal(
-                              msg.content,
-                            );
+                            const proposals = parseProposals(msg.content);
+                            const multiple = proposals.length > 1;
+
                             return (
                               <>
-                                <p className="text-gray-800 font-bold text-base">
-                                  {formatProposalDate(pDate)}
-                                </p>
-                                <p className="text-gray-600 text-sm">{pTime}</p>
+                                <div className="space-y-2.5">
+                                  {proposals.map((proposal, index) => {
+                                    const key = `${msg.id}:${index}`;
+                                    const isConfirmed =
+                                      meeting_sc.is_commit &&
+                                      meeting_sc.date === proposal.date &&
+                                      meeting_sc.time === proposal.time;
+
+                                    return (
+                                      <div
+                                        key={key}
+                                        className={
+                                          index > 0 ? "border-t border-blue-100 pt-2.5" : ""
+                                        }
+                                      >
+                                        {multiple && (
+                                          <p className="text-[11px] font-medium text-blue-600">
+                                            {proposalLabel(index)}
+                                          </p>
+                                        )}
+                                        <p className="text-gray-800 font-bold text-base">
+                                          {formatProposalDate(proposal.date)}
+                                        </p>
+                                        <p className="text-gray-600 text-sm">{proposal.time}</p>
+
+                                        {canConfirm && (
+                                          <button
+                                            onClick={() =>
+                                              handleConfirmDate(msg, index, proposal)
+                                            }
+                                            disabled={confirmingId !== null}
+                                            className="mt-2 w-full py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300"
+                                          >
+                                            {confirmingId === key
+                                              ? "確定中..."
+                                              : "この日時で確定する"}
+                                          </button>
+                                        )}
+
+                                        {isConfirmed && (
+                                          <div className="mt-2 flex items-center gap-1 text-green-600 text-xs font-medium">
+                                            <CheckCircle size={12} />
+                                            確定済み
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+
                                 {isMine && (
-                                  <p className="font-bold text-base">
+                                  <p className="mt-2 font-bold text-base">
                                     相手からの承認をお待ちください
                                   </p>
                                 )}
-
-                                {canConfirm && (
-                                  <button
-                                    onClick={() => handleConfirmDate(msg)}
-                                    disabled={confirmingId === msg.id}
-                                    className="mt-3 w-full py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300"
-                                  >
-                                    {confirmingId === msg.id
-                                      ? "確定中..."
-                                      : "この日時で確定する"}
-                                  </button>
-                                )}
-
-                                {meeting_sc.is_commit &&
-                                  meeting_sc.date === pDate &&
-                                  meeting_sc.time === pTime && (
-                                    <div className="mt-2 flex items-center gap-1 text-green-600 text-xs font-medium">
-                                      <CheckCircle size={12} />
-                                      確定済み
-                                    </div>
-                                  )}
                               </>
                             );
                           })()}
@@ -833,7 +896,10 @@ const canceled = searchParams.get("canceled");
                           {msg.content}
                         </div>
                       )}
-                      <span className="text-xs text-gray-400">
+                      <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                        {msg.id === readMessageId && (
+                          <span className="text-blue-500 font-medium">既読</span>
+                        )}
                         {formatTime(msg.created_at)}
                       </span>
                     </div>
