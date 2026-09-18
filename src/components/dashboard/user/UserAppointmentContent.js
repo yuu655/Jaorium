@@ -10,7 +10,7 @@ import Mentors from "./UserMentors";
 import MentorSearch from "@/components/common/mentorSearch";
 import { useState } from "react";
 
-export default function UserAppointmentContent({ meetings, mentors, mentorTagsMap, tags }) {
+export default function UserAppointmentContent({ meetings, mentors, mentorTagsMap, tags, unreadByMeeting = {} }) {
   const [isActive, setIsActive] = useState("upcoming");
 
   // meeting.mentor (ID) からmentorオブジェクトを引くためのMap
@@ -29,6 +29,7 @@ export default function UserAppointmentContent({ meetings, mentors, mentorTagsMa
                   key={appointment.id}
                   appointment={appointment}
                   mentor={mentorMap[appointment.mentor]}
+                  unreadCount={unreadByMeeting[appointment.id] ?? 0}
                 />
               ))
             ) : (

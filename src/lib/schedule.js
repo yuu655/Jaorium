@@ -380,3 +380,102 @@ export function buildWeeklyApplyPlan({
 
   return { dates: targets.map((t) => t.date), rows };
 }
+
+// ---- 日時提案（第1〜第3希望）----
+
+// 1つの提案メッセージに載せられる希望の数
+export const MAX_DATE_PROPOSALS = 3;
+
+export function proposalLabel(index) {
+  return `第${index + 1}希望`;
+}
+
+// messages.content の形式: "YYYY-MM-DD|HH:MM" をカンマで第1希望から連結したもの。
+// 第2・第3希望を導入する前のメッセージ（カンマなし）は1件としてそのまま読める。
+export function parseProposals(content) {
+  if (typeof content !== "string") return [];
+
+  return content
+    .split(",")
+    .map((part) => {
+      const [date, time] = part.trim().split("|");
+      // DBのtime型やコピーされた値を "HH:MM" に丸めてから検証する
+      const normalized = normalizeTime(time);
+      if (!isDateString(date) || !normalized || !isSlotTime(normalized)) return null;
+      return { date, time: normalized };
+    })
+    .filter(Boolean);
+}
+
+export function formatProposals(choices) {
+  return (choices ?? []).map(({ date, time }) => `${date}|${time}`).join(",");
+}
+
+// 提案を送る前の最終判定。UIでも絞っているが、サーバー側はこれを通す。
+// 希望どうしが60分枠として重なること（13:00と13:30）は、確定するのが片方だけ
+// なので許容する。完全に同じ日時だけ弾く。
+export function validateProposalChoices({
+  choices,
+  bandsByDate,
+  bookedByDate,
+  unrestricted = false,
+  now = nowInJst(),
+}) {
+  const list = Array.isArray(choices) ? choices : [];
+  if (list.length === 0) return { error: "日時を選択してください" };
+  if (list.length > MAX_DATE_PROPOSALS) {
+    return { error: `日時は${MAX_DATE_PROPOSALS}つまで選択できます` };
+  }
+
+  const seen = new Set();
+  for (const choice of list) {
+    const key = `${choice?.date}|${choice?.time}`;
+    if (seen.has(key)) return { error: "同じ日時は選べません" };
+    seen.add(key);
+  }
+
+  for (const [index, choice] of list.entries()) {
+    const proposable = isProposableSlot({
+      date: choice?.date,
+      time: choice?.time,
+      bandsByDate,
+      bookedByDate,
+      unrestricted,
+      now,
+    });
+    if (!proposable) {
+      return {
+        error: `${proposalLabel(index)}の日時は提案できません。空き状況を確認してください`,
+      };
+    }
+  }
+
+  return { choices: list };
+}
+
+// "2026-10-03" → "2026年10月3日"。チャットの吹き出しと通知メールで共用する。
+export function formatProposalDate(date) {
+  if (!isDateString(date)) return date ?? "";
+  const [year, month, day] = date.split("-");
+  return `${year}年${Number(month)}月${Number(day)}日`;
+}
+
+// 希望日時を「第1希望: 2026年10月3日 13:00」の行にする（メール本文など）
+export function formatProposalLines(choices) {
+  const list = choices ?? [];
+  return list.map(
+    (choice, index) =>
+      `${list.length > 1 ? `${proposalLabel(index)}: ` : ""}${formatProposalDate(choice.date)} ${choice.time}`,
+  );
+}
+
+// 第1〜第3希望の入力欄の初期値。未選択の枠は null（第2・第3希望は任意）
+export function emptyChoices() {
+  return Array.from({ length: MAX_DATE_PROPOSALS }, () => null);
+}
+
+// 日付だけ選んで時刻が未選択の枠は「未入力」として扱う。
+// 第2希望を飛ばして第3希望だけ選んだ場合も、順序を保ったまま詰める。
+export function selectedChoices(choices) {
+  return (choices ?? []).filter((choice) => choice?.date && choice?.time);
+}

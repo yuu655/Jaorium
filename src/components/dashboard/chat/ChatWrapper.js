@@ -14,6 +14,8 @@ export default function ChatWrapper({
   availabilityByDate,
   bookedByDate,
   unrestricted,
+  counterpartId,
+  initialCounterpartReadAt,
 }) {
   return <Chat
     meeting={meeting}
@@ -25,5 +27,7 @@ export default function ChatWrapper({
     availabilityByDate={availabilityByDate}
     bookedByDate={bookedByDate}
     unrestricted={unrestricted}
+    counterpartId={counterpartId}
+    initialCounterpartReadAt={initialCounterpartReadAt}
   />;
 }

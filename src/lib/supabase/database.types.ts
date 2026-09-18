@@ -1,11 +1,3 @@
-// Supabase のスキーマから自動生成した型。手で編集しないこと。
-//
-// 再生成:
-//   npx supabase gen types typescript --project-id rmjjlkxqtrpuhemmjlun > src/lib/supabase/database.types.ts
-//
-// マイグレーションを当てたら必ず再生成する。生成し直すと `Database` が変わるため、
-// `tsc --noEmit` がスキーマとコードのズレをそのまま検出する。
-
 export type Json =
   | string
   | number
@@ -158,6 +150,35 @@ export type Database = {
             columns: ["organization_credit_log_id"]
             isOneToOne: true
             referencedRelation: "organization_credit_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_reads: {
+        Row: {
+          last_notified_at: string | null
+          last_read_at: string | null
+          meeting_id: string
+          user_id: string
+        }
+        Insert: {
+          last_notified_at?: string | null
+          last_read_at?: string | null
+          meeting_id: string
+          user_id: string
+        }
+        Update: {
+          last_notified_at?: string | null
+          last_read_at?: string | null
+          meeting_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_reads_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
             referencedColumns: ["id"]
           },
         ]
@@ -1106,13 +1127,6 @@ export type Database = {
         }[]
       }
       find_user_id_by_email: { Args: { check_email: string }; Returns: string }
-      get_unpaid_amount: {
-        Args: { p_mentor_id: string }
-        Returns: {
-          unpaid_amount: number
-          unpaid_count: number
-        }[]
-      }
     }
     Enums: {
       mentor_region: "A" | "B" | "C" | "D" | "E" | "F"

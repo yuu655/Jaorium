@@ -11,6 +11,7 @@ import {
   Info,
   X,
 } from "lucide-react";
+import { formatProposalDate, parseProposals, proposalLabel } from "@/lib/schedule";
 
 // profile/icon.js は mx-auto mb-3 付きでチャット行内では位置がずれるため、
 // Chat.js と同じ素のImageでアバターを描画する
@@ -54,18 +55,6 @@ export default function AdminChatViewer({
       month: "long",
       day: "numeric",
     });
-
-  const formatProposalDate = (dateStr) => {
-    if (!dateStr?.includes("-")) return dateStr ?? "";
-    const [year, month, day] = dateStr.split("-");
-    return `${year}年${parseInt(month)}月${parseInt(day)}日`;
-  };
-
-  const parseProposal = (content) => {
-    if (!content?.includes("|")) return { date: null, time: content ?? "" };
-    const [date, time] = content.split("|");
-    return { date, time };
-  };
 
   const groupedMessages = messages.reduce((groups, msg) => {
     const date = new Date(msg.created_at).toDateString();
@@ -184,24 +173,36 @@ export default function AdminChatViewer({
                             日時の提案
                           </div>
                           {(() => {
-                            const { date: pDate, time: pTime } = parseProposal(
-                              msg.content,
-                            );
+                            const proposals = parseProposals(msg.content);
+                            const multiple = proposals.length > 1;
+
                             return (
-                              <>
-                                <p className="text-gray-800 font-bold text-base">
-                                  {formatProposalDate(pDate)}
-                                </p>
-                                <p className="text-gray-600 text-sm">{pTime}</p>
-                                {meetingSchedule?.is_commit &&
-                                  meetingSchedule.date === pDate &&
-                                  meetingSchedule.time === pTime && (
-                                    <div className="mt-2 flex items-center gap-1 text-green-600 text-xs font-medium">
-                                      <CheckCircle size={12} />
-                                      確定済み
-                                    </div>
-                                  )}
-                              </>
+                              <div className="space-y-2.5">
+                                {proposals.map((proposal, index) => (
+                                  <div
+                                    key={`${msg.id}:${index}`}
+                                    className={index > 0 ? "border-t border-blue-100 pt-2.5" : ""}
+                                  >
+                                    {multiple && (
+                                      <p className="text-[11px] font-medium text-blue-600">
+                                        {proposalLabel(index)}
+                                      </p>
+                                    )}
+                                    <p className="text-gray-800 font-bold text-base">
+                                      {formatProposalDate(proposal.date)}
+                                    </p>
+                                    <p className="text-gray-600 text-sm">{proposal.time}</p>
+                                    {meetingSchedule?.is_commit &&
+                                      meetingSchedule.date === proposal.date &&
+                                      meetingSchedule.time === proposal.time && (
+                                        <div className="mt-2 flex items-center gap-1 text-green-600 text-xs font-medium">
+                                          <CheckCircle size={12} />
+                                          確定済み
+                                        </div>
+                                      )}
+                                  </div>
+                                ))}
+                              </div>
                             );
                           })()}
                         </div>

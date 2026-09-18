@@ -2,6 +2,7 @@
 import MentorDashboard from "@/components/dashboard/mentor/MentorDashboard";
 import { createClient } from "@/lib/supabase/server";
 import { getMentorDashboardData, getMentorTags } from "./mentorDashboardData";
+import { fetchUnreadByMeeting } from "@/lib/unreadMessages";
 
 export default async function MentorPage({ searchParams }) {
   const { side } = await searchParams;
@@ -17,6 +18,12 @@ export default async function MentorPage({ searchParams }) {
   )();
   const { allTags, mentorTags } = await getMentorTags(supabase, user.id)();
 
+  // 未読は変化が速いのでキャッシュの外で引く（開いたのにバッジが残るのを防ぐ）
+  const unreadByMeeting = await fetchUnreadByMeeting(supabase, {
+    userId: user.id,
+    meetingIds: meetings.next.map((m) => m.id),
+  });
+
   // 面談可能日時の取得（キャッシュなしの重いクエリ）は
   // /dashboard/mentor/availability 側に移したので、ここでは読まない。
   return (
@@ -27,6 +34,7 @@ export default async function MentorPage({ searchParams }) {
       mentorTags={mentorTags}
       allTags={allTags}
       initialSide={side}
+      unreadByMeeting={unreadByMeeting}
     />
   );
 }

@@ -4,12 +4,8 @@ import ChatWrapper from "@/components/dashboard/chat/ChatWrapper";
 import Chat from "@/components/dashboard/chat/Chat";
 import { counterpartColumnsFor } from "@/lib/chatCounterpart";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import {
-  groupBandsByDate,
-  groupBookedByDate,
-  hasFutureAvailability,
-  todayInJst,
-} from "@/lib/schedule";
+import { groupBandsByDate, hasFutureAvailability, todayInJst } from "@/lib/schedule";
+import { fetchMentorAvailability, fetchMentorBookedByDate } from "@/lib/mentorSchedule";
 
 
 export default async function ChatPage({ params }) {
@@ -57,16 +53,15 @@ export default async function ChatPage({ params }) {
   const today = todayInJst();
 
   // メンターの面談可能日時。RLS上、面談相手のユーザーも読める。
-  const { data: availability } = await supabase
-    .from("mentor_availabilities")
-    .select("date, start_time, end_time")
-    .eq("mentor_id", meeting.mentor)
-    .gte("date", today);
+  const availability = await fetchMentorAvailability(supabase, {
+    mentorId: meeting.mentor,
+    from: today,
+  });
 
   // このメンターが「別の面談」で確定済みの日時。他人の面談のscheduleはRLSで参照
   // できないため service role で引き、開始時刻だけをクライアントに渡す
   // （面談IDや相手の情報は渡さない）。
-  const bookedByDate = await fetchMentorBookedSlots({
+  const bookedByDate = await fetchMentorBookedByDate(createAdminSupabaseClient(), {
     mentorId: meeting.mentor,
     excludeMeetingId: meetingId,
     from: today,
@@ -76,6 +71,15 @@ export default async function ChatPage({ params }) {
   // 使える枠が1つも残っていないとき（未設定・今日の分が過ぎただけ、を含む）だけ、
   // これまで通り自由に提案できる。
   const unrestricted = isMentor || !hasFutureAvailability(availability);
+
+  // 相手がこのチャットを最後に開いた時刻。自分のメッセージの既読表示に使う。
+  // RLSは面談の参加者どうしのSELECTを許しているが、見えるのは時刻だけ。
+  const { data: counterpartRead } = await supabase
+    .from("meeting_reads")
+    .select("last_read_at")
+    .eq("meeting_id", meetingId)
+    .eq("user_id", counterpartId)
+    .maybeSingle();
 
   // 論理削除されたメッセージは本文をクライアントに渡さない（表示は「削除しました」のみ）
   const visibleMessages = (initialMessages ?? []).map((msg) =>
@@ -93,32 +97,8 @@ export default async function ChatPage({ params }) {
       availabilityByDate={groupBandsByDate(availability)}
       bookedByDate={bookedByDate}
       unrestricted={unrestricted}
+      counterpartId={counterpartId}
+      initialCounterpartReadAt={counterpartRead?.last_read_at ?? null}
     />
   );
-}
-
-// メンターが担当する他の面談のうち、確定済み・未終了のものの日時を集める
-async function fetchMentorBookedSlots({ mentorId, excludeMeetingId, from }) {
-  const admin = createAdminSupabaseClient();
-
-  const { data: mentorMeetings } = await admin
-    .from("meetings")
-    .select("id")
-    .eq("mentor", mentorId);
-
-  const meetingIds = (mentorMeetings ?? [])
-    .map((m) => m.id)
-    .filter((id) => id !== excludeMeetingId);
-
-  if (meetingIds.length === 0) return {};
-
-  const { data: schedules } = await admin
-    .from("meeting_schedules")
-    .select("date, time")
-    .in("meeting_id", meetingIds)
-    .eq("is_commit", true)
-    .eq("is_finished", false)
-    .gte("date", from);
-
-  return groupBookedByDate(schedules);
 }

@@ -11,7 +11,7 @@ import { updateMentorProfile } from "../profile/actions";
 
 // 面談可能日時は /dashboard/mentor/availability に切り出してあるので、
 // ここで扱うのは MENTOR_TAB_KEYS のタブだけ。
-export default function MentorDashboard({ profile, meetings, users, mentorTags, allTags, initialSide }) {
+export default function MentorDashboard({ profile, meetings, users, mentorTags, allTags, initialSide, unreadByMeeting = {} }) {
   const [side, setSide] = useSideTab(
     initialSide,
     MENTOR_TAB_KEYS,
@@ -24,9 +24,10 @@ export default function MentorDashboard({ profile, meetings, users, mentorTags, 
       meetings={meetings}
       side={side}
       setSide={setSide}
+      unreadByMeeting={unreadByMeeting}
     >
       {side === "appointment" && (
-        <MentorAppointmentContent meetings={meetings} users={users} />
+        <MentorAppointmentContent meetings={meetings} users={users} unreadByMeeting={unreadByMeeting} />
       )}
       {side === "profile" && (
         <MentorProfile funcProfile={updateMentorProfile} profile={profile} mentorTags={mentorTags} allTags={allTags} />

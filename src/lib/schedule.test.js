@@ -21,6 +21,11 @@ import {
   derivePatternByWeekday,
   datesOverwrittenByPattern,
   buildWeeklyApplyPlan,
+  parseProposals,
+  formatProposals,
+  validateProposalChoices,
+  emptyChoices,
+  selectedChoices,
 } from "./schedule";
 
 describe("isSlotTime", () => {
@@ -522,5 +527,210 @@ describe("buildWeeklyApplyPlan", () => {
     expect(
       buildWeeklyApplyPlan({ ...base, slotsByWeekday: { 2: ["13:00"] }, mode: "bogus" }),
     ).toEqual({ error: "反映方法が不正です" });
+  });
+});
+
+describe("parseProposals", () => {
+  it("parses a single choice", () => {
+    expect(parseProposals("2026-10-03|13:00")).toEqual([
+      { date: "2026-10-03", time: "13:00" },
+    ]);
+  });
+
+  it("parses three choices in order", () => {
+    expect(parseProposals("2026-10-03|13:00,2026-10-05|14:30,2026-10-07|10:00")).toEqual([
+      { date: "2026-10-03", time: "13:00" },
+      { date: "2026-10-05", time: "14:30" },
+      { date: "2026-10-07", time: "10:00" },
+    ]);
+  });
+
+  it("normalizes times coming from the DB time type", () => {
+    expect(parseProposals("2026-10-03|13:00:00")).toEqual([
+      { date: "2026-10-03", time: "13:00" },
+    ]);
+  });
+
+  it("drops malformed fragments instead of rendering them", () => {
+    expect(parseProposals("2026-10-03|13:00,broken,2026-10-05|25:00,2026-10-07|10:00")).toEqual([
+      { date: "2026-10-03", time: "13:00" },
+      { date: "2026-10-07", time: "10:00" },
+    ]);
+  });
+
+  it("returns an empty list for empty or non-string content", () => {
+    expect(parseProposals("")).toEqual([]);
+    expect(parseProposals(null)).toEqual([]);
+    expect(parseProposals(undefined)).toEqual([]);
+  });
+
+  it("tolerates whitespace and trailing separators", () => {
+    expect(parseProposals("2026-10-03|13:00, 2026-10-05|14:00,")).toEqual([
+      { date: "2026-10-03", time: "13:00" },
+      { date: "2026-10-05", time: "14:00" },
+    ]);
+  });
+});
+
+describe("formatProposals", () => {
+  it("joins choices with a comma, first choice first", () => {
+    expect(
+      formatProposals([
+        { date: "2026-10-03", time: "13:00" },
+        { date: "2026-10-05", time: "14:30" },
+      ]),
+    ).toBe("2026-10-03|13:00,2026-10-05|14:30");
+  });
+
+  it("round-trips through parseProposals", () => {
+    const choices = [
+      { date: "2026-10-03", time: "13:00" },
+      { date: "2026-10-05", time: "14:30" },
+      { date: "2026-10-07", time: "10:00" },
+    ];
+    expect(parseProposals(formatProposals(choices))).toEqual(choices);
+  });
+
+  it("keeps the legacy single-choice shape", () => {
+    expect(formatProposals([{ date: "2026-10-03", time: "13:00" }])).toBe("2026-10-03|13:00");
+  });
+});
+
+describe("validateProposalChoices", () => {
+  const now = { date: "2026-10-01", time: "09:00" };
+  // メンターは 10/3 と 10/5 の 13:00-15:00 を開けている
+  const bandsByDate = {
+    "2026-10-03": [{ start_time: "13:00", end_time: "15:00" }],
+    "2026-10-05": [{ start_time: "13:00", end_time: "15:00" }],
+  };
+  const base = { bandsByDate, bookedByDate: {}, now };
+
+  it("accepts a single choice", () => {
+    expect(
+      validateProposalChoices({ ...base, choices: [{ date: "2026-10-03", time: "13:00" }] }),
+    ).toEqual({ choices: [{ date: "2026-10-03", time: "13:00" }] });
+  });
+
+  it("accepts three choices and keeps their order", () => {
+    const choices = [
+      { date: "2026-10-03", time: "13:00" },
+      { date: "2026-10-05", time: "14:30" },
+      { date: "2026-10-03", time: "14:00" },
+    ];
+    expect(validateProposalChoices({ ...base, choices })).toEqual({ choices });
+  });
+
+  it("allows two choices that overlap as meeting slots", () => {
+    // 60分面談なので 13:00 と 13:30 は重なるが、確定するのは片方だけなので許容する
+    const choices = [
+      { date: "2026-10-03", time: "13:00" },
+      { date: "2026-10-03", time: "13:30" },
+    ];
+    expect(validateProposalChoices({ ...base, choices })).toEqual({ choices });
+  });
+
+  it("rejects an empty list", () => {
+    expect(validateProposalChoices({ ...base, choices: [] })).toEqual({
+      error: "日時を選択してください",
+    });
+    expect(validateProposalChoices({ ...base, choices: undefined })).toEqual({
+      error: "日時を選択してください",
+    });
+  });
+
+  it("rejects more than three choices", () => {
+    const choices = [
+      { date: "2026-10-03", time: "13:00" },
+      { date: "2026-10-03", time: "13:30" },
+      { date: "2026-10-03", time: "14:00" },
+      { date: "2026-10-03", time: "14:30" },
+    ];
+    expect(validateProposalChoices({ ...base, choices })).toEqual({
+      error: "日時は3つまで選択できます",
+    });
+  });
+
+  it("rejects duplicate choices", () => {
+    const choices = [
+      { date: "2026-10-03", time: "13:00" },
+      { date: "2026-10-05", time: "14:00" },
+      { date: "2026-10-03", time: "13:00" },
+    ];
+    expect(validateProposalChoices({ ...base, choices })).toEqual({
+      error: "同じ日時は選べません",
+    });
+  });
+
+  it("names which choice is outside the mentor's availability", () => {
+    const choices = [
+      { date: "2026-10-03", time: "13:00" },
+      { date: "2026-10-05", time: "16:00" },
+    ];
+    expect(validateProposalChoices({ ...base, choices })).toEqual({
+      error: "第2希望の日時は提案できません。空き状況を確認してください",
+    });
+  });
+
+  it("rejects a past slot", () => {
+    expect(
+      validateProposalChoices({
+        ...base,
+        choices: [{ date: "2026-09-30", time: "13:00" }],
+      }),
+    ).toEqual({ error: "第1希望の日時は提案できません。空き状況を確認してください" });
+  });
+
+  it("rejects a malformed choice", () => {
+    expect(
+      validateProposalChoices({ ...base, choices: [{ date: "2026/10/03", time: "13:00" }] }),
+    ).toEqual({ error: "第1希望の日時は提案できません。空き状況を確認してください" });
+    expect(
+      validateProposalChoices({ ...base, choices: [{ date: "2026-10-03", time: "13:15" }] }),
+    ).toEqual({ error: "第1希望の日時は提案できません。空き状況を確認してください" });
+  });
+
+  it("skips the availability check when unrestricted", () => {
+    const choices = [{ date: "2026-10-09", time: "20:00" }];
+    expect(
+      validateProposalChoices({ ...base, choices, bandsByDate: {}, unrestricted: true }),
+    ).toEqual({ choices });
+  });
+
+  it("rejects a slot already booked by another meeting", () => {
+    expect(
+      validateProposalChoices({
+        ...base,
+        bookedByDate: { "2026-10-03": ["13:00"] },
+        choices: [{ date: "2026-10-03", time: "13:00" }],
+      }),
+    ).toEqual({ error: "第1希望の日時は提案できません。空き状況を確認してください" });
+  });
+});
+
+describe("emptyChoices / selectedChoices", () => {
+  it("starts with three empty slots", () => {
+    expect(emptyChoices()).toEqual([null, null, null]);
+  });
+
+  it("keeps only the slots that have both a date and a time", () => {
+    const first = { date: "2026-10-03", time: "13:00" };
+    const third = { date: "2026-10-07", time: "10:00" };
+    // 日付だけ選んで時刻未選択の枠は落とす
+    expect(selectedChoices([first, { date: "2026-10-05", time: "" }, third])).toEqual([
+      first,
+      third,
+    ]);
+  });
+
+  // 第2希望を飛ばして第3希望だけ選んでも、順序を保ったまま詰める
+  it("compacts skipped slots without reordering", () => {
+    const first = { date: "2026-10-03", time: "13:00" };
+    const third = { date: "2026-10-07", time: "10:00" };
+    expect(selectedChoices([first, null, third])).toEqual([first, third]);
+  });
+
+  it("tolerates null input", () => {
+    expect(selectedChoices(null)).toEqual([]);
+    expect(selectedChoices([null, null, null])).toEqual([]);
   });
 });
