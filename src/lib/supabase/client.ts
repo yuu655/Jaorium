@@ -1,0 +1,19 @@
+import { createBrowserClient } from "@supabase/ssr";
+
+import type { Database } from "./database.types";
+
+export type SupabaseBrowserClient = ReturnType<typeof createBrowserClient<Database>>;
+
+let client: SupabaseBrowserClient | null = null;
+
+// 環境変数は呼び出し時に読む（モジュール評価時に読むとテストのstubEnvより先に
+// 固定されてしまう）。欠けていればSupabase側で即エラーになるので、ここでは
+// 挙動を変えないよう非nullアサーションのみに留める。
+export function createClient(): SupabaseBrowserClient {
+  if (client) return client;
+  client = createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+  );
+  return client;
+}
