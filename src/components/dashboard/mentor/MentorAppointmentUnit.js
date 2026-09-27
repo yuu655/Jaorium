@@ -1,9 +1,9 @@
-import { Calendar, Clock, CheckCircle, CalendarClock } from "lucide-react";
+import { Calendar, Clock, CheckCircle, CalendarClock, Check, FilePen } from "lucide-react";
 import Icon from "../profile/icon";
 import Link from "next/link";
 import UnreadBadge from "../common/UnreadBadge";
 
-export default function MentorAppointmentUnit({ appointment, user , unreadCount = 0 }) {
+export default function MentorAppointmentUnit({ appointment, user , unreadCount = 0, hasAdvice = false }) {
   return (
     <div className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
@@ -57,6 +57,16 @@ export default function MentorAppointmentUnit({ appointment, user , unreadCount 
         >
           メッセージ
           <UnreadBadge count={unreadCount} />
+        </Link>
+        <Link
+          href={`/dashboard/mentor/advice/${appointment.id}`}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <FilePen size={16} />
+          アドバイス入力
+          {hasAdvice && (
+            <Check size={16} className="text-green-600" aria-label="入力済み" />
+          )}
         </Link>
       </div>
     </div>

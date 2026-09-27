@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { setMentorAdminAllow } from "@/app/(userPage)/dashboard/admin/mentors/actions";
 import Pagination from "@/components/common/pagination";
+import MentorSlideUploadButton from "@/components/dashboard/admin/MentorSlideUploadButton";
 import {
   DEFAULT_PAGE_SIZE,
   getTotalPages,
@@ -77,17 +80,18 @@ export default function AdminMentorList({ mentors, pageSize = DEFAULT_PAGE_SIZE 
               <thead className="bg-gray-50 text-gray-500 text-xs">
                 <tr>
                   <th className="text-left font-medium px-4 py-3">名前</th>
-                  <th className="text-left font-medium px-4 py-3">アドレス</th>
-                  <th className="text-left font-medium px-4 py-3">admin_allow</th>
+                  <th className="text-left font-medium px-4 py-3 border-l border-gray-200">アドレス</th>
+                  <th className="text-left font-medium px-2 py-3 border-l border-gray-200">admin_allow</th>
                   <th className="px-4 py-3" />
+                  <th className="text-left font-medium px-4 py-3 border-l border-gray-200">スライド</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {pagedMentors.map((mentor) => (
                   <tr key={mentor.id}>
                     <td className="px-4 py-3 font-medium text-gray-900">{mentor.name}</td>
-                    <td className="px-4 py-3 text-gray-600 break-all">{mentor.email}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-gray-600 break-all border-l border-gray-200">{mentor.email}</td>
+                    <td className="px-4 py-3 border-l border-gray-200">
                       <span
                         className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
                           mentor.adminAllow
@@ -98,6 +102,7 @@ export default function AdminMentorList({ mentors, pageSize = DEFAULT_PAGE_SIZE 
                         {mentor.adminAllow ? "true" : "false"}
                       </span>
                     </td>
+                    
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => handleToggle(mentor)}
@@ -114,6 +119,23 @@ export default function AdminMentorList({ mentors, pageSize = DEFAULT_PAGE_SIZE 
                             ? "falseにする"
                             : "trueにする"}
                       </button>
+                    </td>
+                    <td className="px-4 py-3 border-l border-gray-200">
+                      <div className="flex items-center gap-2">
+                        <MentorSlideUploadButton mentorId={mentor.id} />
+                        <Link
+                          href={`/dashboard/admin/mentors/${mentor.id}/slides`}
+                          className="px-3 py-1.5 text-xs font-medium rounded-lg text-blue-600 hover:bg-blue-50 shrink-0"
+                        >
+                          PDF確認
+                        </Link>
+                        {mentor.hasSlides && (
+                          <Check
+                            className="w-4 h-4 text-green-600 shrink-0"
+                            aria-label="PDFアップロード済み"
+                          />
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

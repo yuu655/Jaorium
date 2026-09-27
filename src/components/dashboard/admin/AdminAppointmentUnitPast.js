@@ -1,9 +1,9 @@
-import { Calendar, CheckCircle, Clock, MessageSquare } from "lucide-react";
+import { Calendar, CheckCircle, Clock, MessageSquare, Star } from "lucide-react";
 import Icon from "../profile/icon";
 import Link from "next/link";
 
 // 終了済み(is_finished=true)の相談カード。adminは当事者ではないので
-// 「レビューを書く」「もう一度予約」は出さず、両者の情報とDM確認だけにする。
+// 「レビューを書く」「もう一度予約」は出さず、両者の情報とDM確認・レビュー確認だけにする。
 export default function AdminAppointmentUnitPast({ appointment }) {
   return (
     <div className="border border-gray-200 rounded-lg p-6 bg-gray-50/50">
@@ -64,6 +64,13 @@ export default function AdminAppointmentUnitPast({ appointment }) {
         >
           <MessageSquare size={16} />
           DMを確認
+        </Link>
+        <Link
+          href={`/dashboard/admin/review/${appointment.id}`}
+          className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <Star size={16} />
+          レビュー確認
         </Link>
       </div>
     </div>

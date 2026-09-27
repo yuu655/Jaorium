@@ -6,6 +6,7 @@ import { counterpartColumnsFor } from "@/lib/chatCounterpart";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { groupBandsByDate, hasFutureAvailability, todayInJst } from "@/lib/schedule";
 import { fetchMentorAvailability, fetchMentorBookedByDate } from "@/lib/mentorSchedule";
+import { adviceInputPath, mentorMustEnterAdvice } from "@/lib/meetingAdvice";
 
 
 export default async function ChatPage({ params }) {
@@ -34,6 +35,26 @@ export default async function ChatPage({ params }) {
   }
 
   const isMentor = meeting.mentor === user.id;
+
+  // 面談資料に載せるアドバイス。ユーザーはチャットから確認し、
+  // メンターは入力を済ませるまでチャットを開けない（入力ページへ送る）
+  const { data: advice } = await supabase
+    .from("meeting_advices")
+    .select("items")
+    .eq("meeting_id", meetingId)
+    .maybeSingle();
+  const adviceItems = advice?.items ?? [];
+
+  if (
+    mentorMustEnterAdvice({
+      isMentor,
+      isFinished: Boolean(meeting_schedule?.is_finished),
+      adviceItems,
+    })
+  ) {
+    redirect(adviceInputPath(meetingId, { required: true }));
+  }
+
   const counterpartId = isMentor ? meeting.user : meeting.mentor;
   const counterpartTable = isMentor ? "users" : "mentors";
 
@@ -99,6 +120,7 @@ export default async function ChatPage({ params }) {
       unrestricted={unrestricted}
       counterpartId={counterpartId}
       initialCounterpartReadAt={counterpartRead?.last_read_at ?? null}
+      adviceItems={adviceItems}
     />
   );
 }

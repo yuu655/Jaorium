@@ -16,6 +16,7 @@ export default function ChatWrapper({
   unrestricted,
   counterpartId,
   initialCounterpartReadAt,
+  adviceItems,
 }) {
   return <Chat
     meeting={meeting}
@@ -29,5 +30,6 @@ export default function ChatWrapper({
     unrestricted={unrestricted}
     counterpartId={counterpartId}
     initialCounterpartReadAt={initialCounterpartReadAt}
+    adviceItems={adviceItems}
   />;
 }

@@ -7,11 +7,17 @@ import MentorAppointmentUnit from "./MentorAppointmentUnit";
 // import AppointmentUnitPast from "../appointment/appointmentUnitPast";
 import MentorAppointmentUnitPast from "./MentorAppointmentUnitPast";
 
-export default function MentorAppointmentContent({ meetings, users, unreadByMeeting = {} }) {
+export default function MentorAppointmentContent({
+  meetings,
+  users,
+  unreadByMeeting = {},
+  advisedMeetingIds = [],
+}) {
   const [isActive, setIsActive] = useState("upcoming");
 
   // meeting.user (ID) からuserオブジェクトを引くためのMap
   const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
+  const advisedSet = new Set(advisedMeetingIds);
 
   return (
     <>
@@ -27,6 +33,7 @@ export default function MentorAppointmentContent({ meetings, users, unreadByMeet
                   appointment={appointment}
                   user={userMap[appointment.user]}
                   unreadCount={unreadByMeeting[appointment.id] ?? 0}
+                  hasAdvice={advisedSet.has(appointment.id)}
                 />
               ))
             ) : (

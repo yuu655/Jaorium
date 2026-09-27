@@ -89,7 +89,7 @@ function ParticipantTile({ participant, isLocal, isSpeaking, compact = false }) 
 }
 
 // ── メインのルーム内UI ───────────────────────────────────
-function RoomContent({ onLeave }) {
+function RoomContent({ onLeave, roomName, userRole }) {
   const { localParticipant, isMicrophoneEnabled, isCameraEnabled } = useLocalParticipant();
   const participants = useParticipants();
   const [speakingMap, setSpeakingMap] = useState({});
@@ -106,6 +106,18 @@ function RoomContent({ onLeave }) {
     stopPresentation,
     goToPage,
   } = useSlideShare();
+
+  // 面談資料は面談ごとにサーバーで生成したPDFに固定（メンターのみ共有可）
+  const canPresent = userRole === "mentor";
+  const shareMeetingSlide = useCallback(async () => {
+    const res = await fetch(`/api/meeting-slide/${roomName}`);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error ?? "面談資料の取得に失敗しました");
+    }
+    const blob = await res.blob();
+    await startPresentation(new File([blob], "面談資料.pdf", { type: "application/pdf" }));
+  }, [roomName, startPresentation]);
 
   // スライド発表開始時は自動でパネルを開く
   useEffect(() => {
@@ -195,7 +207,8 @@ function RoomContent({ onLeave }) {
                 isPresenting={isPresenting}
                 onPageChange={goToPage}
                 onStop={() => { stopPresentation(); setShowSlidePanel(false); }}
-                onUpload={startPresentation}
+                onStartShare={shareMeetingSlide}
+                canPresent={canPresent}
               />
             </div>
 
@@ -485,7 +498,7 @@ export default function Interview({ roomName, userName, userRole, dateTime }) {
         audio={true}
         onDisconnected={() => redirect(`${getUrls()}/dashboard/review/${roomName}`)}
       >
-        <RoomContent onLeave={
+        <RoomContent roomName={roomName} userRole={userRole} onLeave={
           () => {
             if(userRole === "user") redirect(`${getUrls()}/dashboard/review/${roomName}`)
             else if(userRole === "mentor") redirect(`${getUrls()}/dashboard/chat/${roomName}`)

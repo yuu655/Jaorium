@@ -96,50 +96,36 @@ export function useSlideShare() {
     [room]
   );
 
-  // ── ファイルをスライドとして読み込み ──────────────────
-  const loadFile = useCallback(
-    async (file) => {
-      if (!file) return;
+  // ── PDFをスライド画像として読み込み ──────────────────
+  // 共有するのは /api/meeting-slide で生成した面談資料PDFのみ
+  const loadFile = useCallback(async (file) => {
+    if (!file) return;
 
-      const ext = file.name.split(".").pop().toLowerCase();
+    if (file.type !== "application/pdf") {
+      throw new Error("面談資料の形式が不正です");
+    }
 
-      // ── PDF ──
-      if (ext === "pdf") {
-        const pdfjsLib = await import("pdfjs-dist");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        const pages = [];
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pages = [];
 
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 1.5 });
-          const canvas = document.createElement("canvas");
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          await page.render({
-            canvasContext: canvas.getContext("2d"),
-            viewport,
-          }).promise;
-          pages.push({ dataUrl: canvas.toDataURL("image/jpeg", 0.85) });
-        }
-        return pages;
-      }
-
-      // ── 画像（PNG/JPEG/GIF/WEBP）──
-      if (["png", "jpg", "jpeg", "gif", "webp"].includes(ext)) {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve([{ dataUrl: e.target.result }]);
-          reader.readAsDataURL(file);
-        });
-      }
-
-      throw new Error(`未対応のファイル形式: .${ext}`);
-    },
-    []
-  );
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({
+        canvasContext: canvas.getContext("2d"),
+        viewport,
+      }).promise;
+      pages.push({ dataUrl: canvas.toDataURL("image/jpeg", 0.85) });
+    }
+    return pages;
+  }, []);
 
   // ── スライドを全参加者に送信 ──────────────────────────
   const startPresentation = useCallback(
