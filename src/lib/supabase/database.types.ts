@@ -108,6 +108,49 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_advices: {
+        Row: {
+          items: string[]
+          meeting_id: string
+          mentor_id: string
+          updated_at: string
+        }
+        Insert: {
+          items?: string[]
+          meeting_id: string
+          mentor_id: string
+          updated_at?: string
+        }
+        Update: {
+          items?: string[]
+          meeting_id?: string
+          mentor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_advices_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: true
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_advices_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "mentors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_advices_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "public_mentors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_confirmations: {
         Row: {
           confirmed_at: string | null

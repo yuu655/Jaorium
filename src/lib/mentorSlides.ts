@@ -98,6 +98,17 @@ export async function listSlides(mentorId: string): Promise<MentorSlide[]> {
   return slides.sort((a, b) => (b.lastModified ?? "").localeCompare(a.lastModified ?? ""));
 }
 
+// 面談資料のベースにする最新のスライドPDFを取得する。1件もなければnull。
+// サーバー内で直接読むので署名付きURLは使わない。
+export async function fetchLatestSlideBytes(mentorId: string): Promise<Uint8Array | null> {
+  const [latest] = await listSlides(mentorId);
+  if (!latest) return null;
+
+  const res = await r2.send(new GetObjectCommand({ Bucket: bucketName(), Key: latest.key }));
+  if (!res.Body) return null;
+  return res.Body.transformToByteArray();
+}
+
 // mentors/ 配下を一括で列挙し、slide/ 直下にPDFがあるメンターIDを返す。
 // メンターごとにListを投げるとメンター数ぶんリクエストが増えるため1回の走査にまとめる。
 export async function listMentorIdsWithSlides(): Promise<Set<string>> {

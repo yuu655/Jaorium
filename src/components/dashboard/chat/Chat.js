@@ -23,10 +23,14 @@ import {
   Check,
   Trash2,
   Ban,
+  FileText,
+  FilePen,
+  Lightbulb,
 } from "lucide-react";
 import DateProposalModal from "./DateProposalModal";
 import { formatProposalDate, parseProposals, proposalLabel } from "@/lib/schedule";
 import { lastReadMessageId } from "@/lib/unreadMessages";
+import { adviceInputPath } from "@/lib/meetingAdvice";
 import {
   confirmDate,
   markChatRead,
@@ -70,6 +74,7 @@ export default function Chat({
   unrestricted,
   counterpartId,
   initialCounterpartReadAt = null,
+  adviceItems = [],
 }) {
   const [messages, setMessages] = useState(initialMessages);
   // 相手がこのチャットを最後に開いた時刻。既読表示の基準
@@ -85,6 +90,7 @@ export default function Chat({
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showMeetingInfo, setShowMeetingInfo] = useState(false);
+  const [showAdvice, setShowAdvice] = useState(false);
   const [meetingConfirmation, setMeetingConfirmation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [credit, setCredit] = useState(null);
@@ -596,6 +602,42 @@ const canceled = searchParams.get("canceled");
           )}
         </div>
 
+        {/* 面談資料：メンターはスライド確認とアドバイス編集、ユーザーはアドバイスの確認 */}
+        {isUser ? (
+          <button
+            onClick={() => setShowAdvice(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors shrink-0"
+            title="メンターからのアドバイスを見る"
+          >
+            <Lightbulb size={14} />
+            <span className="hidden sm:inline">アドバイス</span>
+            {adviceItems.length > 0 && (
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" aria-hidden />
+            )}
+          </button>
+        ) : (
+          <>
+            <a
+              href={`/api/meeting-slide/${meeting.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shrink-0"
+              title="面談資料（スライド）を確認する"
+            >
+              <FileText size={14} />
+              <span className="hidden sm:inline">スライド確認</span>
+            </a>
+            <Link
+              href={adviceInputPath(meeting.id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors shrink-0"
+              title="アドバイスを編集する"
+            >
+              <FilePen size={14} />
+              <span className="hidden sm:inline">アドバイス編集</span>
+            </Link>
+          </>
+        )}
+
         {/* ミーティング終了ボタン */}
         <button
           onClick={() => setShowFinishDialog(true)}
@@ -1075,6 +1117,52 @@ const canceled = searchParams.get("canceled");
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {showAdvice && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/30 z-40"
+            onClick={() => setShowAdvice(false)}
+          />
+          <div className="fixed right-0 top-0 h-full w-80 max-w-full bg-white shadow-xl z-50 flex flex-col animate-in slide-in-from-right duration-200">
+            <div className="flex items-center justify-between px-5 py-4 border-b">
+              <h2 className="font-bold text-sm text-gray-800 flex items-center gap-2">
+                <Lightbulb size={15} className="text-blue-500" />
+                メンターからのアドバイス
+              </h2>
+              <button
+                onClick={() => setShowAdvice(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+              {adviceItems.length > 0 ? (
+                <>
+                  <ul className="space-y-3">
+                    {adviceItems.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2.5">
+                        <span className="mt-1.5 w-2.5 h-2.5 bg-blue-700 shrink-0" aria-hidden />
+                        <p className="text-sm text-gray-800 font-medium leading-relaxed whitespace-pre-wrap break-words">
+                          {item}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-gray-400 pt-2">
+                    ※ 詳細は面談の中でメンターが口頭でお話しします。
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  メンターからのアドバイスはまだありません。
+                </p>
+              )}
+            </div>
+          </div>
+        </>
+      )}
       {showMeetingInfo && (
         <>
           {/* オーバーレイ */}

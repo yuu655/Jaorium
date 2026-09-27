@@ -24,6 +24,19 @@ export default async function MentorPage({ searchParams }) {
     meetingIds: meetings.next.map((m) => m.id),
   });
 
+  // アドバイス入力済みの面談。入力直後にダッシュボードへ戻ったとき反映されるようキャッシュの外で引く
+  const nextMeetingIds = meetings.next.map((m) => m.id);
+  const { data: advices } =
+    nextMeetingIds.length > 0
+      ? await supabase
+          .from("meeting_advices")
+          .select("meeting_id, items")
+          .in("meeting_id", nextMeetingIds)
+      : { data: [] };
+  const advisedMeetingIds = (advices ?? [])
+    .filter((a) => a.items?.length > 0)
+    .map((a) => a.meeting_id);
+
   // 面談可能日時の取得（キャッシュなしの重いクエリ）は
   // /dashboard/mentor/availability 側に移したので、ここでは読まない。
   return (
@@ -35,6 +48,7 @@ export default async function MentorPage({ searchParams }) {
       allTags={allTags}
       initialSide={side}
       unreadByMeeting={unreadByMeeting}
+      advisedMeetingIds={advisedMeetingIds}
     />
   );
 }

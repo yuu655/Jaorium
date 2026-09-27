@@ -10,6 +10,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
   createSlideUploadUrl,
   createSlideViewUrl,
+  fetchLatestSlideBytes,
   isPdfFilename,
   isSafePathSegment,
   listMentorIdsWithSlides,
@@ -123,5 +124,36 @@ describe("listMentorIdsWithSlides", () => {
     expect([...ids].sort()).toEqual(["m-1", "m-5"]);
     expect(r2.send.mock.calls[0][0].input).toMatchObject({ Prefix: "mentors/" });
     expect(r2.send.mock.calls[1][0].input.ContinuationToken).toBe("t1");
+  });
+});
+
+describe("fetchLatestSlideBytes", () => {
+  it("reads the newest PDF under the mentor's slide/ prefix", async () => {
+    r2.send
+      .mockResolvedValueOnce({
+        Contents: [
+          { Key: "mentors/m-1/slide/old.pdf", Size: 1, LastModified: new Date("2026-01-01") },
+          { Key: "mentors/m-1/slide/new.pdf", Size: 1, LastModified: new Date("2026-03-01") },
+        ],
+        IsTruncated: false,
+      })
+      .mockResolvedValueOnce({
+        Body: { transformToByteArray: async () => new Uint8Array([9]) },
+      });
+
+    const bytes = await fetchLatestSlideBytes("m-1");
+
+    expect(bytes).toEqual(new Uint8Array([9]));
+    expect(r2.send.mock.calls[1][0].input).toEqual({
+      Bucket: "private-bucket",
+      Key: "mentors/m-1/slide/new.pdf",
+    });
+  });
+
+  it("returns null when the mentor has no slide PDF", async () => {
+    r2.send.mockResolvedValueOnce({ Contents: [], IsTruncated: false });
+
+    expect(await fetchLatestSlideBytes("m-1")).toBeNull();
+    expect(r2.send).toHaveBeenCalledTimes(1);
   });
 });

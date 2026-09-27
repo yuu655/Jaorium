@@ -18,6 +18,13 @@ const nextConfig = {
       },
     ],
   },
+  // 面談資料PDFの生成（src/lib/meetingSlide）で fs から読む日本語フォントを
+  // サーバーレス関数のバンドルに含める
+  outputFileTracingIncludes: {
+    "/api/meeting-slide/[meetingId]": ["./src/assets/fonts/**"],
+  },
+  // subset-font は同梱の HarfBuzz WASM をパッケージ内の相対パスで読むため、バンドルしない
+  serverExternalPackages: ["subset-font"],
   turbopack: {
     resolveAlias: {
       canvas: "./empty-module.js", // pdfjs用
