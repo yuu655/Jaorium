@@ -17,7 +17,7 @@ async function makeMentorPdf(pageCount) {
 }
 
 describe("buildMeetingSlide", () => {
-  it("appends the question page after every page of the mentor PDF", async () => {
+  it("inserts the question page second to last in the mentor PDF", async () => {
     const bytes = await buildMeetingSlide({
       mentorPdfBytes: await makeMentorPdf(3),
       ...QUESTION_DATA,
@@ -26,7 +26,21 @@ describe("buildMeetingSlide", () => {
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(4);
     expect(doc.getPage(0).getSize()).toEqual({ width: 720, height: 405 });
-    expect(doc.getPage(3).getSize()).toEqual({ width: PAGE_WIDTH, height: PAGE_HEIGHT });
+    expect(doc.getPage(1).getSize()).toEqual({ width: 720, height: 405 });
+    expect(doc.getPage(2).getSize()).toEqual({ width: PAGE_WIDTH, height: PAGE_HEIGHT });
+    expect(doc.getPage(3).getSize()).toEqual({ width: 720, height: 405 });
+  }, 30_000);
+
+  it("puts the question page first when the mentor PDF has a single page", async () => {
+    const bytes = await buildMeetingSlide({
+      mentorPdfBytes: await makeMentorPdf(1),
+      ...QUESTION_DATA,
+    });
+
+    const doc = await PDFDocument.load(bytes);
+    expect(doc.getPageCount()).toBe(2);
+    expect(doc.getPage(0).getSize()).toEqual({ width: PAGE_WIDTH, height: PAGE_HEIGHT });
+    expect(doc.getPage(1).getSize()).toEqual({ width: 720, height: 405 });
   }, 30_000);
 
   it("returns only the question page when the mentor has no slide PDF", async () => {

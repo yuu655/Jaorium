@@ -167,8 +167,9 @@ export function drawQuestionPage(
   pdfDoc: PDFDocument,
   data: QuestionPageData,
   { regular, bold }: QuestionPageFonts,
+  index: number,
 ): PDFPage {
-  const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+  const page = pdfDoc.insertPage(index, [PAGE_WIDTH, PAGE_HEIGHT]);
 
   // ── タイトル ──
   drawPath(page, `M 25 29 H 30 V 60 H 25 Z`, { fill: COLORS.purple });

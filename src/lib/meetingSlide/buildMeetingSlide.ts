@@ -39,7 +39,8 @@ async function copyMentorPages(pdfDoc: PDFDocument, mentorPdfBytes: Uint8Array) 
   }
 }
 
-// メンターのスライドPDF（あれば）の後ろに、面談ごとの質問ページを1枚連結する
+// メンターのスライドPDF（あれば）の最後から2ページ目に、面談ごとの質問ページを1枚挿入する
+// （最終ページはメンターの締めのスライドを想定し、その手前に置く）
 export async function buildMeetingSlide({
   mentorPdfBytes,
   ...questionData
@@ -67,7 +68,9 @@ export async function buildMeetingSlide({
     pdfDoc.embedFont(boldSubset, { subset: true }),
   ]);
 
-  drawQuestionPage(pdfDoc, questionData, { regular, bold });
+  // メンターPDFが無い・読めなかった場合は 0 ページなので、質問ページだけになる
+  const insertIndex = Math.max(pdfDoc.getPageCount() - 1, 0);
+  drawQuestionPage(pdfDoc, questionData, { regular, bold }, insertIndex);
 
   return pdfDoc.save();
 }
