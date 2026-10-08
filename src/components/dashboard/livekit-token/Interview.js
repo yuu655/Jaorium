@@ -102,6 +102,7 @@ function RoomContent({ onLeave, roomName, userRole }) {
     currentPage,
     isPresenting,
     isLocalPresenter,
+    presentationSeq,
     startPresentation,
     stopPresentation,
     goToPage,
@@ -119,10 +120,18 @@ function RoomContent({ onLeave, roomName, userRole }) {
     await startPresentation(new File([blob], "面談資料.pdf", { type: "application/pdf" }));
   }, [roomName, startPresentation]);
 
-  // スライド発表開始時は自動でパネルを開く
+  // 資料が共有されたら、受け取った側も自分でボタンを押さなくてよいように自動でパネルを開く。
+  // isPresenting は既にtrueのまま再共有されると変化しないので、共有ごとに増える番号を見る
+  // （パネルを閉じていた参加者や、共有中に入室した参加者も開く）。
   useEffect(() => {
-    if (isPresenting) setShowSlidePanel(true);
-  }, [isPresenting]);
+    if (presentationSeq > 0) setShowSlidePanel(true);
+  }, [presentationSeq]);
+
+  // メンターが共有を終えたら、見ているだけの側（ユーザー・admin）のパネルも閉じる。
+  // メンター側は onStop で自分で閉じている。
+  useEffect(() => {
+    if (!isPresenting && !canPresent) setShowSlidePanel(false);
+  }, [isPresenting, canPresent]);
 
   const isMuted = !isMicrophoneEnabled;
   const isCameraOff = !isCameraEnabled;

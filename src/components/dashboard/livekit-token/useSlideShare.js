@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRoomContext } from "@livekit/components-react";
-import { DataPacket_Kind } from "livekit-client";
+import { DataPacket_Kind, RoomEvent } from "livekit-client";
 
 const MSG_TYPE = {
   SLIDE_META: "SLIDE_META",   // スライド枚数・タイトル
@@ -18,10 +18,19 @@ export function useSlideShare() {
   const [currentPage, setCurrentPage] = useState(0);
   const [isPresenting, setIsPresenting] = useState(false);
   const [presenterIdentity, setPresenterIdentity] = useState(null);
+  // 共有が始まるたびに増える番号。isPresenting は既に true のまま再共有されると
+  // 変化しないので、「共有が届いたらパネルを開く」はこちらを見て判定する。
+  const [presentationSeq, setPresentationSeq] = useState(0);
   const chunksRef = useRef({}); // { [pageIndex]: string[] }
 
   const isLocalPresenter =
     isPresenting && presenterIdentity === room?.localParticipant?.identity;
+
+  // 後から入室した参加者へ送り直すときに、イベントハンドラから最新の状態を読むためのref
+  const presenterStateRef = useRef({ isLocalPresenter: false, slides: [], currentPage: 0 });
+  useEffect(() => {
+    presenterStateRef.current = { isLocalPresenter, slides, currentPage };
+  }, [isLocalPresenter, slides, currentPage]);
 
   // ── 受信ハンドラ ──────────────────────────────────────
   useEffect(() => {
@@ -40,6 +49,7 @@ export function useSlideShare() {
             setCurrentPage(0);
             setIsPresenting(true);
             setPresenterIdentity(participant?.identity ?? msg.identity);
+            setPresentationSeq((n) => n + 1);
             break;
 
           case MSG_TYPE.SLIDE_PAGE: {
@@ -87,14 +97,70 @@ export function useSlideShare() {
   }, [room]);
 
   // ── 送信ヘルパー ──────────────────────────────────────
+  // destinationIdentities を省略すると全参加者に送る
   const publish = useCallback(
-    (obj) => {
+    (obj, destinationIdentities) => {
       if (!room?.localParticipant) return;
       const bytes = new TextEncoder().encode(JSON.stringify(obj));
-      room.localParticipant.publishData(bytes, { reliable: true });
+      room.localParticipant.publishData(bytes, { reliable: true, destinationIdentities });
     },
     [room]
   );
+
+  // メタ情報→各ページ（チャンク分割）の順に送る。受信側はメタ情報でバッファを
+  // リセットしてパネルを開く。
+  const sendSlides = useCallback(
+    async (pages, destinationIdentities) => {
+      publish(
+        {
+          type: MSG_TYPE.SLIDE_META,
+          identity: room?.localParticipant?.identity,
+          totalPages: pages.length,
+        },
+        destinationIdentities,
+      );
+
+      for (let i = 0; i < pages.length; i++) {
+        const dataUrl = pages[i].dataUrl;
+        const totalChunks = Math.ceil(dataUrl.length / CHUNK_SIZE);
+        for (let c = 0; c < totalChunks; c++) {
+          publish(
+            {
+              type: MSG_TYPE.SLIDE_PAGE,
+              pageIndex: i,
+              chunkIndex: c,
+              totalChunks,
+              data: dataUrl.slice(c * CHUNK_SIZE, (c + 1) * CHUNK_SIZE),
+            },
+            destinationIdentities,
+          );
+          // 詰まり防止のため少し待つ
+          await new Promise((r) => setTimeout(r, 10));
+        }
+      }
+    },
+    [publish, room]
+  );
+
+  // ── 共有中に入室した参加者へ送り直す ──────────────────
+  // データメッセージは送った時点の参加者にしか届かないので、共有を始めた後に
+  // 入室（再読み込み・再接続を含む）した相手には、発表者側から今の資料とページを送る。
+  useEffect(() => {
+    if (!room) return;
+
+    const onParticipantConnected = async (participant) => {
+      const { isLocalPresenter: presenting, slides: pages, currentPage: page } =
+        presenterStateRef.current;
+      if (!presenting || !pages.length) return;
+
+      const to = [participant.identity];
+      await sendSlides(pages, to);
+      if (page > 0) publish({ type: MSG_TYPE.PAGE_CHANGE, pageIndex: page }, to);
+    };
+
+    room.on(RoomEvent.ParticipantConnected, onParticipantConnected);
+    return () => room.off(RoomEvent.ParticipantConnected, onParticipantConnected);
+  }, [room, sendSlides, publish]);
 
   // ── PDFをスライド画像として読み込み ──────────────────
   // 共有するのは /api/meeting-slide で生成した面談資料PDFのみ
@@ -138,32 +204,11 @@ export function useSlideShare() {
       setCurrentPage(0);
       setIsPresenting(true);
       setPresenterIdentity(room?.localParticipant?.identity);
+      setPresentationSeq((n) => n + 1);
 
-      // メタ情報を送信
-      publish({
-        type: MSG_TYPE.SLIDE_META,
-        identity: room?.localParticipant?.identity,
-        totalPages: pages.length,
-      });
-
-      // 各ページをチャンク分割して送信
-      for (let i = 0; i < pages.length; i++) {
-        const dataUrl = pages[i].dataUrl;
-        const totalChunks = Math.ceil(dataUrl.length / CHUNK_SIZE);
-        for (let c = 0; c < totalChunks; c++) {
-          publish({
-            type: MSG_TYPE.SLIDE_PAGE,
-            pageIndex: i,
-            chunkIndex: c,
-            totalChunks,
-            data: dataUrl.slice(c * CHUNK_SIZE, (c + 1) * CHUNK_SIZE),
-          });
-          // 詰まり防止のため少し待つ
-          await new Promise((r) => setTimeout(r, 10));
-        }
-      }
+      await sendSlides(pages);
     },
-    [loadFile, publish, room]
+    [loadFile, sendSlides, room]
   );
 
   // ── ページ切り替え（送信者のみ） ─────────────────────
@@ -191,6 +236,7 @@ export function useSlideShare() {
     isPresenting,
     isLocalPresenter,
     presenterIdentity,
+    presentationSeq,
     startPresentation,
     stopPresentation,
     goToPage,
