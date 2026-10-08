@@ -227,8 +227,10 @@ describe("availableSlots", () => {
   it("falls back to the full range when unrestricted", () => {
     const slots = availableSlots({ date: "2026-10-04", bandsByDate: {}, unrestricted: true, now });
 
-    expect(slots[0]).toBe("10:00");
-    expect(slots.at(-1)).toBe("21:30");
+    // 終日、30分刻みで選べる
+    expect(slots[0]).toBe("00:00");
+    expect(slots.at(-1)).toBe("23:30");
+    expect(slots).toHaveLength(48);
     expect(slots).toEqual(freeSlotOptions());
   });
 

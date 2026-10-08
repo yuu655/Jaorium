@@ -5,9 +5,10 @@ export const SLOT_MINUTES = 30;
 // 面談1回の長さ。確定済み枠との重なり判定に使う。
 export const MEETING_DURATION_MIN = 60;
 
-// フリーモード（メンターが空き時間を未設定）で選べる時間の範囲
-export const FREE_SLOT_START = "10:00";
-export const FREE_SLOT_END = "22:00";
+// フリーモード（メンターが空き時間を未設定）で選べる時間の範囲。
+// 終日（0:00〜23:30開始）を30分単位で選べる。終端の "24:00" は開始時刻には含まれない。
+export const FREE_SLOT_START = "00:00";
+export const FREE_SLOT_END = "24:00";
 
 export function toMinutes(time) {
   if (typeof time !== "string") return null;

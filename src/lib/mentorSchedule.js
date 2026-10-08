@@ -3,8 +3,13 @@
 // 確定済み枠は他人の面談のscheduleを見るため、RLSを迂回するadminクライアントを渡す。
 
 import { groupBookedByDate } from "@/lib/schedule";
+import { isMentorAvailabilityEnabled } from "@/lib/featureFlags";
 
+// 機能OFFの間は「未設定」として空を返す。呼び出し側は hasFutureAvailability が
+// false になるので、自由に日時を選べるモードに落ちる。
 export async function fetchMentorAvailability(supabase, { mentorId, from }) {
+  if (!isMentorAvailabilityEnabled()) return [];
+
   const { data } = await supabase
     .from("mentor_availabilities")
     .select("date, start_time, end_time")

@@ -8,6 +8,10 @@ import {
   isMonthString,
   shiftMonth,
 } from "@/lib/schedule";
+import { isMentorAvailabilityEnabled } from "@/lib/featureFlags";
+
+// 機能OFFの間は画面を閉じているが、Server Actionは直接呼べるのでここでも止める
+const DISABLED_ERROR = "面談可能日時の設定は現在停止中です";
 
 // ---- I/O ----
 
@@ -55,6 +59,8 @@ async function insertAvailabilityRows(supabase, rows) {
 // 帯の重なりはこの「置換 + mergeSlots」で構造的に起きないようにしている。
 // 書き込みはRLS（mentor_id = auth.uid()）に従うので、他人の予定は触れない。
 export async function saveAvailability(date, slots) {
+  if (!isMentorAvailabilityEnabled()) return { error: DISABLED_ERROR };
+
   const supabase = await createClient();
   const user = await getAuthenticatedUser(supabase);
   if (!user) return { error: "ログインが必要です" };
@@ -93,6 +99,8 @@ export async function saveAvailability(date, slots) {
 // slotsByWeekday はキーのある曜日だけが対象で、空配列なら「その曜日を空きなしにする」。
 // 日数分の往復を避けるため、delete と insert を1回ずつにまとめている。
 export async function applyWeeklyAvailability(month, slotsByWeekday, mode = "replace") {
+  if (!isMentorAvailabilityEnabled()) return { error: DISABLED_ERROR };
+
   const supabase = await createClient();
   const user = await getAuthenticatedUser(supabase);
   if (!user) return { error: "ログインが必要です" };
