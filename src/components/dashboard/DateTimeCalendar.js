@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { availableSlots, nowInJst, MEETING_DURATION_MIN } from "@/lib/schedule";
 
@@ -8,6 +8,10 @@ const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
 // 選べるのは当月〜3ヶ月先（メンター側の登録範囲と揃える）
 const MONTH_RANGE = 3;
+
+// 時刻は終日（最大48個）並ぶのでスクロールさせる。日付を選んだ直後は深夜帯ではなく
+// この時刻あたりを先頭に見せる（選択済みの時刻があればそちらを優先）。
+const INITIAL_SCROLL_TIME = "09:00";
 
 function monthKey(year, month) {
   return `${year}-${String(month + 1).padStart(2, "0")}`;
@@ -61,6 +65,18 @@ export default function DateTimeCalendar({
     });
 
   const slots = date ? slotsFor(date) : [];
+
+  // 日付を切り替えたら、選択済みの時刻（なければ INITIAL_SCROLL_TIME 以降の最初の枠）まで
+  // 時刻一覧だけをスクロールする。scrollIntoView だとモーダルやページごと動くので使わない。
+  const slotListRef = useRef(null);
+  useEffect(() => {
+    const list = slotListRef.current;
+    if (!list) return;
+    const target = time || slots.find((slot) => slot >= INITIAL_SCROLL_TIME);
+    const button = target ? list.querySelector(`[data-slot="${target}"]`) : null;
+    list.scrollTop = button ? button.offsetTop : 0;
+    // 時刻を選ぶたびに動くと押しづらいので、日付が変わったときだけ合わせる
+  }, [date]);
 
   const limit = new Date(Number(today.slice(0, 4)), Number(today.slice(5, 7)) - 1 + MONTH_RANGE, 1);
   const canGoPrev = monthKey(year, month) > today.slice(0, 7);
@@ -161,12 +177,16 @@ export default function DateTimeCalendar({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             希望時間（30分単位）
           </label>
-          <div className="grid grid-cols-4 gap-2">
+          <div
+            ref={slotListRef}
+            className="relative grid grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1"
+          >
             {slots.map((slot) => {
               const taken = disabledSlotKeys?.has(`${date}|${slot}`) ?? false;
               return (
                 <button
                   key={slot}
+                  data-slot={slot}
                   type="button"
                   onClick={() => onChange({ date, time: slot })}
                   disabled={taken}

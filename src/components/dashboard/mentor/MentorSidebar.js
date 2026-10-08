@@ -6,6 +6,7 @@ import { IconBuildingBank } from "@tabler/icons-react";
 import Icon from "../profile/icon";
 import UnreadBadge from "../common/UnreadBadge";
 import { totalUnread } from "@/lib/unreadMessages";
+import { isMentorAvailabilityEnabled } from "@/lib/featureFlags";
 
 export const MENTOR_DEFAULT_SIDE = "appointment";
 
@@ -15,12 +16,17 @@ export const MENTOR_DEFAULT_SIDE = "appointment";
 //   { key: "setting", label: "設定", Icon: Settings },
 export const MENTOR_NAV = [
   { key: "appointment", label: "予約管理", Icon: Calendar },
-  {
-    key: "availability",
-    label: "面談可能日時",
-    Icon: CalendarDays,
-    href: "/dashboard/mentor/availability",
-  },
+  // 面談可能日時は機能フラグでOFFにしている間は出さない（lib/featureFlags.js）
+  ...(isMentorAvailabilityEnabled()
+    ? [
+        {
+          key: "availability",
+          label: "面談可能日時",
+          Icon: CalendarDays,
+          href: "/dashboard/mentor/availability",
+        },
+      ]
+    : []),
   { key: "profile", label: "プロフィール", Icon: User },
   { key: "template", label: "テンプレート", Icon: FileChartColumn },
   { key: "payout", label: "支払い", Icon: IconBuildingBank },

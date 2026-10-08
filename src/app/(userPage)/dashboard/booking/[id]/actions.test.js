@@ -9,6 +9,11 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
+// 面談可能日時の制限そのものを検証するため、既定ではONにしておく（OFF時は個別に切り替える）
+const flags = vi.hoisted(() => ({ availability: true }));
+vi.mock("@/lib/featureFlags", () => ({
+  isMentorAvailabilityEnabled: () => flags.availability,
+}));
 vi.mock("@/utils/getUrls", () => ({ default: vi.fn(() => "https://www.jaorium.com") }));
 
 const { sendMock } = vi.hoisted(() => ({ sendMock: vi.fn(async () => ({})) }));
@@ -325,6 +330,29 @@ describe("submitBooking / 希望日時（第1〜第3希望）", () => {
       error: "第2希望の日時は提案できません。空き状況を確認してください",
     });
     expect(messagesChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("ignores the registered availability while the feature is turned off", async () => {
+    flags.availability = false;
+    try {
+      const messagesChain = createChain({ error: null });
+      mockClients({
+        messagesChain,
+        availability: [{ date: FUTURE_DATE, start_time: "13:00:00", end_time: "15:00:00" }],
+      });
+
+      await expect(
+        submitBooking(
+          "mentor-1",
+          null,
+          formData({ ...validFields, date_choices: `${FUTURE_DATE}|20:00` }),
+        ),
+      ).rejects.toThrow("REDIRECT:/dashboard/chat/meeting-1");
+
+      expect(messagesChain.insert).toHaveBeenCalled();
+    } finally {
+      flags.availability = true;
+    }
   });
 
   it("rejects duplicate choices", async () => {

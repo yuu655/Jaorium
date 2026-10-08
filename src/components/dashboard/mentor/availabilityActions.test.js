@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createSupabaseMock, createChain } from "@/test/supabaseMock";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+// 保存処理そのものを検証するため、既定ではONにしておく（OFF時は個別に切り替える）
+const flags = vi.hoisted(() => ({ availability: true }));
+vi.mock("@/lib/featureFlags", () => ({
+  isMentorAvailabilityEnabled: () => flags.availability,
+}));
 
 import { createClient } from "@/lib/supabase/server";
 import { saveAvailability, applyWeeklyAvailability } from "./availabilityActions";
@@ -22,6 +27,31 @@ function mockMentor({ user = { id: "mentor-1" }, chain = createChain({ data: nul
 
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
+  flags.availability = true;
+});
+
+describe("while the availability feature is turned off", () => {
+  it("saveAvailability refuses without touching the table", async () => {
+    flags.availability = false;
+    const chain = mockMentor();
+
+    const result = await saveAvailability(futureDate, ["13:00"]);
+
+    expect(result).toEqual({ error: "面談可能日時の設定は現在停止中です" });
+    expect(chain.delete).not.toHaveBeenCalled();
+    expect(chain.insert).not.toHaveBeenCalled();
+  });
+
+  it("applyWeeklyAvailability refuses without touching the table", async () => {
+    flags.availability = false;
+    const chain = mockMentor();
+
+    const result = await applyWeeklyAvailability(futureDate.slice(0, 7), { 1: ["13:00"] });
+
+    expect(result).toEqual({ error: "面談可能日時の設定は現在停止中です" });
+    expect(chain.delete).not.toHaveBeenCalled();
+    expect(chain.insert).not.toHaveBeenCalled();
+  });
 });
 
 describe("saveAvailability", () => {

@@ -11,6 +11,11 @@ vi.mock("next/navigation", () => ({
     throw new Error(`REDIRECT:${url}`);
   }),
 }));
+// 面談可能日時の制限そのものを検証するため、既定ではONにしておく（OFF時は個別に切り替える）
+const flags = vi.hoisted(() => ({ availability: true }));
+vi.mock("@/lib/featureFlags", () => ({
+  isMentorAvailabilityEnabled: () => flags.availability,
+}));
 
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
@@ -316,6 +321,19 @@ describe("sendDateProposal / mentor availability", () => {
     expect(messagesChain.insert).toHaveBeenCalled();
   });
 
+  it("accepts early-morning and late-night slots in free mode", async () => {
+    const messagesChain = setup({ availability: [] });
+
+    const result = await sendDateProposal("meeting-1", [
+      { date: FUTURE_DATE, time: "00:00" },
+      { date: FUTURE_DATE, time: "07:30" },
+      { date: FUTURE_DATE, time: "23:30" },
+    ]);
+
+    expect(result).toEqual({ success: true });
+    expect(messagesChain.insert).toHaveBeenCalled();
+  });
+
   it("enforces 30-minute slots even without availability", async () => {
     const messagesChain = setup({ availability: [] });
 
@@ -332,6 +350,34 @@ describe("sendDateProposal / mentor availability", () => {
 
     expect(result.error).toBeDefined();
     expect(messagesChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("ignores the registered availability while the feature is turned off", async () => {
+    flags.availability = false;
+    try {
+      const messagesChain = setup({ availability });
+
+      const result = await sendDateProposal("meeting-1", [{ date: FUTURE_DATE, time: "20:00" }]);
+
+      expect(result).toEqual({ success: true });
+      expect(messagesChain.insert).toHaveBeenCalled();
+    } finally {
+      flags.availability = true;
+    }
+  });
+
+  it("still blocks double booking while the feature is turned off", async () => {
+    flags.availability = false;
+    try {
+      const messagesChain = setup({ schedules: [{ date: FUTURE_DATE, time: "13:00:00" }] });
+
+      const result = await sendDateProposal("meeting-1", [{ date: FUTURE_DATE, time: "13:30" }]);
+
+      expect(result.error).toBeDefined();
+      expect(messagesChain.insert).not.toHaveBeenCalled();
+    } finally {
+      flags.availability = true;
+    }
   });
 
   it("lets the mentor propose outside their own availability", async () => {

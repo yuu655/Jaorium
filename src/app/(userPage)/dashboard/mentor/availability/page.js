@@ -1,6 +1,8 @@
 import MentorDashboardShell from "@/components/dashboard/mentor/MentorDashboardShell";
 import MentorAvailabilityContent from "@/components/dashboard/mentor/MentorAvailabilityContent";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isMentorAvailabilityEnabled } from "@/lib/featureFlags";
 import {
   AVAILABILITY_MONTH_RANGE,
   groupBookedByDate,
@@ -10,6 +12,9 @@ import {
 import { getMentorDashboardData } from "../mentorDashboardData";
 
 export default async function MentorAvailabilityPage() {
+  // 機能OFFの間はURL直打ちでも設定画面を開かせない
+  if (!isMentorAvailabilityEnabled()) redirect("/dashboard/mentor");
+
   const supabase = await createClient();
   const {
     data: { user },
